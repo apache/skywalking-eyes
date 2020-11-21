@@ -140,7 +140,7 @@ func Walk(p string, cfg *Config) error {
 			scanner := bufio.NewScanner(file)
 			for scanner.Scan() {
 				line := scanner.Text()
-				if strings.Contains()
+				//if strings.Contains()
 			}
 
 		}

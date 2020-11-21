@@ -13,10 +13,31 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package main
+package util
 
-import "license-checker/cmd"
+import (
+	"strings"
+)
 
-func main() {
-	cmd.Execute()
+func InStrSliceMapKeyFunc(strs []string) func(string) bool {
+	set := make(map[string]struct{})
+
+	for _, e := range strs {
+		set[e] = struct{}{}
+	}
+
+	return func(s string) bool {
+		_, ok := set[s]
+		return ok
+	}
+}
+
+func GetFileExtension(filename string) string {
+	i := strings.LastIndex(filename, ".")
+	if i != -1 {
+		if i+1 < len(filename) {
+			return filename[i+1:]
+		}
+	}
+	return ""
 }

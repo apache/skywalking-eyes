@@ -1,5 +1,5 @@
 /*
-Copyright © 2020 NAME HERE <EMAIL ADDRESS>
+Copyright © 2020 Hoshea Jiang <hoshea@apache.org>
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,23 +16,33 @@ limitations under the License.
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/spf13/cobra"
+	"io/ioutil"
+	"license-checker/util"
 	"os"
-
-	homedir "github.com/mitchellh/go-homedir"
-	"github.com/spf13/viper"
+	"path/filepath"
 )
 
 var cfgFile string
+var checkPath string
+var loose bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "license-checker",
-	Short: "A brief description of your application",
-
+	Use: "license-checker [flags]",
+	Long: `license-checker walks the specified path recursively and checks 
+if the specified files have the license header in the config file.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Hello Cobra CLI!")
+		config, err := LoadConfig()
+		if err != nil {
+			fmt.Println(err)
+		}
+		//fmt.Println(config.TargetFiles)
+		if err := Walk(checkPath, config); err != nil {
+			fmt.Println(err)
+		}
 	},
 }
 
@@ -46,41 +56,77 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
-
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.license-checker.yaml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", ".licenserc.json", "the config file")
+	rootCmd.PersistentFlags().StringVarP(&checkPath, "path", "p", "", "the path to check (required)")
+	rootCmd.PersistentFlags().BoolVarP(&loose, "loose", "l", false, "loose mode")
+	if err := rootCmd.MarkPersistentFlagRequired("path"); err != nil {
+		fmt.Println(err)
+	}
 }
 
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find home directory.
-		home, err := homedir.Dir()
+type excludeConfig struct {
+	Files       []string `json:"files"`
+	Extensions  []string `json:"extensions"`
+	Directories []string `json:"directories"`
+}
+
+type Config struct {
+	LicenseStrict []string      `json:"licenseStrict"`
+	LicenseLoose  []string      `json:"licenseLoose"`
+	TargetFiles   []string      `json:"targetFiles"`
+	Exclude       excludeConfig `json:"exclude"`
+}
+
+type Result struct {
+	Success []string `json:"success"`
+	Failure []string `json:"failure"`
+}
+
+// LoadConfig reads in config file.
+func LoadConfig() (*Config, error) {
+	var config Config
+	bytes, err := ioutil.ReadFile(cfgFile)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(bytes, &config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &config, nil
+}
+
+func Walk(p string, cfg *Config) error {
+	inExcludeDir := util.InStrSliceMapKeyFunc(cfg.Exclude.Directories)
+	inExcludeExt := util.InStrSliceMapKeyFunc(cfg.Exclude.Extensions)
+	inExcludeFiles := util.InStrSliceMapKeyFunc(cfg.Exclude.Files)
+
+	err := filepath.Walk(p, func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			fmt.Println(err) // can't walk here,
+			return nil       // but continue walking elsewhere
 		}
 
-		// Search config in home directory with name ".license-checker" (without extension).
-		viper.AddConfigPath(home)
-		viper.SetConfigName(".license-checker")
-	}
+		if fi.IsDir() {
+			if inExcludeDir(fi.Name()) {
+				return filepath.SkipDir
+			}
+		} else {
+			ext := util.GetFileExtension(fi.Name())
+			if inExcludeFiles(fi.Name()) || inExcludeExt(ext) {
+				return nil
+			}
 
-	viper.AutomaticEnv() // read in environment variables that match
+			// TODO: open the file and check
+			fmt.Println(path)
+			//curDir := strings.Replace(path, fi.Name(), "", 1)
+			//fmt.Println(curDir)
+		}
 
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
-	}
+		return nil
+	})
+
+	return err
 }

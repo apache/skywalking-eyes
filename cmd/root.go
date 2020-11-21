@@ -16,6 +16,7 @@ limitations under the License.
 package cmd
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"github.com/spf13/cobra"
@@ -23,6 +24,7 @@ import (
 	"license-checker/util"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 var cfgFile string
@@ -39,7 +41,7 @@ if the specified files have the license header in the config file.`,
 		if err != nil {
 			fmt.Println(err)
 		}
-		//fmt.Println(config.TargetFiles)
+
 		if err := Walk(checkPath, config); err != nil {
 			fmt.Println(err)
 		}
@@ -99,6 +101,13 @@ func LoadConfig() (*Config, error) {
 }
 
 func Walk(p string, cfg *Config) error {
+	var license []string
+	if loose {
+		license = cfg.LicenseStrict
+	} else {
+		license = cfg.LicenseLoose
+	}
+
 	inExcludeDir := util.InStrSliceMapKeyFunc(cfg.Exclude.Directories)
 	inExcludeExt := util.InStrSliceMapKeyFunc(cfg.Exclude.Extensions)
 	inExcludeFiles := util.InStrSliceMapKeyFunc(cfg.Exclude.Files)
@@ -121,8 +130,19 @@ func Walk(p string, cfg *Config) error {
 
 			// TODO: open the file and check
 			fmt.Println(path)
-			//curDir := strings.Replace(path, fi.Name(), "", 1)
-			//fmt.Println(curDir)
+
+			file, err := os.Open(path)
+			if err != nil {
+				return err
+			}
+			defer file.Close()
+
+			scanner := bufio.NewScanner(file)
+			for scanner.Scan() {
+				line := scanner.Text()
+				if strings.Contains()
+			}
+
 		}
 
 		return nil

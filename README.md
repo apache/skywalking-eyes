@@ -31,7 +31,7 @@ Flags:
 
 ## Configuration
 
-```json
+```
 {
   // What to check in strict mode, the order of strings can NOT be changed arbitrarily
   "licenseStrict": [

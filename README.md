@@ -33,43 +33,43 @@ Flags:
 
 ```json
 {
+  // What to check in strict mode, the order of strings can NOT be changed arbitrarily
   "licenseStrict": [
     "Licensed to the Apache Software Foundation (ASF) under one or more",
     "contributor license agreements.  See the NOTICE file distributed with",
     "..."
   ],
+
+  // What to check in loose mode, the order of strings can NOT be changed arbitrarily
   "licenseLoose": [
     "Apache License, Version 2.0"
   ],
+
+  // license-checker will check *.java and *.go
   "targetFiles": [
     "java",
-    "go",
-    "py",
-    "sh",
-    "graphql",
-    "yaml",
-    "yml"
+    "go"
   ],
+
   "exclude": {
+    // license-checker will NOT check these files
     "files": [
       ".gitignore",
       "NOTICE",
-      "go.mod",
-      "go.sum",
-      ".DS_Store",
       "LICENSE"
     ],
+
+    // license-checker will NOT check files whose names with these extensions
     "extensions": [
       "md",
       "xml",
       "json"
     ],
+
+    // license-checker will NOT check these directories
     "directories": [
       "bin",
-      ".github",
-      ".git",
-      ".idea",
-      "test"
+      ".github"
     ]
   }
 }

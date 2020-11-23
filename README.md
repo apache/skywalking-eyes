@@ -78,5 +78,14 @@ Flags:
 ## Test
 
 ```bash
-bin/license-checker -p test -c test/.licenserc_for_test.json 
+bin/license-checker -p test -c test/.licenserc_for_test.json
+
+[No Specified License]: test/include_test/without_license/testcase.go
+[No Specified License]: test/include_test/without_license/testcase.graphql
+[No Specified License]: test/include_test/without_license/testcase.java
+[No Specified License]: test/include_test/without_license/testcase.py
+[No Specified License]: test/include_test/without_license/testcase.sh
+[No Specified License]: test/include_test/without_license/testcase.yaml
+[No Specified License]: test/include_test/without_license/testcase.yml
+Total check 14 files, success: 7, failure: 7 
 ```

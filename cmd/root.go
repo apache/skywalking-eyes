@@ -28,10 +28,14 @@ import (
 )
 
 var (
-	cfgFile   string
+	// cfgFile is the path to the config file.
+	cfgFile string
+	// checkPath is the path to check license.
 	checkPath string
-	loose     bool
-	verbose   bool
+	// loose is flag to enable loose mode.
+	loose bool
+	// verbose is flag to enable verbose mode.
+	verbose bool
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -53,7 +57,7 @@ if the specified files have the license header in the config file.`,
 	},
 }
 
-// Execute adds all child commands to the root command and sets flags appropriately.
+// Execute sets flags to the root command appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", ".licenserc.json", "the config file")
@@ -101,6 +105,7 @@ func LoadConfig() (*Config, error) {
 	return &config, nil
 }
 
+// WalkAndCheck traverses the path p and check every target file's license.
 func WalkAndCheck(p string, cfg *Config) (*Result, error) {
 	var license []string
 	if loose {
@@ -149,6 +154,7 @@ func WalkAndCheck(p string, cfg *Config) (*Result, error) {
 	return &result, err
 }
 
+// CheckLicense checks license of single file.
 func CheckLicense(filePath string, license []string) (bool, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -171,6 +177,7 @@ func CheckLicense(filePath string, license []string) (bool, error) {
 	return true, nil
 }
 
+// printResult prints license check result.
 func printResult(r *Result) {
 	if verbose {
 		for _, s := range r.Success {

@@ -5,14 +5,14 @@ A CLI tool for checking license headers, which theoretically supports checking a
 ## Install
 
 ```bash 
-git clone 
+git clone https://github.com/fgksgf/license-checker.git
 cd license-checker
 make
 ```
 
 ## Usage
 
-```bash
+```
 Usage: license-checker [flags]
 
 license-checker walks the specified path recursively and checks 
@@ -27,6 +27,52 @@ Flags:
   -l, --loose           loose mode
   -p, --path string     the path to check (default ".")
   -v, --verbose         verbose mode
+```
+
+## Configuration
+
+```json
+{
+  "licenseStrict": [
+    "Licensed to the Apache Software Foundation (ASF) under one or more",
+    "contributor license agreements.  See the NOTICE file distributed with",
+    "..."
+  ],
+  "licenseLoose": [
+    "Apache License, Version 2.0"
+  ],
+  "targetFiles": [
+    "java",
+    "go",
+    "py",
+    "sh",
+    "graphql",
+    "yaml",
+    "yml"
+  ],
+  "exclude": {
+    "files": [
+      ".gitignore",
+      "NOTICE",
+      "go.mod",
+      "go.sum",
+      ".DS_Store",
+      "LICENSE"
+    ],
+    "extensions": [
+      "md",
+      "xml",
+      "json"
+    ],
+    "directories": [
+      "bin",
+      ".github",
+      ".git",
+      ".idea",
+      "test"
+    ]
+  }
+}
 ```
 
 ## Test

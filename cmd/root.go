@@ -27,9 +27,12 @@ import (
 	"strings"
 )
 
-var cfgFile string
-var checkPath string
-var loose bool
+var (
+	cfgFile   string
+	checkPath string
+	loose     bool
+	verbose   bool
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -42,27 +45,25 @@ if the specified files have the license header in the config file.`,
 			fmt.Println(err)
 		}
 
-		if err := Walk(checkPath, config); err != nil {
+		res, err := WalkAndCheck(checkPath, config)
+		if err != nil {
 			fmt.Println(err)
 		}
+		printResult(res)
 	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", ".licenserc.json", "the config file")
+	rootCmd.PersistentFlags().StringVarP(&checkPath, "path", "p", ".", "the path to check")
+	rootCmd.PersistentFlags().BoolVarP(&loose, "loose", "l", false, "loose mode")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose mode")
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
-	}
-}
-
-func init() {
-	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", ".licenserc.json", "the config file")
-	rootCmd.PersistentFlags().StringVarP(&checkPath, "path", "p", "", "the path to check (required)")
-	rootCmd.PersistentFlags().BoolVarP(&loose, "loose", "l", false, "loose mode")
-	if err := rootCmd.MarkPersistentFlagRequired("path"); err != nil {
-		fmt.Println(err)
 	}
 }
 
@@ -100,18 +101,19 @@ func LoadConfig() (*Config, error) {
 	return &config, nil
 }
 
-func Walk(p string, cfg *Config) error {
+func WalkAndCheck(p string, cfg *Config) (*Result, error) {
 	var license []string
 	if loose {
-		license = cfg.LicenseStrict
-	} else {
 		license = cfg.LicenseLoose
+	} else {
+		license = cfg.LicenseStrict
 	}
 
 	inExcludeDir := util.InStrSliceMapKeyFunc(cfg.Exclude.Directories)
 	inExcludeExt := util.InStrSliceMapKeyFunc(cfg.Exclude.Extensions)
 	inExcludeFiles := util.InStrSliceMapKeyFunc(cfg.Exclude.Files)
 
+	var result Result
 	err := filepath.Walk(p, func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
 			fmt.Println(err) // can't walk here,
@@ -119,7 +121,8 @@ func Walk(p string, cfg *Config) error {
 		}
 
 		if fi.IsDir() {
-			if inExcludeDir(fi.Name()) {
+			if inExcludeDir(fi.Name()) ||
+				inExcludeDir(util.CleanPathPrefixes(path, []string{p, string(os.PathSeparator)})) {
 				return filepath.SkipDir
 			}
 		} else {
@@ -128,25 +131,57 @@ func Walk(p string, cfg *Config) error {
 				return nil
 			}
 
-			// TODO: open the file and check
-			fmt.Println(path)
-
-			file, err := os.Open(path)
+			ok, err := CheckLicense(path, license)
 			if err != nil {
 				return err
 			}
-			defer file.Close()
 
-			scanner := bufio.NewScanner(file)
-			for scanner.Scan() {
-				line := scanner.Text()
-				//if strings.Contains()
+			if ok {
+				result.Success = append(result.Success, fmt.Sprintf("[Pass]: %s", path))
+			} else {
+				result.Failure = append(result.Failure, fmt.Sprintf("[No Specified License]: %s", path))
 			}
-
 		}
 
 		return nil
 	})
 
-	return err
+	return &result, err
+}
+
+func CheckLicense(filePath string, license []string) (bool, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return false, err
+	}
+	defer file.Close()
+
+	index := 0
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() && index < len(license) {
+		line := scanner.Text()
+		if strings.Contains(line, license[index]) {
+			index++
+		}
+	}
+
+	if index != len(license) {
+		return false, nil
+	}
+	return true, nil
+}
+
+func printResult(r *Result) {
+	if verbose {
+		for _, s := range r.Success {
+			fmt.Println(s)
+		}
+	}
+
+	for _, s := range r.Failure {
+		fmt.Println(s)
+	}
+
+	fmt.Printf("Total check %d files, success: %d, failure: %d\n",
+		len(r.Success)+len(r.Failure), len(r.Success), len(r.Failure))
 }

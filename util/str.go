@@ -41,3 +41,13 @@ func GetFileExtension(filename string) string {
 	}
 	return ""
 }
+
+func CleanPathPrefixes(path string, prefixes []string) string {
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(path, prefix) && len(path) > 0 {
+			path = path[len(prefix):]
+		}
+	}
+
+	return path
+}

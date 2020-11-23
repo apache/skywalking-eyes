@@ -27,12 +27,7 @@
   ],
   "exclude": {
     "files": [
-      ".gitignore",
-      "NOTICE",
-      "go.mod",
-      "go.sum",
-      ".DS_Store",
-      "LICENSE"
+      ".DS_Store"
     ],
     "extensions": [
       "md",
@@ -40,11 +35,7 @@
       "json"
     ],
     "directories": [
-      "bin",
-      ".github",
-      ".git",
-      ".idea",
-      "test"
+      "exclude_test/directories"
     ]
   }
 }

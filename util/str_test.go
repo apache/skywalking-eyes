@@ -15,7 +15,10 @@ limitations under the License.
 */
 package util
 
-import "testing"
+import (
+	"os"
+	"testing"
+)
 
 func TestGetFileExtension(t *testing.T) {
 	type args struct {
@@ -52,6 +55,58 @@ func TestGetFileExtension(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := GetFileExtension(tt.args.filename); got != tt.want {
 				t.Errorf("GetFileExtension() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_cleanPathPrefixes(t *testing.T) {
+	type args struct {
+		path     string
+		prefixes []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "",
+			args: args{
+				path:     "test/exclude_test",
+				prefixes: []string{"test", string(os.PathSeparator)},
+			},
+			want: "exclude_test",
+		},
+		{
+			name: "",
+			args: args{
+				path:     "test/exclude_test/directories",
+				prefixes: []string{"test", string(os.PathSeparator)},
+			},
+			want: "exclude_test/directories",
+		},
+		{
+			name: "",
+			args: args{
+				path:     "./.git/",
+				prefixes: []string{".", string(os.PathSeparator)},
+			},
+			want: ".git/",
+		},
+		{
+			name: "",
+			args: args{
+				path:     "test/exclude_test/directories",
+				prefixes: []string{"test/", string(os.PathSeparator)},
+			},
+			want: "exclude_test/directories",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := CleanPathPrefixes(tt.args.path, tt.args.prefixes); got != tt.want {
+				t.Errorf("CleanPathPrefixes() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -14,8 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: License Checker
+name: License Guard
 description: A tool for checking license headers, which theoretically supports checking all types of files.
+branding:
+  icon: book
+  color: orange
 runs:
   using: docker
   image: Dockerfile

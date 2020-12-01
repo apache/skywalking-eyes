@@ -20,17 +20,12 @@ FILES := $$(find .$$($(PACKAGE_DIRECTORIES)) -name "*.go")
 FAIL_ON_STDOUT := awk '{ print } END { if (NR > 0) { exit 1 } }'
 
 GO := GO111MODULE=on go
-GO_PATH = $$($(GO) env GOPATH)
+GO_PATH = $(shell $(GO) env GOPATH)
 GO_BUILD = $(GO) build
 GO_GET = $(GO) get
 GO_TEST = $(GO) test
 GO_LINT = $(GO_PATH)/bin/golangci-lint
 GO_LICENSER = $(GO_PATH)/bin/go-licenser
-
-# Ensure GOPATH is set before running build process.
-ifeq "$(GOPATH)" ""
-  $(error Please set the environment variable GOPATH before running `make`)
-endif
 
 all: clean deps lint test build
 

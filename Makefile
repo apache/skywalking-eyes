@@ -31,7 +31,6 @@ all: clean deps lint test build
 
 tools:
 	mkdir -p $(GO_PATH)/bin
-	$(GO_LINT) version || curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GO_PATH)/bin v1.21.0
 	#$(GO_LICENSER) -version || GO111MODULE=off $(GO_GET) -u github.com/elastic/go-licenser
 
 deps: tools
@@ -39,6 +38,7 @@ deps: tools
 
 .PHONY: lint
 lint: tools
+	$(GO_LINT) version || curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GO_PATH)/bin v1.21.0
 	@gofmt -s -l -w $(FILES) 2>&1 | $(FAIL_ON_STDOUT)
 	$(GO_LINT) run -v ./...
 

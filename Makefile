@@ -25,13 +25,11 @@ GO_BUILD = $(GO) build
 GO_GET = $(GO) get
 GO_TEST = $(GO) test
 GO_LINT = $(GO_PATH)/bin/golangci-lint
-GO_LICENSER = $(GO_PATH)/bin/go-licenser
 
 all: clean deps lint test build
 
 tools:
 	mkdir -p $(GO_PATH)/bin
-	#$(GO_LICENSER) -version || GO111MODULE=off $(GO_GET) -u github.com/elastic/go-licenser
 
 deps: tools
 	$(GO_GET) -v -t -d ./...
@@ -51,9 +49,9 @@ test: clean lint
 build: deps
 	$(GO_BUILD) -o $(OUT_DIR)/$(PROJECT)
 
-#.PHONY: license
-#license: clean tools
-#	$(GO_LICENSER) -d -license='ASL2' .
+.PHONY: license
+license: clean
+	$(GO) run main.go header check
 
 .PHONY: fix
 fix: tools

@@ -78,7 +78,7 @@ Flags:
 ## Test
 
 ```bash
-bin/license-checker -p test -c test/.licenserc_for_test.json
+bin/license-checker -p test -c test/.licenserc_for_test.yaml
 
 [No Specified License]: test/include_test/without_license/testcase.go
 [No Specified License]: test/include_test/without_license/testcase.graphql

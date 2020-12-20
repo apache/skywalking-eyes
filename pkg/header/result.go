@@ -14,13 +14,36 @@
 
 package header
 
-type Config struct {
-	License     string   `yaml:"license"`
-	Paths       []string `yaml:"paths"`
-	PathsIgnore []string `yaml:"paths-ignore"`
-}
+import (
+	"fmt"
+	"strings"
+)
 
 type Result struct {
-	Success []string `yaml:"success"`
-	Failure []string `yaml:"failure"`
+	Success []string
+	Failure []string
+	Ignored []string
+}
+
+func (result *Result) Fail(file string) {
+	result.Failure = append(result.Failure, file)
+}
+
+func (result *Result) Succeed(file string) {
+	result.Success = append(result.Success, file)
+}
+
+func (result *Result) Ignore(file string) {
+	result.Ignored = append(result.Ignored, file)
+}
+
+func (result *Result) HasFailure() bool {
+	return len(result.Failure) > 0
+}
+
+func (result *Result) Error() error {
+	return fmt.Errorf(
+		"The following files don't have a valid license header: \n%v",
+		strings.Join(result.Failure, "\n"),
+	)
 }

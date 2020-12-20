@@ -15,8 +15,15 @@ limitations under the License.
 */
 package main
 
-import "license-checker/cmd"
+import (
+	"license-checker/cmd"
+	"license-checker/internal/logger"
+	"os"
+)
 
 func main() {
-	cmd.Execute()
+	if err := cmd.Execute(); err != nil {
+		logger.Log.Errorln(err)
+		os.Exit(1)
+	}
 }

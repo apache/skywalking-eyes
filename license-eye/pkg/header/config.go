@@ -30,6 +30,7 @@ import (
 
 type ConfigHeader struct {
 	License     string   `yaml:"license"`
+	Pattern     string   `yaml:"pattern"`
 	Paths       []string `yaml:"paths"`
 	PathsIgnore []string `yaml:"paths-ignore"`
 }
@@ -46,6 +47,21 @@ func (config *ConfigHeader) NormalizedLicense() string {
 		}
 	}
 	return strings.Join(lines, " ")
+}
+
+func (config *ConfigHeader) NormalizedPattern() *regexp.Regexp {
+	if config.Pattern == "" || strings.TrimSpace(config.Pattern) == "" {
+		return nil
+	}
+
+	var lines []string
+	for _, line := range strings.Split(config.Pattern, "\n") {
+		if len(line) > 0 {
+			line = regexp.MustCompile("[ \"']+").ReplaceAllString(line, " ")
+			lines = append(lines, strings.TrimSpace(line))
+		}
+	}
+	return regexp.MustCompile("(?i).*" + strings.Join(lines, " ") + ".*")
 }
 
 // Parse reads and parses the header check configurations in config file.

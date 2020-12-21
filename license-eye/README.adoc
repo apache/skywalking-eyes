@@ -54,9 +54,9 @@ Use "license-eye [command] --help" for more information about a command.
 == Configuration
 
 [source,yaml]
-.testdata/.licenserc_for_test.yaml
+.link:../.licenserc.yaml[.licenserc.yaml]
 ----
-include::testdata/.licenserc_for_test_check.yaml[]
+include::../.licenserc.yaml[]
 ----
 
 == Check

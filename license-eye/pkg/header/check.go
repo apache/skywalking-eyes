@@ -119,18 +119,22 @@ func CheckFile(file string, config *ConfigHeader, result *Result) error {
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		line := strings.ToLower(strings.Trim(scanner.Text(), CommentChars))
-		line = regexp.MustCompile(" +").ReplaceAllString(line, " ")
+		line = regexp.MustCompile("[ '\"]+").ReplaceAllString(line, " ")
 		if len(line) > 0 {
 			lines = append(lines, line)
 		}
 	}
 
-	if content := strings.Join(lines, " "); !strings.Contains(content, config.NormalizedLicense()) {
+	content := strings.Join(lines, " ")
+	license, pattern := config.NormalizedLicense(), config.NormalizedPattern()
+
+	if strings.Contains(content, license) || (pattern != nil && pattern.MatchString(content)) {
+		result.Succeed(file)
+	} else {
 		logger.Log.Debugln("Content is:", content)
+		logger.Log.Debugln("Pattern is:", pattern)
 
 		result.Fail(file)
-	} else {
-		result.Succeed(file)
 	}
 
 	return nil

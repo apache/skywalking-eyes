@@ -1,3 +1,4 @@
+//
 // Licensed to Apache Software Foundation (ASF) under one or more contributor
 // license agreements. See the NOTICE file distributed with
 // this work for additional information regarding copyright
@@ -24,8 +25,6 @@ import (
 	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
 	"github.com/apache/skywalking-eyes/license-eye/pkg/config"
 	"github.com/apache/skywalking-eyes/license-eye/pkg/header"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/header/fix"
-
 	"github.com/spf13/cobra"
 )
 
@@ -47,7 +46,7 @@ var FixCommand = &cobra.Command{
 
 		var errors []string
 		for _, file := range result.Failure {
-			if err := fix.Fix(file, &config.Header, &result); err != nil {
+			if err := header.Fix(file, &config.Header, &result); err != nil {
 				errors = append(errors, err.Error())
 			}
 		}

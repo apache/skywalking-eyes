@@ -33,6 +33,8 @@ GO_TEST = $(GO) test
 GO_LINT = $(GO_PATH)/bin/golangci-lint
 GO_BUILD_LDFLAGS = -X github.com/apache/skywalking-eyes/license-eye/commands.version=$(VERSION)
 
+GO_BINDATA = $(GO_PATH)/bin/go-bindata
+
 PLATFORMS := windows linux darwin
 os = $(word 1, $@)
 ARCH = amd64
@@ -40,7 +42,7 @@ ARCH = amd64
 all: clean lint license test build
 
 .PHONY: lint
-lint:
+lint: codegen
 	$(GO_LINT) version || curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GO_PATH)/bin
 	$(GO_LINT) run -v ./...
 
@@ -49,11 +51,16 @@ fix-lint:
 	$(GO_LINT) run -v --fix ./...
 
 .PHONY: license
-license: clean
+license: clean codegen
 	$(GO) run cmd/license-eye/main.go header check -c ../.licenserc.yaml
 
+.PHONY: codegen
+codegen: clean
+	$(GO_BINDATA) -v || curl -Lo $(GO_BINDATA) https://github.com/kevinburke/go-bindata/releases/download/v3.11.0/go-bindata-$(OSNAME)-amd64 && chmod +x $(GO_BINDATA)
+	$(GO_BINDATA) --nocompress --nometadata --pkg assets --ignore '.*\.go' -o "assets/assets.gen.go" assets/
+
 .PHONY: test
-test: clean lint
+test: clean codegen
 	$(GO_TEST) ./...
 	@>&2 echo "Great, all tests passed."
 
@@ -68,3 +75,4 @@ build: windows linux darwin
 .PHONY: clean
 clean:
 	-rm -rf bin
+	-rm -rf assets/*.gen.go

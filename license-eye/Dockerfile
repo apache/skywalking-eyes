@@ -14,18 +14,19 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-# 
+#
+
 FROM golang:1.14.3-alpine AS build
 
-WORKDIR /src
+WORKDIR /license-eye
 
-COPY .. .
+COPY . .
 
-RUN GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /bin/license-eye
+RUN apk add make && make build
 
 FROM alpine:3 AS bin
 
-COPY --from=build /bin/license-eye /bin/license-eye
+COPY --from=build /license-eye/bin/linux/license-eye /bin/license-eye
 
 WORKDIR /github/workspace/
 

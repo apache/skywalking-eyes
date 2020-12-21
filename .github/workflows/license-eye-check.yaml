@@ -22,7 +22,7 @@ on:
   pull_request:
   push:
     branches:
-      - master
+      - main
 
 defaults:
   run:

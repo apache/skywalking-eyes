@@ -19,17 +19,20 @@ package header
 
 import (
 	"bufio"
-	"github.com/bmatcuk/doublestar/v2"
-	"license-checker/internal/logger"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
+
+	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
+
+	"github.com/bmatcuk/doublestar/v2"
 )
 
-const CommentChars = "/*#- !~"
+const CommentChars = "/*#- !~'\""
 
 // Check checks the license headers of the specified paths/globs.
-func Check(config *Config, result *Result) error {
+func Check(config *ConfigHeader, result *Result) error {
 	for _, pattern := range config.Paths {
 		if err := checkPattern(pattern, result, config); err != nil {
 			return err
@@ -41,7 +44,7 @@ func Check(config *Config, result *Result) error {
 
 var seen = make(map[string]bool)
 
-func checkPattern(pattern string, result *Result, config *Config) error {
+func checkPattern(pattern string, result *Result, config *ConfigHeader) error {
 	paths, err := doublestar.Glob(pattern)
 
 	if err != nil {
@@ -53,7 +56,7 @@ func checkPattern(pattern string, result *Result, config *Config) error {
 			result.Ignore(path)
 			continue
 		}
-		if err = checkPath(path, result, config); err != nil {
+		if err := checkPath(path, result, config); err != nil {
 			return err
 		}
 		seen[path] = true
@@ -62,7 +65,7 @@ func checkPattern(pattern string, result *Result, config *Config) error {
 	return nil
 }
 
-func checkPath(path string, result *Result, config *Config) error {
+func checkPath(path string, result *Result, config *ConfigHeader) error {
 	defer func() { seen[path] = true }()
 
 	if yes, err := config.ShouldIgnore(path); yes || seen[path] || err != nil {
@@ -95,7 +98,7 @@ func checkPath(path string, result *Result, config *Config) error {
 }
 
 // CheckFile checks whether or not the file contains the configured license header.
-func CheckFile(file string, config *Config, result *Result) error {
+func CheckFile(file string, config *ConfigHeader, result *Result) error {
 	if yes, err := config.ShouldIgnore(file); yes || err != nil {
 		if !seen[file] {
 			result.Ignore(file)
@@ -115,7 +118,8 @@ func CheckFile(file string, config *Config, result *Result) error {
 
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
-		line := strings.Trim(scanner.Text(), CommentChars)
+		line := strings.ToLower(strings.Trim(scanner.Text(), CommentChars))
+		line = regexp.MustCompile(" +").ReplaceAllString(line, " ")
 		if len(line) > 0 {
 			lines = append(lines, line)
 		}

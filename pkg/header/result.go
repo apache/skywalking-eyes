@@ -51,7 +51,7 @@ func (result *Result) HasFailure() bool {
 
 func (result *Result) Error() error {
 	return fmt.Errorf(
-		"The following files don't have a valid license header: \n%v",
+		"the following files don't have a valid license header: \n%v",
 		strings.Join(result.Failure, "\n"),
 	)
 }

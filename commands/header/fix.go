@@ -19,32 +19,35 @@ package header
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
-	"license-checker/internal/logger"
-	"license-checker/pkg/header"
-	"license-checker/pkg/header/fix"
 	"strings"
+
+	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
+	"github.com/apache/skywalking-eyes/license-eye/pkg/config"
+	"github.com/apache/skywalking-eyes/license-eye/pkg/header"
+	"github.com/apache/skywalking-eyes/license-eye/pkg/header/fix"
+
+	"github.com/spf13/cobra"
 )
 
 var FixCommand = &cobra.Command{
 	Use:     "fix",
 	Aliases: []string{"f"},
-	Long:    "`fix` command walks the specified paths recursively and fix the license header if the specified files don't have the license header in the config file.",
+	Long:    "fix command walks the specified paths recursively and fix the license header if the specified files don't have the license header.",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var config header.Config
+		var config config.Config
 		var result header.Result
 
 		if err := config.Parse(cfgFile); err != nil {
 			return err
 		}
 
-		if err := header.Check(&config, &result); err != nil {
+		if err := header.Check(&config.Header, &result); err != nil {
 			return err
 		}
 
 		var errors []string
 		for _, file := range result.Failure {
-			if err := fix.Fix(file, &config, &result); err != nil {
+			if err := fix.Fix(file, &config.Header, &result); err != nil {
 				errors = append(errors, err.Error())
 			}
 		}

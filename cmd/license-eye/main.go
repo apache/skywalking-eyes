@@ -15,38 +15,18 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package header
+package main
 
 import (
-	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/config"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/header"
+	"os"
 
-	"github.com/spf13/cobra"
+	"github.com/apache/skywalking-eyes/license-eye/commands"
+	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
 )
 
-var CheckCommand = &cobra.Command{
-	Use:     "check",
-	Aliases: []string{"c"},
-	Long:    "check command walks the specified paths recursively and checks if the specified files have the license header in the config file.",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		var config config.Config
-		var result header.Result
-
-		if err := config.Parse(cfgFile); err != nil {
-			return err
-		}
-
-		if err := header.Check(&config.Header, &result); err != nil {
-			return err
-		}
-
-		logger.Log.Infoln(result.String())
-
-		if result.HasFailure() {
-			return result.Error()
-		}
-
-		return nil
-	},
+func main() {
+	if err := commands.Execute(); err != nil {
+		logger.Log.Errorln(err)
+		os.Exit(1)
+	}
 }

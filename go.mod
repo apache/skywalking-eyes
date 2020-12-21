@@ -1,4 +1,4 @@
-module license-checker
+module github.com/apache/skywalking-eyes/license-eye
 
 go 1.13
 

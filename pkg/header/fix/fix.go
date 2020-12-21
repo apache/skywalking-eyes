@@ -19,13 +19,15 @@ package fix
 
 import (
 	"fmt"
-	"license-checker/internal/logger"
-	"license-checker/pkg/header"
 	"strings"
+
+	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
+	"github.com/apache/skywalking-eyes/license-eye/pkg/header"
 )
 
-var suffixToFunc = map[string]func(string, *header.Config, *header.Result) error{
-	".go": DoubleSlash,
+var suffixToFunc = map[string]func(string, *header.ConfigHeader, *header.Result) error{
+	".go":   DoubleSlash,
+	".adoc": DoubleSlash,
 
 	".py":        Hashtag, // TODO: tackle shebang
 	".sh":        Hashtag, // TODO: tackle shebang
@@ -42,7 +44,7 @@ var suffixToFunc = map[string]func(string, *header.Config, *header.Result) error
 }
 
 // Fix adds the configured license header to the given file.
-func Fix(file string, config *header.Config, result *header.Result) error {
+func Fix(file string, config *header.ConfigHeader, result *header.Result) error {
 	var r header.Result
 	if err := header.CheckFile(file, config, &r); err != nil || !r.HasFailure() {
 		logger.Log.Warnln("Try to fix a valid file, returning:", file)

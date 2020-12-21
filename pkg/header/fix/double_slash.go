@@ -19,13 +19,14 @@ package fix
 
 import (
 	"io/ioutil"
-	"license-checker/pkg/header"
 	"os"
 	"strings"
+
+	"github.com/apache/skywalking-eyes/license-eye/pkg/header"
 )
 
 // DoubleSlash adds the configured license header to files whose comment starts with //.
-func DoubleSlash(file string, config *header.Config, result *header.Result) error {
+func DoubleSlash(file string, config *header.ConfigHeader, result *header.Result) error {
 	stat, err := os.Stat(file)
 	if err != nil {
 		return err

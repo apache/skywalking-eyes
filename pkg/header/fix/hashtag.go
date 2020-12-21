@@ -19,14 +19,15 @@ package fix
 
 import (
 	"io/ioutil"
-	"license-checker/pkg/header"
 	"os"
 	"reflect"
 	"strings"
+
+	"github.com/apache/skywalking-eyes/license-eye/pkg/header"
 )
 
 // Hashtag adds the configured license header to the files whose comment starts with #.
-func Hashtag(file string, config *header.Config, result *header.Result) error {
+func Hashtag(file string, config *header.ConfigHeader, result *header.Result) error {
 	stat, err := os.Stat(file)
 	if err != nil {
 		return err

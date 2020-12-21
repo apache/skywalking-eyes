@@ -15,17 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package main
+package commands
 
-import (
-	"license-checker/cmd"
-	"license-checker/internal/logger"
-	"os"
-)
-
-func main() {
-	if err := cmd.Execute(); err != nil {
-		logger.Log.Errorln(err)
-		os.Exit(1)
-	}
-}
+var version string

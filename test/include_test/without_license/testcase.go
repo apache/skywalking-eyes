@@ -16,4 +16,4 @@
 //    consectetur mollit voluptate magna ut ullamco pariatur proident esse commodo consectetur minim in do eu
 //     consequat ea eiusmod proident incididunt ut qui sunt consequat officia amet amet amet dolore fugiat ex.
 
-package with_license
+package withlicense

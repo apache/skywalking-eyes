@@ -14,13 +14,16 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-# 
-PROJECT = license-checker
+#
+
+PROJECT = license-eye
 VERSION ?= latest
 OUT_DIR = bin
 CURDIR := $(shell pwd)
 FILES := $$(find .$$($(PACKAGE_DIRECTORIES)) -name "*.go")
 FAIL_ON_STDOUT := awk '{ print } END { if (NR > 0) { exit 1 } }'
+ARCH := $(shell uname)
+OSNAME := $(if $(findstring Darwin,$(ARCH)),darwin,linux)
 
 GO := GO111MODULE=on go
 GO_PATH = $(shell $(GO) env GOPATH)
@@ -28,38 +31,40 @@ GO_BUILD = $(GO) build
 GO_GET = $(GO) get
 GO_TEST = $(GO) test
 GO_LINT = $(GO_PATH)/bin/golangci-lint
+GO_BUILD_LDFLAGS = -X github.com/apache/skywalking-eyes/license-eye/commands.version=$(VERSION)
 
-all: clean deps lint test build
+PLATFORMS := windows linux darwin
+os = $(word 1, $@)
+ARCH = amd64
 
-tools:
-	mkdir -p $(GO_PATH)/bin
-
-deps: tools
-	$(GO_GET) -v -t -d ./...
+all: clean lint license test build
 
 .PHONY: lint
-lint: tools
-	$(GO_LINT) version || curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GO_PATH)/bin v1.21.0
-	@gofmt -s -l -w $(FILES) 2>&1 | $(FAIL_ON_STDOUT)
+lint:
+	$(GO_LINT) version || curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GO_PATH)/bin
 	$(GO_LINT) run -v ./...
 
-.PHONE: test
+.PHONY: fix-lint
+fix-lint:
+	$(GO_LINT) run -v --fix ./...
+
+.PHONY: license
+license: clean
+	$(GO) run cmd/license-eye/main.go header check
+
+.PHONY: test
 test: clean lint
 	$(GO_TEST) ./...
 	@>&2 echo "Great, all tests passed."
 
+.PHONY: $(PLATFORMS)
+$(PLATFORMS):
+	mkdir -p $(OUT_DIR)
+	GOOS=$(os) GOARCH=$(ARCH) $(GO_BUILD) $(GO_BUILD_FLAGS) -ldflags "$(GO_BUILD_LDFLAGS)" -o $(OUT_DIR)/$(os)/$(PROJECT) cmd/license-eye/main.go
+
 .PHONY: build
-build: deps
-	$(GO_BUILD) -o $(OUT_DIR)/$(PROJECT)
-
-.PHONY: license
-license: clean
-	$(GO) run main.go header check
-
-.PHONY: fix
-fix: tools
-	$(GO_LINT) run -v --fix ./...
+build: windows linux darwin
 
 .PHONY: clean
-clean: tools
+clean:
 	-rm -rf bin

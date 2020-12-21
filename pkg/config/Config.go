@@ -15,41 +15,33 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package fix
+package config
 
 import (
-	"fmt"
 	"io/ioutil"
-	"os"
-	"reflect"
-	"strings"
 
+	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
 	"github.com/apache/skywalking-eyes/license-eye/pkg/header"
+
+	"gopkg.in/yaml.v3"
 )
 
-// AngleBracket adds the configured license header to files whose comment starts with <!--.
-func AngleBracket(file string, config *header.ConfigHeader, result *header.Result) error {
-	stat, err := os.Stat(file)
-	if err != nil {
+type Config struct {
+	Header header.ConfigHeader `yaml:"header"`
+}
+
+// Parse reads and parses the header check configurations in config file.
+func (config *Config) Parse(file string) error {
+	logger.Log.Infoln("Loading configuration from file:", file)
+
+	if bytes, err := ioutil.ReadFile(file); err != nil {
+		return err
+	} else if err := yaml.Unmarshal(bytes, config); err != nil {
 		return err
 	}
 
-	content, err := ioutil.ReadFile(file)
-	if err != nil {
+	if err := config.Header.Finalize(); err != nil {
 		return err
-	}
-
-	if len(content) > 5 && !reflect.DeepEqual(content[0:5], []byte("<?xml")) { // doesn't contains xml declaration
-		lines := "<!--\n  ~ " + strings.Join(strings.Split(config.License, "\n"), "\n  ~ ") + "\n-->\n"
-
-		if err := ioutil.WriteFile(file, append([]byte(lines), content...), stat.Mode()); err != nil {
-			return err
-		}
-
-		result.Fix(file)
-	} else {
-		// TODO: tackle with the "xml declaration"
-		return fmt.Errorf("xml with xml declaration is not supported yet")
 	}
 
 	return nil

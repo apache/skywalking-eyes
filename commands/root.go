@@ -15,41 +15,43 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package cmd
+package commands
 
 import (
+	headercommand "github.com/apache/skywalking-eyes/license-eye/commands/header"
+	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	headercommand "license-checker/commands/header"
-	"license-checker/internal/logger"
 )
 
 var (
 	verbosity string
 )
 
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
-	Use:           "license-checker command [flags]",
+// Root represents the base command when called without any subcommands
+var Root = &cobra.Command{
+	Use:           "license-eye command [flags]",
 	Long:          "A full-featured license guard to check and fix license headers and dependencies' licenses",
 	SilenceUsage:  true,
 	SilenceErrors: true,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		if level, err := logrus.ParseLevel(verbosity); err != nil {
+		level, err := logrus.ParseLevel(verbosity)
+		if err != nil {
 			return err
-		} else {
-			logger.Log.SetLevel(level)
 		}
+		logger.Log.SetLevel(level)
 		return nil
 	},
+	Version: version,
 }
 
 // Execute sets flags to the root command appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
+// This is called by main.main(). It only needs to happen once to the Root.
 func Execute() error {
-	rootCmd.PersistentFlags().StringVarP(&verbosity, "verbosity", "v", logrus.InfoLevel.String(), "log level (debug, info, warn, error, fatal, panic")
+	Root.PersistentFlags().StringVarP(&verbosity, "verbosity", "v", logrus.InfoLevel.String(), "log level (debug, info, warn, error, fatal, panic")
 
-	rootCmd.AddCommand(headercommand.Header)
+	Root.AddCommand(headercommand.Header)
 
-	return rootCmd.Execute()
+	return Root.Execute()
 }

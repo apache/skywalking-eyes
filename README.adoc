@@ -1,5 +1,22 @@
-= license-checker
-:repo: https://github.com/fgksgf/license-checker
+// Licensed to Apache Software Foundation (ASF) under one or more contributor
+// license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright
+// ownership. Apache Software Foundation (ASF) licenses this file to you under
+// the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+// 
+= license-eye
+:repo: https://github.com/apache/skywalking-eyes
 
 A full-featured license guard to check and fix license headers and dependencies' licenses.
 
@@ -8,7 +25,7 @@ A full-featured license guard to check and fix license headers and dependencies'
 [subs="attributes+",source,bash]
 ----
 git clone {repo}
-cd license-checker
+cd license-eye
 make
 ----
 
@@ -16,22 +33,22 @@ make
 
 [source]
 ----
-$ license-checker
+$ license-eye
 
 A full-featured license guard to check and fix license headers and dependencies' licenses.
 
 Usage:
-  license-checker [command]
+  license-eye [command]
 
 Available Commands:
   header      License header related commands; e.g. check, fix, etc.
   help        Help about any command
 
 Flags:
-  -h, --help               help for license-checker
+  -h, --help               help for license-eye
   -v, --verbosity string   log level (debug, info, warn, error, fatal, panic (default "info")
 
-Use "license-checker [command] --help" for more information about a command.
+Use "license-eye [command] --help" for more information about a command.
 ----
 
 == Configuration
@@ -46,7 +63,7 @@ include::test/.licenserc_for_test_check.yaml[]
 
 [source]
 ----
-bin/license-checker -c test/.licenserc_for_test_fix.yaml header check
+bin/license-eye -c test/.licenserc_for_test_fix.yaml header check
 
 INFO Loading configuration from file: test/.licenserc_for_test.yaml serc_for_test.yaml
 INFO Totally checked 23 files, valid: 8, invalid: 8, ignored: 7, fixed: 0
@@ -66,7 +83,7 @@ exit status 1
 
 [source]
 ----
-bin/license-checker -c test/.licenserc_for_test_fix.yaml header fix
+bin/license-eye -c test/.licenserc_for_test_fix.yaml header fix
 
 INFO Loading configuration from file: test/.licenserc_for_test_fix.yaml
 INFO Totally checked 16 files, valid: 7, invalid: 8, ignored: 1, fixed: 8

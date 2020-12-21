@@ -16,7 +16,7 @@
 # under the License.
 # 
 name: License Guard
-description: A tool for checking license headers, which theoretically supports checking all types of files.
+description: A full-featured license guard to check and fix license headers and dependencies' licenses.
 branding:
   icon: book
   color: orange

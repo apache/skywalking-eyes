@@ -23,15 +23,10 @@ import (
 	"license-checker/pkg/header"
 )
 
-var (
-	// cfgFile is the config path to the config file of header command.
-	cfgFile string
-)
-
 var CheckCommand = &cobra.Command{
 	Use:     "check",
-	Long:    "`check` command walks the specified paths recursively and checks if the specified files have the license header in the config file.",
 	Aliases: []string{"c"},
+	Long:    "`check` command walks the specified paths recursively and checks if the specified files have the license header in the config file.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var config header.Config
 		var result header.Result

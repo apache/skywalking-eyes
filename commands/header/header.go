@@ -21,11 +21,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	// cfgFile is the config path to the config file of header command.
+	cfgFile string
+)
+
 var Header = &cobra.Command{
 	Use:     "header",
+	Aliases: []string{"h"},
 	Short:   "License header related commands; e.g. check, fix, etc.",
 	Long:    "`header` command walks the specified paths recursively and checks if the specified files have the license header in the config file.",
-	Aliases: []string{"h"},
 }
 
 func init() {

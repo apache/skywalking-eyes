@@ -29,7 +29,7 @@ import (
 	"github.com/bmatcuk/doublestar/v2"
 )
 
-const CommentChars = "/*#- !~'\""
+const CommentChars = "/*#- !~'\"(){}"
 
 // Check checks the license headers of the specified paths/globs.
 func Check(config *ConfigHeader, result *Result) error {

@@ -15,43 +15,41 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package header
+package fix
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
+	"io/ioutil"
 	"license-checker/pkg/header"
-	"license-checker/pkg/header/fix"
+	"os"
+	"reflect"
 	"strings"
 )
 
-var FixCommand = &cobra.Command{
-	Use:     "fix",
-	Aliases: []string{"f"},
-	Long:    "`fix` command walks the specified paths recursively and fix the license header if the specified files don't have the license header in the config file.",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		var config header.Config
-		var result header.Result
+// AngleBracket adds the configured license header to files whose comment starts with <!--.
+func AngleBracket(file string, config *header.Config, result *header.Result) error {
+	stat, err := os.Stat(file)
+	if err != nil {
+		return err
+	}
 
-		if err := config.Parse(cfgFile); err != nil {
+	content, err := ioutil.ReadFile(file)
+	if err != nil {
+		return err
+	}
+
+	if !reflect.DeepEqual(content[0:5], []byte("<?xml")) { // doesn't contains xml declaration
+		lines := "<!--\n  ~ " + strings.Join(strings.Split(config.License, "\n"), "\n  ~ ") + "\n-->\n"
+
+		if err := ioutil.WriteFile(file, append([]byte(lines), content...), stat.Mode()); err != nil {
 			return err
 		}
 
-		if err := header.Check(&config, &result); err != nil {
-			return err
-		}
+		result.Fix(file)
+	} else {
+		// TODO: tackle with the "xml declaration"
+		return fmt.Errorf("xml with xml declaration is not supported yet")
+	}
 
-		var errors []string
-		for _, file := range result.Failure {
-			if err := fix.Fix(file, &config, &result); err != nil {
-				errors = append(errors, err.Error())
-			}
-		}
-
-		if len(errors) > 0 {
-			return fmt.Errorf(strings.Join(errors, "\n"))
-		}
-
-		return nil
-	},
+	return nil
 }

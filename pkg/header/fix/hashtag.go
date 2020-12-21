@@ -15,25 +15,34 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package logger
+package fix
 
 import (
+	"io/ioutil"
+	"license-checker/pkg/header"
 	"os"
-
-	"github.com/sirupsen/logrus"
+	"strings"
 )
 
-var Log *logrus.Logger
-
-func init() {
-	if Log == nil {
-		Log = logrus.New()
+// Hashtag adds the configured license header to the files whose comment starts with #.
+func Hashtag(file string, config *header.Config, result *header.Result) error {
+	stat, err := os.Stat(file)
+	if err != nil {
+		return err
 	}
-	Log.Level = logrus.DebugLevel
-	Log.SetOutput(os.Stdout)
-	Log.SetFormatter(&logrus.TextFormatter{
-		DisableTimestamp:       true,
-		DisableLevelTruncation: true,
-		ForceColors:            true,
-	})
+
+	content, err := ioutil.ReadFile(file)
+	if err != nil {
+		return err
+	}
+
+	lines := "# " + strings.Join(strings.Split(config.License, "\n"), "\n# ") + "\n"
+
+	if err := ioutil.WriteFile(file, append([]byte(lines), content...), stat.Mode()); err != nil {
+		return err
+	}
+
+	result.Fix(file)
+
+	return nil
 }

@@ -15,17 +15,38 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package main
+package fix
 
 import (
-	"license-checker/cmd"
+	"fmt"
 	"license-checker/internal/logger"
-	"os"
+	"license-checker/pkg/header"
+	"strings"
 )
 
-func main() {
-	if err := cmd.Execute(); err != nil {
-		logger.Log.Errorln(err)
-		os.Exit(1)
+var suffixToFunc = map[string]func(string, *header.Config, *header.Result) error{
+	".go":        DoubleSlash,
+	".yml":       Hashtag,
+	".yaml":      Hashtag,
+	"Dockerfile": Hashtag,
+	"Makefile":   Hashtag,
+	".gitignore": Hashtag,
+	".md":        AngleBracket,
+}
+
+// Fix adds the configured license header to the given file.
+func Fix(file string, config *header.Config, result *header.Result) error {
+	var r header.Result
+	if err := header.CheckFile(file, config, &r); err != nil || !r.HasFailure() {
+		logger.Log.Warnln("Try to fix a valid file, returning:", file)
+		return err
 	}
+
+	for suffix, fixFunc := range suffixToFunc {
+		if strings.HasSuffix(file, suffix) {
+			return fixFunc(file, config, result)
+		}
+	}
+
+	return fmt.Errorf("file type is unsupported yet: %v", file)
 }

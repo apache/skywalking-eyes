@@ -15,11 +15,11 @@
 # specific language governing permissions and limitations
 # under the License.
 # 
-name: License Guard
+name: License Eye
 description: A full-featured license guard to check and fix license headers and dependencies' licenses.
 branding:
   icon: book
   color: orange
 runs:
   using: docker
-  image: Dockerfile
+  image: license-eye/Dockerfile

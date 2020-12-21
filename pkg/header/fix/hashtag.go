@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 	"license-checker/pkg/header"
 	"os"
+	"reflect"
 	"strings"
 )
 
@@ -36,13 +37,15 @@ func Hashtag(file string, config *header.Config, result *header.Result) error {
 		return err
 	}
 
-	lines := "# " + strings.Join(strings.Split(config.License, "\n"), "\n# ") + "\n"
+	if len(content) >= 3 && !reflect.DeepEqual(content[0:3], []byte("#! ")) || len(content) < 3 { // doesn't contains shebang
+		lines := "# " + strings.Join(strings.Split(config.License, "\n"), "\n# ") + "\n"
 
-	if err := ioutil.WriteFile(file, append([]byte(lines), content...), stat.Mode()); err != nil {
-		return err
+		if err := ioutil.WriteFile(file, append([]byte(lines), content...), stat.Mode()); err != nil {
+			return err
+		}
+
+		result.Fix(file)
 	}
-
-	result.Fix(file)
 
 	return nil
 }

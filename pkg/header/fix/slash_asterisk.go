@@ -15,4 +15,34 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package with_license
+package fix
+
+import (
+	"io/ioutil"
+	"license-checker/pkg/header"
+	"os"
+	"strings"
+)
+
+// SlashAsterisk adds the configured license header to files whose comment starts with /**.
+func SlashAsterisk(file string, config *header.Config, result *header.Result) error {
+	stat, err := os.Stat(file)
+	if err != nil {
+		return err
+	}
+
+	content, err := ioutil.ReadFile(file)
+	if err != nil {
+		return err
+	}
+
+	lines := "/*\n * " + strings.Join(strings.Split(config.License, "\n"), "\n * ") + "\n */\n"
+
+	if err := ioutil.WriteFile(file, append([]byte(lines), content...), stat.Mode()); err != nil {
+		return err
+	}
+
+	result.Fix(file)
+
+	return nil
+}

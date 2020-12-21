@@ -39,6 +39,8 @@ func Check(config *Config, result *Result) error {
 	return nil
 }
 
+var seen = make(map[string]bool)
+
 func checkPattern(pattern string, result *Result, config *Config) error {
 	paths, err := doublestar.Glob(pattern)
 
@@ -48,17 +50,17 @@ func checkPattern(pattern string, result *Result, config *Config) error {
 
 	for _, path := range paths {
 		if yes, err := config.ShouldIgnore(path); yes || err != nil {
+			result.Ignore(path)
 			continue
 		}
 		if err = checkPath(path, result, config); err != nil {
 			return err
 		}
+		seen[path] = true
 	}
 
 	return nil
 }
-
-var seen = make(map[string]bool)
 
 func checkPath(path string, result *Result, config *Config) error {
 	defer func() { seen[path] = true }()
@@ -95,6 +97,9 @@ func checkPath(path string, result *Result, config *Config) error {
 // CheckFile checks whether or not the file contains the configured license header.
 func CheckFile(file string, config *Config, result *Result) error {
 	if yes, err := config.ShouldIgnore(file); yes || err != nil {
+		if !seen[file] {
+			result.Ignore(file)
+		}
 		return err
 	}
 
@@ -118,7 +123,6 @@ func CheckFile(file string, config *Config, result *Result) error {
 
 	if content := strings.Join(lines, " "); !strings.Contains(content, config.NormalizedLicense()) {
 		logger.Log.Debugln("Content is:", content)
-		logger.Log.Debugln("License is:", config.License)
 
 		result.Fail(file)
 	} else {

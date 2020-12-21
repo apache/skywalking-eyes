@@ -1,0 +1,73 @@
+= license-checker
+:repo: https://github.com/fgksgf/license-checker
+
+A full-featured license guard to check and fix license headers and dependencies' licenses.
+
+== Install
+
+[subs="attributes+",source,bash]
+----
+git clone {repo}
+cd license-checker
+make
+----
+
+== Usage
+
+[source]
+----
+$ license-checker
+
+A full-featured license guard to check and fix license headers and dependencies' licenses.
+
+Usage:
+  license-checker [command]
+
+Available Commands:
+  header      License header related commands; e.g. check, fix, etc.
+  help        Help about any command
+
+Flags:
+  -h, --help               help for license-checker
+  -v, --verbosity string   log level (debug, info, warn, error, fatal, panic (default "info")
+
+Use "license-checker [command] --help" for more information about a command.
+----
+
+== Configuration
+
+[source,yaml]
+.test/.licenserc_for_test.yaml
+----
+include::test/.licenserc_for_test_check.yaml[]
+----
+
+== Check
+
+[source]
+----
+bin/license-checker -c test/.licenserc_for_test_fix.yaml header check
+
+INFO Loading configuration from file: test/.licenserc_for_test.yaml serc_for_test.yaml
+INFO Totally checked 23 files, valid: 8, invalid: 8, ignored: 7, fixed: 0
+ERROR The following files don't have a valid license header:
+test/include_test/without_license/testcase.go
+test/include_test/without_license/testcase.graphql
+test/include_test/without_license/testcase.java
+test/include_test/without_license/testcase.md
+test/include_test/without_license/testcase.py
+test/include_test/without_license/testcase.sh
+test/include_test/without_license/testcase.yaml
+test/include_test/without_license/testcase.yml
+exit status 1
+----
+
+== Fix
+
+[source]
+----
+bin/license-checker -c test/.licenserc_for_test_fix.yaml header fix
+
+INFO Loading configuration from file: test/.licenserc_for_test_fix.yaml
+INFO Totally checked 16 files, valid: 7, invalid: 8, ignored: 1, fixed: 8
+----

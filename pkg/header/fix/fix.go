@@ -25,13 +25,20 @@ import (
 )
 
 var suffixToFunc = map[string]func(string, *header.Config, *header.Result) error{
-	".go":        DoubleSlash,
+	".go": DoubleSlash,
+
+	".py":        Hashtag, // TODO: tackle shebang
+	".sh":        Hashtag, // TODO: tackle shebang
 	".yml":       Hashtag,
 	".yaml":      Hashtag,
-	"Dockerfile": Hashtag,
+	".graphql":   Hashtag,
 	"Makefile":   Hashtag,
+	"Dockerfile": Hashtag,
 	".gitignore": Hashtag,
-	".md":        AngleBracket,
+
+	".md": AngleBracket,
+
+	".java": SlashAsterisk,
 }
 
 // Fix adds the configured license header to the given file.

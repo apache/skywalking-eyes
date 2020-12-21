@@ -55,3 +55,14 @@ func (result *Result) Error() error {
 		strings.Join(result.Failure, "\n"),
 	)
 }
+
+func (result *Result) String() string {
+	return fmt.Sprintf(
+		"Totally checked %d files, valid: %d, invalid: %d, ignored: %d, fixed: %d",
+		len(result.Success)+len(result.Failure)+len(result.Ignored),
+		len(result.Success),
+		len(result.Failure),
+		len(result.Ignored),
+		len(result.Fixed),
+	)
+}

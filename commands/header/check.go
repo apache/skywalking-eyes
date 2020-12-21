@@ -19,6 +19,7 @@ package header
 
 import (
 	"github.com/spf13/cobra"
+	"license-checker/internal/logger"
 	"license-checker/pkg/header"
 )
 
@@ -42,6 +43,8 @@ var CheckCommand = &cobra.Command{
 		if err := header.Check(&config, &result); err != nil {
 			return err
 		}
+
+		logger.Log.Infoln(result.String())
 
 		if result.HasFailure() {
 			return result.Error()

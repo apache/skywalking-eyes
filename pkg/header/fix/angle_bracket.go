@@ -38,7 +38,7 @@ func AngleBracket(file string, config *header.Config, result *header.Result) err
 		return err
 	}
 
-	if !reflect.DeepEqual(content[0:5], []byte("<?xml")) { // doesn't contains xml declaration
+	if len(content) > 5 && !reflect.DeepEqual(content[0:5], []byte("<?xml")) { // doesn't contains xml declaration
 		lines := "<!--\n  ~ " + strings.Join(strings.Split(config.License, "\n"), "\n  ~ ") + "\n-->\n"
 
 		if err := ioutil.WriteFile(file, append([]byte(lines), content...), stat.Mode()); err != nil {

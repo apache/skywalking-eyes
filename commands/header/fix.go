@@ -20,6 +20,7 @@ package header
 import (
 	"fmt"
 	"github.com/spf13/cobra"
+	"license-checker/internal/logger"
 	"license-checker/pkg/header"
 	"license-checker/pkg/header/fix"
 	"strings"
@@ -47,6 +48,8 @@ var FixCommand = &cobra.Command{
 				errors = append(errors, err.Error())
 			}
 		}
+
+		logger.Log.Infoln(result.String())
 
 		if len(errors) > 0 {
 			return fmt.Errorf(strings.Join(errors, "\n"))

@@ -31,7 +31,7 @@ var (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:           "license-checker command [flags]",
-	Long:          "license-checker walks the specified path recursively and checks if the specified files have the license header in the config file.",
+	Long:          "A full-featured license guard to check and fix license headers and dependencies' licenses",
 	SilenceUsage:  true,
 	SilenceErrors: true,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
@@ -47,7 +47,7 @@ var rootCmd = &cobra.Command{
 // Execute sets flags to the root command appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() error {
-	rootCmd.PersistentFlags().StringVarP(&verbosity, "verbosity", "v", logrus.InfoLevel.String(), "Log level (debug, info, warn, error, fatal, panic")
+	rootCmd.PersistentFlags().StringVarP(&verbosity, "verbosity", "v", logrus.InfoLevel.String(), "log level (debug, info, warn, error, fatal, panic")
 
 	rootCmd.AddCommand(headercommand.Header)
 

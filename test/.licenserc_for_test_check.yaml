@@ -16,13 +16,10 @@ license: |
   specific language governing permissions and limitations
   under the License.
 
-paths-ignore:
-  - '.git/**'
-  - '.idea/**'
-  - 'bin/**'
-  - '**/*.md'
-  - '**/.DS_Store'
+paths:
   - 'test/**'
-  - 'go.mod'
-  - 'go.sum'
-  - 'LICENSE'
+
+paths-ignore:
+  - '**/.DS_Store'
+  - '**/.json'
+  - '**/exclude_test/**'

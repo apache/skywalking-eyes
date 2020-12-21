@@ -50,7 +50,7 @@ func (config *Config) Parse(file string) error {
 		return err
 	}
 
-	logger.Log.Infoln("License header is:", config.NormalizedLicense())
+	logger.Log.Debugln("License header is:", config.NormalizedLicense())
 
 	if len(config.Paths) == 0 {
 		config.Paths = []string{"**"}

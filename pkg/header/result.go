@@ -23,6 +23,7 @@ type Result struct {
 	Success []string
 	Failure []string
 	Ignored []string
+	Fixed   []string
 }
 
 func (result *Result) Fail(file string) {
@@ -35,6 +36,10 @@ func (result *Result) Succeed(file string) {
 
 func (result *Result) Ignore(file string) {
 	result.Ignored = append(result.Ignored, file)
+}
+
+func (result *Result) Fix(file string) {
+	result.Fixed = append(result.Fixed, file)
 }
 
 func (result *Result) HasFailure() bool {

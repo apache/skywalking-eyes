@@ -55,8 +55,12 @@ func checkPattern(pattern string, result *Result, config *Config) error {
 	return nil
 }
 
+var seen = make(map[string]bool)
+
 func checkPath(path string, result *Result, config *Config) error {
-	if yes, err := config.ShouldIgnore(path); yes || err != nil {
+	defer func() { seen[path] = true }()
+
+	if yes, err := config.ShouldIgnore(path); yes || seen[path] || err != nil {
 		return err
 	}
 
@@ -80,20 +84,16 @@ func checkPath(path string, result *Result, config *Config) error {
 			return err
 		}
 	case mode.IsRegular():
-		return checkFile(path, result, config)
+		return CheckFile(path, config, result)
 	}
 	return nil
 }
 
-var seen = make(map[string]bool)
-
-func checkFile(file string, result *Result, config *Config) error {
-	if yes, err := config.ShouldIgnore(file); yes || seen[file] || err != nil {
-		seen[file] = true
+// CheckFile checks whether or not the file contains the configured license header.
+func CheckFile(file string, config *Config, result *Result) error {
+	if yes, err := config.ShouldIgnore(file); yes || err != nil {
 		return err
 	}
-
-	seen[file] = true
 
 	logger.Log.Debugln("Checking file:", file)
 

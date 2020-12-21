@@ -25,5 +25,7 @@ var Header = &cobra.Command{
 }
 
 func init() {
+	Header.PersistentFlags().StringVarP(&cfgFile, "config", "c", ".licenserc.yaml", "the config file")
 	Header.AddCommand(CheckCommand)
+	Header.AddCommand(FixCommand)
 }

@@ -18,7 +18,7 @@ header:
     under the License.
 
   paths:
-    - 'test/include_test/**'
+    - 'testdata/include_test/**'
 
   paths-ignore:
     - '**/.DS_Store'

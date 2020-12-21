@@ -50,7 +50,7 @@ fix-lint:
 
 .PHONY: license
 license: clean
-	$(GO) run cmd/license-eye/main.go header check
+	$(GO) run cmd/license-eye/main.go header check -c ../.licenserc.yaml
 
 .PHONY: test
 test: clean lint

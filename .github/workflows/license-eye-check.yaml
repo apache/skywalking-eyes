@@ -16,7 +16,7 @@
 # under the License.
 #
 
-name: Build
+name: LicenseEye
 
 on:
   pull_request:
@@ -24,9 +24,13 @@ on:
     branches:
       - master
 
+defaults:
+  run:
+    working-directory: license-eye
+
 jobs:
-  build:
-    name: Build
+  build-license-eye:
+    name: Build LicenseEye
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -40,6 +44,9 @@ jobs:
 
       - name: License Check
         run: make license
+
+      - name: Test
+        run: make test
 
       - name: Build
         run: make build

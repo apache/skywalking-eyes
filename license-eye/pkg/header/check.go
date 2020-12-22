@@ -19,6 +19,8 @@ package header
 
 import (
 	"bufio"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -121,6 +123,15 @@ func CheckFile(file string, config *ConfigHeader, result *Result) error {
 	}
 
 	var lines []string
+
+	bs, err := ioutil.ReadFile(file)
+	if err != nil {
+		return err
+	}
+	if t := http.DetectContentType(bs); !strings.HasPrefix(t, "text/") {
+		logger.Log.Debugln("Ignoring file:", file, "; type:", t)
+		return nil
+	}
 
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {

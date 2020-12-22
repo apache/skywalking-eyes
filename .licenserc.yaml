@@ -61,9 +61,7 @@ header: # `header` section is configurations for source codes license header.
   paths-ignore: # `paths-ignore` are the path list that will be ignored by license-eye.
     - 'dist'
     - 'licenses'
-    - '**/bin/**'
     - '**/*.md'
-    - '**/.DS_Store'
     - '**/testdata/**'
     - '**/go.mod'
     - '**/go.sum'

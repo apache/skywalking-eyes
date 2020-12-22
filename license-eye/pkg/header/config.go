@@ -18,7 +18,9 @@
 package header
 
 import (
+	"bufio"
 	"io/ioutil"
+	"os"
 	"regexp"
 	"strings"
 
@@ -36,17 +38,15 @@ type ConfigHeader struct {
 }
 
 // NormalizedLicense returns the normalized string of the license content,
-// "normalized" means the linebreaks and CommentChars are all trimmed.
+// "normalized" means the linebreaks and Punctuations are all trimmed.
 func (config *ConfigHeader) NormalizedLicense() string {
 	var lines []string
 	for _, line := range strings.Split(config.License, "\n") {
 		if len(line) > 0 {
-			line = strings.ToLower(strings.Trim(line, CommentChars))
-			line = regexp.MustCompile(" +").ReplaceAllString(line, " ")
-			lines = append(lines, line)
+			lines = append(lines, Punctuations.ReplaceAllString(line, " "))
 		}
 	}
-	return strings.Join(lines, " ")
+	return strings.ToLower(regexp.MustCompile("(?m)[\\s\"']+").ReplaceAllString(strings.Join(lines, " "), " "))
 }
 
 func (config *ConfigHeader) NormalizedPattern() *regexp.Regexp {
@@ -57,11 +57,11 @@ func (config *ConfigHeader) NormalizedPattern() *regexp.Regexp {
 	var lines []string
 	for _, line := range strings.Split(config.Pattern, "\n") {
 		if len(line) > 0 {
-			line = regexp.MustCompile("[ \"']+").ReplaceAllString(line, " ")
-			lines = append(lines, strings.TrimSpace(line))
+			lines = append(lines, line)
 		}
 	}
-	return regexp.MustCompile("(?i).*" + strings.Join(lines, " ") + ".*")
+	content := regexp.MustCompile("(?m)[\\s\"':;/\\-]+").ReplaceAllString(strings.Join(lines, " "), " ")
+	return regexp.MustCompile("(?i).*" + content + ".*")
 }
 
 // Parse reads and parses the header check configurations in config file.
@@ -89,6 +89,16 @@ func (config *ConfigHeader) ShouldIgnore(path string) (bool, error) {
 			return matched, err
 		}
 	}
+
+	if stat, err := os.Stat(path); err == nil {
+		for _, ignorePattern := range config.PathsIgnore {
+			ignorePattern = strings.TrimRight(ignorePattern, "/")
+			if strings.HasPrefix(path, ignorePattern+"/") || stat.Name() == ignorePattern {
+				return true, nil
+			}
+		}
+	}
+
 	return false, nil
 }
 
@@ -97,6 +107,21 @@ func (config *ConfigHeader) Finalize() error {
 
 	if len(config.Paths) == 0 {
 		config.Paths = []string{"**"}
+	}
+
+	config.PathsIgnore = append(config.PathsIgnore, ".git")
+
+	if file, err := os.Open(".gitignore"); err == nil {
+		defer func() { _ = file.Close() }()
+
+		for scanner := bufio.NewScanner(file); scanner.Scan(); {
+			line := scanner.Text()
+			if strings.HasPrefix(line, "#") || strings.TrimSpace(line) == "" {
+				continue
+			}
+			logger.Log.Debugln("Add ignore path from .gitignore:", line)
+			config.PathsIgnore = append(config.PathsIgnore, strings.TrimSpace(line))
+		}
 	}
 
 	return nil

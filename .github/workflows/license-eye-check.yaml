@@ -50,3 +50,6 @@ jobs:
 
       - name: Build
         run: make build
+
+      - name: Build Docker Image
+        run: make docker

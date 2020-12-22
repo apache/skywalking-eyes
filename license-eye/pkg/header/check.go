@@ -29,7 +29,13 @@ import (
 	"github.com/bmatcuk/doublestar/v2"
 )
 
-const CommentChars = "/*#- !~'\"(){}"
+// TODO: also trim stop words
+var (
+	// LicenseLocationThreshold specifies the index threshold where the license header can be located,
+	// after all, a "header" cannot be TOO far from the file start.
+	LicenseLocationThreshold = 80
+	Punctuations             = regexp.MustCompile("[\\[\\]/*:;\\s#\\-!~'\"(){}?]+")
+)
 
 // Check checks the license headers of the specified paths/globs.
 func Check(config *ConfigHeader, result *Result) error {
@@ -111,31 +117,45 @@ func CheckFile(file string, config *ConfigHeader, result *Result) error {
 	reader, err := os.Open(file)
 
 	if err != nil {
-		return nil
+		return err
 	}
 
 	var lines []string
 
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
-		line := strings.ToLower(strings.Trim(scanner.Text(), CommentChars))
-		line = regexp.MustCompile("[ '\"]+").ReplaceAllString(line, " ")
+		line := strings.ToLower(Punctuations.ReplaceAllString(scanner.Text(), " "))
 		if len(line) > 0 {
 			lines = append(lines, line)
 		}
 	}
 
-	content := strings.Join(lines, " ")
+	content := Punctuations.ReplaceAllString(strings.Join(lines, " "), " ")
 	license, pattern := config.NormalizedLicense(), config.NormalizedPattern()
 
-	if strings.Contains(content, license) || (pattern != nil && pattern.MatchString(content)) {
+	if satisfy(content, license, pattern) {
 		result.Succeed(file)
 	} else {
 		logger.Log.Debugln("Content is:", content)
-		logger.Log.Debugln("Pattern is:", pattern)
+		if pattern != nil {
+			logger.Log.Debugln("Pattern is:", pattern)
+		}
 
 		result.Fail(file)
 	}
 
 	return nil
+}
+
+func satisfy(content, license string, pattern *regexp.Regexp) bool {
+	if index := strings.Index(content, license); index >= 0 {
+		return index < LicenseLocationThreshold
+	}
+
+	if pattern == nil {
+		return false
+	}
+	index := pattern.FindStringIndex(content)
+
+	return len(index) == 2 && index[0] < LicenseLocationThreshold
 }

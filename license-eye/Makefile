@@ -61,7 +61,7 @@ codegen: clean
 
 .PHONY: test
 test: clean codegen
-	$(GO_TEST) ./...
+	$(GO_TEST) ./... -coverprofile=coverage.txt -covermode=atomic
 	@>&2 echo "Great, all tests passed."
 
 .PHONY: $(PLATFORMS)
@@ -80,3 +80,4 @@ docker:
 clean:
 	-rm -rf bin
 	-rm -rf assets/*.gen.go
+	-rm -rf coverage.txt

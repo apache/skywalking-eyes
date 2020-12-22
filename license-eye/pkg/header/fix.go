@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
@@ -60,12 +61,14 @@ func InsertComment(file string, style *comments.CommentStyle, config *ConfigHead
 		return err
 	}
 
-	lines, err := generateLicenseHeader(style, config)
+	licenseHeader, err := generateLicenseHeader(style, config)
 	if err != nil {
 		return err
 	}
 
-	if err := ioutil.WriteFile(file, append([]byte(lines), content...), stat.Mode()); err != nil {
+	content = rewriteContent(style, content, licenseHeader)
+
+	if err := ioutil.WriteFile(file, content, stat.Mode()); err != nil {
 		return err
 	}
 
@@ -74,7 +77,22 @@ func InsertComment(file string, style *comments.CommentStyle, config *ConfigHead
 	return nil
 }
 
-// TODO: tackle with shebang and xml declaration
+func rewriteContent(style *comments.CommentStyle, content []byte, licenseHeader string) []byte {
+	if style.After == "" {
+		return append([]byte(licenseHeader), content...)
+	}
+
+	content = []byte(strings.TrimLeft(string(content), " \n"))
+	afterPattern := regexp.MustCompile(style.After)
+	location := afterPattern.FindIndex(content)
+	if location == nil || len(location) != 2 {
+		return append([]byte(licenseHeader), content...)
+	}
+	return append(content[0:location[1]],
+		append(append([]byte("\n"), []byte(licenseHeader)...), content[location[1]+1:]...)...,
+	)
+}
+
 func generateLicenseHeader(style *comments.CommentStyle, config *ConfigHeader) (string, error) {
 	if err := style.Validate(); err != nil {
 		return "", err
@@ -82,7 +100,7 @@ func generateLicenseHeader(style *comments.CommentStyle, config *ConfigHeader) (
 
 	middleLines := strings.Split(config.License, "\n")
 	for i, line := range middleLines {
-		middleLines[i] = fmt.Sprintf("%v %v", style.Middle, line)
+		middleLines[i] = strings.TrimRight(fmt.Sprintf("%v %v", style.Middle, line), " ")
 	}
 
 	lines := fmt.Sprintf("%v\n%v\n", style.Start, strings.Join(middleLines, "\n"))
@@ -90,5 +108,5 @@ func generateLicenseHeader(style *comments.CommentStyle, config *ConfigHeader) (
 		lines += style.End
 	}
 
-	return lines, nil
+	return strings.TrimSpace(lines) + "\n", nil
 }

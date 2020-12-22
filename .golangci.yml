@@ -51,7 +51,7 @@ linters-settings:
     disabled-checks:
       - ifElseChain
   funlen:
-    lines: 100
+    lines: 150
     statements: 50
   whitespace:
     multi-if: false

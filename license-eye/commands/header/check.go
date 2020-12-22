@@ -37,6 +37,11 @@ var CheckCommand = &cobra.Command{
 			return err
 		}
 
+		if len(args) > 0 {
+			logger.Log.Debugln("Overriding paths with command line args.")
+			config.Header.Paths = args
+		}
+
 		if err := header.Check(&config.Header, &result); err != nil {
 			return err
 		}

@@ -36,17 +36,15 @@ type ConfigHeader struct {
 }
 
 // NormalizedLicense returns the normalized string of the license content,
-// "normalized" means the linebreaks and CommentChars are all trimmed.
+// "normalized" means the linebreaks and Punctuations are all trimmed.
 func (config *ConfigHeader) NormalizedLicense() string {
 	var lines []string
 	for _, line := range strings.Split(config.License, "\n") {
 		if len(line) > 0 {
-			line = strings.ToLower(strings.Trim(line, CommentChars))
-			line = regexp.MustCompile(" +").ReplaceAllString(line, " ")
-			lines = append(lines, line)
+			lines = append(lines, Punctuations.ReplaceAllString(line, " "))
 		}
 	}
-	return strings.Join(lines, " ")
+	return strings.ToLower(regexp.MustCompile("(?m)[\\s\"']+").ReplaceAllString(strings.Join(lines, " "), " "))
 }
 
 func (config *ConfigHeader) NormalizedPattern() *regexp.Regexp {
@@ -57,11 +55,11 @@ func (config *ConfigHeader) NormalizedPattern() *regexp.Regexp {
 	var lines []string
 	for _, line := range strings.Split(config.Pattern, "\n") {
 		if len(line) > 0 {
-			line = regexp.MustCompile("[ \"']+").ReplaceAllString(line, " ")
-			lines = append(lines, strings.TrimSpace(line))
+			lines = append(lines, line)
 		}
 	}
-	return regexp.MustCompile("(?i).*" + strings.Join(lines, " ") + ".*")
+	content := regexp.MustCompile("(?m)[\\s\"':;/\\-]+").ReplaceAllString(strings.Join(lines, " "), " ")
+	return regexp.MustCompile("(?i).*" + content + ".*")
 }
 
 // Parse reads and parses the header check configurations in config file.

@@ -18,16 +18,17 @@
 
 - id: DoubleSlash
   start: '//'
-  middle: ~
-  end: ~
+  middle: '//'
+  end: '//'
 
 - id: Hashtag
+  after: '(?m)^*#!.+$'
   start: '#'
-  middle: ~
-  end: ~
-  skip: '^#!'
+  middle: '#'
+  end: '#'
 
 - id: AngleBracket
+  after: '(?ms)^<\?.+?\?>$'
   start: '<!--'
   middle: '  ~'
   end: '-->'
@@ -38,3 +39,23 @@
   middle: ' *'          # <2>
   end: ' */'            # <3>
 # end::SlashAsterisk[]
+
+- id: RoundBracketAsterisk
+  start: '(*'
+  middle: '(*'
+  end: '(*'
+
+- id: CurlyBracketDash
+  start: '{-'
+  middle: ~
+  end: '-}'
+
+- id: DoubleDash
+  start: '--'
+  middle: '--'
+  end: '--'
+
+- id: Quotes
+  start: '"'
+  middle: '"'
+  end: '"'

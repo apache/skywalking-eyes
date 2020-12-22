@@ -2232,6 +2232,7 @@ Haskell:
   codemirror_mode: haskell
   codemirror_mime_type: text/x-haskell
   language_id: 157
+  comment_style_id: CurlyBracketDash
 Haxe:
   type: programming
   ace_mode: haxe
@@ -3708,6 +3709,7 @@ OCaml:
     - ocamlscript
   tm_scope: source.ocaml
   language_id: 255
+  comment_style_id: RoundBracketAsterisk
 ObjDump:
   type: data
   extensions:
@@ -3977,6 +3979,7 @@ PLSQL:
     - ".trg"
     - ".vw"
   language_id: 273
+  comment_style_id: DoubleDash
 PLpgSQL:
   type: programming
   ace_mode: pgsql
@@ -3987,6 +3990,7 @@ PLpgSQL:
     - ".pgsql"
     - ".sql"
   language_id: 274
+  comment_style_id: DoubleDash
 POV-Ray SDL:
   type: programming
   aliases:
@@ -5026,6 +5030,7 @@ SQL:
     - ".udf"
     - ".viw"
   language_id: 333
+  comment_style_id: DoubleDash
 SQLPL:
   type: programming
   ace_mode: sql
@@ -5036,6 +5041,7 @@ SQLPL:
     - ".sql"
     - ".db2"
   language_id: 334
+  comment_style_id: DoubleDash
 SRecode Template:
   type: markup
   color: "#348a34"
@@ -5549,6 +5555,7 @@ TSQL:
   ace_mode: sql
   tm_scope: source.tsql
   language_id: 918334941
+  comment_style_id: DoubleDash
 TSV:
   type: data
   ace_mode: text
@@ -5969,6 +5976,7 @@ Vim script:
     - vimrc
   ace_mode: text
   language_id: 388
+  comment_style_id: Quotes
 Visual Basic .NET:
   type: programming
   color: "#945db7"

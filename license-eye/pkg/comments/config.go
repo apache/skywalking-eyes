@@ -27,6 +27,7 @@ import (
 
 type CommentStyle struct {
 	ID     string `yaml:"id"`
+	After  string `yaml:"after"`
 	Start  string `yaml:"start"`
 	Middle string `yaml:"middle"`
 	End    string `yaml:"end"`
@@ -37,15 +38,6 @@ func (style *CommentStyle) Validate() error {
 		return fmt.Errorf("comment style 'start' cannot be empty")
 	}
 	return nil
-}
-
-func (style *CommentStyle) Finalize() {
-	if style.Middle == "" {
-		style.Middle = style.Start
-	}
-	if style.End == "" {
-		style.End = style.Start
-	}
 }
 
 type Language struct {
@@ -107,7 +99,6 @@ func initCommentStyles() {
 	}
 
 	for _, style := range styles {
-		style.Finalize()
 		comments[style.ID] = style
 	}
 }

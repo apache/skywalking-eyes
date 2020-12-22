@@ -22,7 +22,7 @@ WORKDIR /license-eye
 
 COPY . .
 
-RUN apk add make && make build
+RUN apk add make curl && make build
 
 FROM alpine:3 AS bin
 

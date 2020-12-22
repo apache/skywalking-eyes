@@ -70,7 +70,11 @@ $(PLATFORMS):
 	GOOS=$(os) GOARCH=$(ARCH) $(GO_BUILD) $(GO_BUILD_FLAGS) -ldflags "$(GO_BUILD_LDFLAGS)" -o $(OUT_DIR)/$(os)/$(PROJECT) cmd/license-eye/main.go
 
 .PHONY: build
-build: windows linux darwin
+build: codegen windows linux darwin
+
+.PHONY: docker
+docker:
+	docker build . -t license-eye:latest
 
 .PHONY: clean
 clean:

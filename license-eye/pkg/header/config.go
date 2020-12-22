@@ -18,7 +18,9 @@
 package header
 
 import (
+	"bufio"
 	"io/ioutil"
+	"os"
 	"regexp"
 	"strings"
 
@@ -87,6 +89,16 @@ func (config *ConfigHeader) ShouldIgnore(path string) (bool, error) {
 			return matched, err
 		}
 	}
+
+	if stat, err := os.Stat(path); err == nil {
+		for _, ignorePattern := range config.PathsIgnore {
+			ignorePattern = strings.TrimRight(ignorePattern, "/")
+			if strings.HasPrefix(path, ignorePattern+"/") || stat.Name() == ignorePattern {
+				return true, nil
+			}
+		}
+	}
+
 	return false, nil
 }
 
@@ -95,6 +107,21 @@ func (config *ConfigHeader) Finalize() error {
 
 	if len(config.Paths) == 0 {
 		config.Paths = []string{"**"}
+	}
+
+	config.PathsIgnore = append(config.PathsIgnore, ".git")
+
+	if file, err := os.Open(".gitignore"); err == nil {
+		defer func() { _ = file.Close() }()
+
+		for scanner := bufio.NewScanner(file); scanner.Scan(); {
+			line := scanner.Text()
+			if strings.HasPrefix(line, "#") || strings.TrimSpace(line) == "" {
+				continue
+			}
+			logger.Log.Debugln("Add ignore path from .gitignore:", line)
+			config.PathsIgnore = append(config.PathsIgnore, strings.TrimSpace(line))
+		}
 	}
 
 	return nil

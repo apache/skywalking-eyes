@@ -147,7 +147,7 @@ func CheckFile(file string, config *ConfigHeader, result *Result) error {
 	return nil
 }
 
-func satisfy(content string, license string, pattern *regexp.Regexp) bool {
+func satisfy(content, license string, pattern *regexp.Regexp) bool {
 	if index := strings.Index(content, license); index >= 0 {
 		return index < LicenseLocationThreshold
 	}
@@ -157,5 +157,5 @@ func satisfy(content string, license string, pattern *regexp.Regexp) bool {
 	}
 	index := pattern.FindStringIndex(content)
 
-	return index != nil && len(index) == 2 && index[0] < LicenseLocationThreshold
+	return len(index) == 2 && index[0] < LicenseLocationThreshold
 }

@@ -70,3 +70,4 @@ header: # `header` section is configurations for source codes license header.
     - 'LICENSE'
     - 'NOTICE'
     - '**/assets/languages.yaml'
+    - '**/assets/assets.gen.go'

@@ -98,7 +98,7 @@ include::assets/styles.yaml[tags=SlashAsterisk]
 
 == Contribution
 
-If you found any file type is supported by the aforementioned configurations, feel free to link:https://github.com/apache/skywalking-eyes/pulls[open a pull request] to add the configuration into the 2 files.
+If you found any file type is not supported by the aforementioned configurations, feel free to link:https://github.com/apache/skywalking-eyes/pulls[open a pull request] to add the configuration into the 2 files.
 
 == License
 

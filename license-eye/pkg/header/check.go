@@ -18,7 +18,6 @@
 package header
 
 import (
-	"bufio"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -27,20 +26,20 @@ import (
 	"strings"
 
 	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
+	"github.com/apache/skywalking-eyes/license-eye/pkg"
+	lcs "github.com/apache/skywalking-eyes/license-eye/pkg/license"
 
 	"github.com/bmatcuk/doublestar/v2"
 )
 
-// TODO: also trim stop words
 var (
 	// LicenseLocationThreshold specifies the index threshold where the license header can be located,
 	// after all, a "header" cannot be TOO far from the file start.
 	LicenseLocationThreshold = 80
-	Punctuations             = regexp.MustCompile("[\\[\\]/*:;\\s#\\-!~'\"(){}?]+")
 )
 
 // Check checks the license headers of the specified paths/globs.
-func Check(config *ConfigHeader, result *Result) error {
+func Check(config *ConfigHeader, result *pkg.Result) error {
 	for _, pattern := range config.Paths {
 		if err := checkPattern(pattern, result, config); err != nil {
 			return err
@@ -52,7 +51,7 @@ func Check(config *ConfigHeader, result *Result) error {
 
 var seen = make(map[string]bool)
 
-func checkPattern(pattern string, result *Result, config *ConfigHeader) error {
+func checkPattern(pattern string, result *pkg.Result, config *ConfigHeader) error {
 	paths, err := doublestar.Glob(pattern)
 
 	if err != nil {
@@ -73,7 +72,7 @@ func checkPattern(pattern string, result *Result, config *ConfigHeader) error {
 	return nil
 }
 
-func checkPath(path string, result *Result, config *ConfigHeader) error {
+func checkPath(path string, result *pkg.Result, config *ConfigHeader) error {
 	defer func() { seen[path] = true }()
 
 	if yes, err := config.ShouldIgnore(path); yes || seen[path] || err != nil {
@@ -106,7 +105,7 @@ func checkPath(path string, result *Result, config *ConfigHeader) error {
 }
 
 // CheckFile checks whether or not the file contains the configured license header.
-func CheckFile(file string, config *ConfigHeader, result *Result) error {
+func CheckFile(file string, config *ConfigHeader, result *pkg.Result) error {
 	if yes, err := config.ShouldIgnore(file); yes || err != nil {
 		if !seen[file] {
 			result.Ignore(file)
@@ -115,14 +114,6 @@ func CheckFile(file string, config *ConfigHeader, result *Result) error {
 	}
 
 	logger.Log.Debugln("Checking file:", file)
-
-	reader, err := os.Open(file)
-
-	if err != nil {
-		return err
-	}
-
-	var lines []string
 
 	bs, err := ioutil.ReadFile(file)
 	if err != nil {
@@ -133,24 +124,13 @@ func CheckFile(file string, config *ConfigHeader, result *Result) error {
 		return nil
 	}
 
-	scanner := bufio.NewScanner(reader)
-	for scanner.Scan() {
-		line := strings.ToLower(Punctuations.ReplaceAllString(scanner.Text(), " "))
-		if len(line) > 0 {
-			lines = append(lines, line)
-		}
-	}
+	content := lcs.NormalizeHeader(string(bs))
+	expected, pattern := config.NormalizedLicense(), config.NormalizedPattern()
 
-	content := Punctuations.ReplaceAllString(strings.Join(lines, " "), " ")
-	license, pattern := config.NormalizedLicense(), config.NormalizedPattern()
-
-	if satisfy(content, license, pattern) {
+	if satisfy(content, expected, pattern) {
 		result.Succeed(file)
 	} else {
 		logger.Log.Debugln("Content is:", content)
-		if pattern != nil {
-			logger.Log.Debugln("Pattern is:", pattern)
-		}
 
 		result.Fail(file)
 	}
@@ -159,7 +139,7 @@ func CheckFile(file string, config *ConfigHeader, result *Result) error {
 }
 
 func satisfy(content, license string, pattern *regexp.Regexp) bool {
-	if index := strings.Index(content, license); index >= 0 {
+	if index := strings.Index(content, license); license != "" && index >= 0 {
 		return index < LicenseLocationThreshold
 	}
 

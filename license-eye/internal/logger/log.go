@@ -29,7 +29,7 @@ func init() {
 	if Log == nil {
 		Log = logrus.New()
 	}
-	Log.Level = logrus.InfoLevel
+	Log.Level = logrus.DebugLevel
 	Log.SetOutput(os.Stdout)
 	Log.SetFormatter(&logrus.TextFormatter{
 		DisableTimestamp:       true,

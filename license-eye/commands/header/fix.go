@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
+	"github.com/apache/skywalking-eyes/license-eye/pkg"
 	"github.com/apache/skywalking-eyes/license-eye/pkg/config"
 	"github.com/apache/skywalking-eyes/license-eye/pkg/header"
 	"github.com/spf13/cobra"
@@ -34,7 +35,7 @@ var FixCommand = &cobra.Command{
 	Long:    "fix command walks the specified paths recursively and fix the license header if the specified files don't have the license header.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var config config.Config
-		var result header.Result
+		var result pkg.Result
 
 		if err := config.Parse(cfgFile); err != nil {
 			return err

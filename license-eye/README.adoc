@@ -28,7 +28,7 @@ You can use {name} in GitHub Actions or in your local machine.
 
 === GitHub Actions
 
-To use License-Eye in GitHub Actions, add a step in your GitHub workflow.
+To use {name} in GitHub Actions, add a step in your GitHub workflow.
 
 [source,yaml]
 ----
@@ -164,11 +164,11 @@ header: # <1>
 <1> `header` section is configurations for source codes license header.
 <2> The link:https://spdx.org/licenses/[SPDX ID] of the license, it's convenient when your license is standard SPDX license, so that you can simply specify this identifier without copying the whole license `content` or `pattern`. This will be used as the content when `fix` command needs to insert a license header.
 <3> The copyright owner to replace the `[owner]` in the `SPDX-ID` license template.
-<4> If you are not using the standard license txt, you can paste your license text here, this will be used as the content when `fix` command needs to insert a license header, if both `license` and `SPDX-ID` are specified, `license` wins.
+<4> If you are not using the standard license text, you can paste your license text here, this will be used as the content when `fix` command needs to insert a license header, if both `license` and `SPDX-ID` are specified, `license` wins.
 <5> `pattern` is an optional regexp. You don't need this if all the file headers are the same as `license` or the license of `SPDX-ID`, otherwise you need to compose a pattern that matches your license texts.
-<6> `paths` are the path list that will be checked (and fixed) by license-eye, default is ['**']. Formats like `**/*.md` and `**/bin/**` are supported.
+<6> `paths` are the path list that will be checked (and fixed) by license-eye, default is `['++**++']`. Formats like `++**/*.md++` and `++**/bin/**++` are supported.
 <7> `paths-ignore` are the path list that will be ignored by license-eye. By default, `.git` and the content in `.gitignore` will be inflated into the `paths-ignore` list.
-<8> On what condition license-eye will comment the check results on the pull request, `on-failure`, `always`, `never`. Options other than `never` requre the environment variable `GITHUB_TOKEN` to be set.
+<8> On what condition {name} will comment the check results on the pull request, `on-failure`, `always`, `never`. Options other than `never` require the environment variable `GITHUB_TOKEN` to be set.
 
 NOTE: When the `SPDX-ID` is Apache-2.0 and the owner is Apache Software foundation, the content would be link:https://www.apache.org/legal/src-headers.html#headers[a dedicated license] link:https://www.apache.org/foundation/license-faq.html#Apply-My-Software[specified by the ASF], otherwise, the license would be link:https://www.apache.org/foundation/license-faq.html#Apply-My-Software[the standard one].
 

@@ -16,6 +16,9 @@
 # under the License.
 # 
 
+run:
+  tests: false
+
 linters-settings:
   govet:
     check-shadowing: true
@@ -37,6 +40,38 @@ linters-settings:
       fmt: "logging is allowed only by logutils.Log"
   misspell:
     locale: US
+    ignore-words:
+      - analogue
+      - analyse
+      - artefact
+      - authorised
+      - calibre
+      - cancelled
+      - catalogue
+      - categorise
+      - centre
+      - emphasised
+      - favour
+      - favourite
+      - fulfil
+      - fulfilment
+      - initialise
+      - labelling
+      - labour
+      - licence
+      - maximise
+      - modelled
+      - modelling
+      - offence
+      - optimise
+      - organisation
+      - organise
+      - practise
+      - programme
+      - realise
+      - recognise
+      - signalling
+      - utilisation
   lll:
     line-length: 150
   goimports:
@@ -51,7 +86,7 @@ linters-settings:
     disabled-checks:
       - ifElseChain
   funlen:
-    lines: 150
+    lines: 100
     statements: 50
   whitespace:
     multi-if: false

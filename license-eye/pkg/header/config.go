@@ -19,15 +19,14 @@ package header
 
 import (
 	"bufio"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"strings"
 
 	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
+	"github.com/apache/skywalking-eyes/license-eye/pkg/license"
 
 	"github.com/bmatcuk/doublestar/v2"
-	"gopkg.in/yaml.v3"
 )
 
 type ConfigHeader struct {
@@ -40,47 +39,19 @@ type ConfigHeader struct {
 // NormalizedLicense returns the normalized string of the license content,
 // "normalized" means the linebreaks and Punctuations are all trimmed.
 func (config *ConfigHeader) NormalizedLicense() string {
-	var lines []string
-	for _, line := range strings.Split(config.License, "\n") {
-		if len(line) > 0 {
-			lines = append(lines, Punctuations.ReplaceAllString(line, " "))
-		}
-	}
-	return strings.ToLower(regexp.MustCompile("(?m)[\\s\"']+").ReplaceAllString(strings.Join(lines, " "), " "))
+	return license.Normalize(config.License)
 }
 
 func (config *ConfigHeader) NormalizedPattern() *regexp.Regexp {
-	if config.Pattern == "" || strings.TrimSpace(config.Pattern) == "" {
+	pattern := config.Pattern
+
+	if pattern == "" || strings.TrimSpace(pattern) == "" {
 		return nil
 	}
 
-	var lines []string
-	for _, line := range strings.Split(config.Pattern, "\n") {
-		if len(line) > 0 {
-			lines = append(lines, line)
-		}
-	}
-	content := regexp.MustCompile("(?m)[\\s\"':;/\\-]+").ReplaceAllString(strings.Join(lines, " "), " ")
-	return regexp.MustCompile("(?i).*" + content + ".*")
-}
+	pattern = license.NormalizePattern(pattern)
 
-// Parse reads and parses the header check configurations in config file.
-func (config *ConfigHeader) Parse(file string) error {
-	logger.Log.Infoln("Loading configuration from file:", file)
-
-	if bytes, err := ioutil.ReadFile(file); err != nil {
-		return err
-	} else if err := yaml.Unmarshal(bytes, config); err != nil {
-		return err
-	}
-
-	logger.Log.Debugln("License header is:", config.NormalizedLicense())
-
-	if len(config.Paths) == 0 {
-		config.Paths = []string{"**"}
-	}
-
-	return nil
+	return regexp.MustCompile("(?i).*" + pattern + ".*")
 }
 
 func (config *ConfigHeader) ShouldIgnore(path string) (bool, error) {
@@ -103,8 +74,6 @@ func (config *ConfigHeader) ShouldIgnore(path string) (bool, error) {
 }
 
 func (config *ConfigHeader) Finalize() error {
-	logger.Log.Debugln("License header is:", config.NormalizedLicense())
-
 	if len(config.Paths) == 0 {
 		config.Paths = []string{"**"}
 	}
@@ -122,6 +91,11 @@ func (config *ConfigHeader) Finalize() error {
 			logger.Log.Debugln("Add ignore path from .gitignore:", line)
 			config.PathsIgnore = append(config.PathsIgnore, strings.TrimSpace(line))
 		}
+	}
+
+	logger.Log.Debugln("License header is:", config.NormalizedLicense())
+	if p := config.NormalizedPattern(); p != nil {
+		logger.Log.Debugln("Pattern is:", p)
 	}
 
 	return nil

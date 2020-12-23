@@ -62,7 +62,7 @@ func InsertComment(file string, style *comments.CommentStyle, config *ConfigHead
 		return err
 	}
 
-	licenseHeader, err := generateLicenseHeader(style, config)
+	licenseHeader, err := GenerateLicenseHeader(style, config)
 	if err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func rewriteContent(style *comments.CommentStyle, content []byte, licenseHeader 
 	)
 }
 
-func generateLicenseHeader(style *comments.CommentStyle, config *ConfigHeader) (string, error) {
+func GenerateLicenseHeader(style *comments.CommentStyle, config *ConfigHeader) (string, error) {
 	if err := style.Validate(); err != nil {
 		return "", err
 	}

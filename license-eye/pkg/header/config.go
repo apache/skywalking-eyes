@@ -29,11 +29,20 @@ import (
 	"github.com/bmatcuk/doublestar/v2"
 )
 
+type CommentOption string
+
+var (
+	Always    CommentOption = "always"
+	Never     CommentOption = "never"
+	OnFailure CommentOption = "on-failure"
+)
+
 type ConfigHeader struct {
-	License     string   `yaml:"license"`
-	Pattern     string   `yaml:"pattern"`
-	Paths       []string `yaml:"paths"`
-	PathsIgnore []string `yaml:"paths-ignore"`
+	License     string        `yaml:"license"`
+	Pattern     string        `yaml:"pattern"`
+	Paths       []string      `yaml:"paths"`
+	PathsIgnore []string      `yaml:"paths-ignore"`
+	Comment     CommentOption `yaml:"comment"`
 }
 
 // NormalizedLicense returns the normalized string of the license content,

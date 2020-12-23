@@ -229,3 +229,13 @@ The text of each license is also included at licenses/LICENSE-[project].txt.
     doublestar v2: https://github.com/bmatcuk/doublestar MIT
     logrus 1.4.2: https://github.com/sirupsen/logrus MIT
     yaml v3: https://github.com/go-yaml/yaml/blob/v3 MIT
+
+========================================================================
+BSD licenses
+========================================================================
+
+The following components are provided under a BSD license. See project link for details.
+The text of each license is also included at licenses/LICENSE-[project].txt.
+
+    go-github v33: https://github.com/google/go-github BSD-3-Clause
+    oauth2 v0.0.0: https://github.com/golang/oauth2 BSD-3-Clause

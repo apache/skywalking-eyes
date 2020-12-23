@@ -57,7 +57,7 @@ func TestFix(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.filename, func(t *testing.T) {
 			style := comments.FileCommentStyle(test.filename)
-			if c, err := generateLicenseHeader(style, config); err != nil || c != test.comments {
+			if c, err := GenerateLicenseHeader(style, config); err != nil || c != test.comments {
 				t.Log("Actual:", c)
 				t.Log("Expected:", test.comments)
 				t.Logf("Middle:'%v'\n", style.Middle)
@@ -213,7 +213,7 @@ echo 'Hello' | echo 'world!'
 }
 
 func getLicenseHeader(filename string, tError func(args ...interface{})) string {
-	s, err := generateLicenseHeader(comments.FileCommentStyle(filename), config)
+	s, err := GenerateLicenseHeader(comments.FileCommentStyle(filename), config)
 	if err != nil {
 		tError(err)
 	}

@@ -22,6 +22,7 @@ import (
 	"github.com/apache/skywalking-eyes/license-eye/pkg"
 	"github.com/apache/skywalking-eyes/license-eye/pkg/config"
 	"github.com/apache/skywalking-eyes/license-eye/pkg/header"
+	"github.com/apache/skywalking-eyes/license-eye/pkg/review"
 
 	"github.com/spf13/cobra"
 )
@@ -50,6 +51,9 @@ var CheckCommand = &cobra.Command{
 		logger.Log.Infoln(result.String())
 
 		if result.HasFailure() {
+			if err := review.Header(&result, &config); err != nil {
+				logger.Log.Warnln("Failed to create review comments", err)
+			}
 			return result.Error()
 		}
 

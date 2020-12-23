@@ -80,7 +80,7 @@ func TestCheckFile(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if strings.TrimSpace(c.Header.License) == "" {
+			if strings.TrimSpace(c.Header.GetLicenseContent()) == "" {
 				t.Errorf("License should not be empty")
 			}
 			if err := CheckFile(tt.file, &c.Header, tt.result); (err != nil) != tt.wantErr {
@@ -127,7 +127,7 @@ func TestCheckFileFailure(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if strings.TrimSpace(c.Header.License) == "" {
+			if strings.TrimSpace(c.Header.GetLicenseContent()) == "" {
 				t.Errorf("License should not be empty")
 			}
 			if err := CheckFile(tt.file, &c.Header, tt.result); (err != nil) != tt.wantErr {

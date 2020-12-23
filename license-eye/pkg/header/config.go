@@ -19,10 +19,14 @@ package header
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
+	"time"
 
+	"github.com/apache/skywalking-eyes/license-eye/assets"
 	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
 	"github.com/apache/skywalking-eyes/license-eye/pkg/license"
 
@@ -35,10 +39,19 @@ var (
 	Always    CommentOption = "always"
 	Never     CommentOption = "never"
 	OnFailure CommentOption = "on-failure"
+
+	ASFNames = regexp.MustCompile("(?i)(the )?(Apache Software Foundation|ASF)")
 )
 
+type LicenseConfig struct {
+	SpdxID         string `yaml:"spdx-id"`
+	CopyrightOwner string `yaml:"copyright-owner"`
+	Content        string `yaml:"content"`
+	Pattern        string `yaml:"pattern"`
+}
+
 type ConfigHeader struct {
-	License     string        `yaml:"license"`
+	License     LicenseConfig `yaml:"license"`
 	Pattern     string        `yaml:"pattern"`
 	Paths       []string      `yaml:"paths"`
 	PathsIgnore []string      `yaml:"paths-ignore"`
@@ -48,7 +61,7 @@ type ConfigHeader struct {
 // NormalizedLicense returns the normalized string of the license content,
 // "normalized" means the linebreaks and Punctuations are all trimmed.
 func (config *ConfigHeader) NormalizedLicense() string {
-	return license.Normalize(config.License)
+	return license.Normalize(config.GetLicenseContent())
 }
 
 func (config *ConfigHeader) NormalizedPattern() *regexp.Regexp {
@@ -108,4 +121,37 @@ func (config *ConfigHeader) Finalize() error {
 	}
 
 	return nil
+}
+
+func (config *ConfigHeader) GetLicenseContent() string {
+	if c := strings.TrimSpace(config.License.Content); c != "" {
+		return c
+	}
+	c, err := readLicenseFromSpdx(config)
+	if err != nil {
+		logger.Log.Warnln(err)
+		return ""
+	}
+	return c
+}
+
+func readLicenseFromSpdx(config *ConfigHeader) (string, error) {
+	spdxID, owner := config.License.SpdxID, config.License.CopyrightOwner
+	filename := fmt.Sprintf("assets/lcs-templates/%v.txt", spdxID)
+
+	if spdxID == "Apache-2.0" && ASFNames.MatchString(owner) {
+		// Note that the Apache Software Foundation uses a different source header that is related to our use of a CLA.
+		// Our instructions for our project's source headers are here (https://www.apache.org/legal/src-headers.html#headers).
+		filename = "assets/lcs-templates/Apache-2.0-ASF.txt"
+	}
+
+	content, err := assets.Asset(filename)
+	if err != nil {
+		return "", fmt.Errorf("failed to find a license template for spdx id %v, %w", spdxID, err)
+	}
+	template := string(content)
+	template = strings.Replace(template, "[year]", strconv.Itoa(time.Now().Year()), 1)
+	template = strings.Replace(template, "[owner]", owner, 1)
+
+	return template, nil
 }

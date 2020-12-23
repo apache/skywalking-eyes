@@ -99,7 +99,7 @@ func GenerateLicenseHeader(style *comments.CommentStyle, config *ConfigHeader) (
 		return "", err
 	}
 
-	middleLines := strings.Split(config.License, "\n")
+	middleLines := strings.Split(config.GetLicenseContent(), "\n")
 	for i, line := range middleLines {
 		middleLines[i] = strings.TrimRight(fmt.Sprintf("%v %v", style.Middle, line), " ")
 	}

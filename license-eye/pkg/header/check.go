@@ -139,7 +139,7 @@ func CheckFile(file string, config *ConfigHeader, result *pkg.Result) error {
 }
 
 func satisfy(content, license string, pattern *regexp.Regexp) bool {
-	if index := strings.Index(content, license); license != "" && index >= 0 {
+	if index := strings.Index(content, license); strings.TrimSpace(license) != "" && index >= 0 {
 		return index < LicenseLocationThreshold
 	}
 

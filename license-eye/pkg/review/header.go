@@ -111,7 +111,7 @@ func init() {
 
 // Header reviews the license header, including suggestions on the pull request and an overview of the checks.
 func Header(result *pkg.Result, config *config2.Config) error {
-	if !result.HasFailure() || !IsPR() || gh == nil {
+	if !result.HasFailure() || !IsPR() || gh == nil || config.Header.Comment == header2.Never {
 		return nil
 	}
 

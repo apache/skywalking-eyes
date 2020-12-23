@@ -57,7 +57,7 @@ license: clean codegen
 .PHONY: codegen
 codegen: clean
 	$(GO_BINDATA) -v || curl -Lo $(GO_BINDATA) https://github.com/kevinburke/go-bindata/releases/download/v3.11.0/go-bindata-$(OSNAME)-amd64 && chmod +x $(GO_BINDATA)
-	$(GO_BINDATA) --nocompress --nometadata --pkg assets --ignore '.*\.go' -o "assets/assets.gen.go" assets/
+	$(GO_BINDATA) --nocompress --nometadata --pkg assets --ignore '.*\.go' -o "assets/assets.gen.go" assets/...
 
 .PHONY: test
 test: clean codegen

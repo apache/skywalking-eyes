@@ -19,16 +19,12 @@
 PROJECT = license-eye
 VERSION ?= latest
 OUT_DIR = bin
-CURDIR := $(shell pwd)
-FILES := $$(find .$$($(PACKAGE_DIRECTORIES)) -name "*.go")
-FAIL_ON_STDOUT := awk '{ print } END { if (NR > 0) { exit 1 } }'
 ARCH := $(shell uname)
 OSNAME := $(if $(findstring Darwin,$(ARCH)),darwin,linux)
 
 GO := GO111MODULE=on go
 GO_PATH = $(shell $(GO) env GOPATH)
 GO_BUILD = $(GO) build
-GO_GET = $(GO) get
 GO_TEST = $(GO) test
 GO_LINT = $(GO_PATH)/bin/golangci-lint
 GO_BUILD_LDFLAGS = -X github.com/apache/skywalking-eyes/license-eye/commands.version=$(VERSION)
@@ -38,6 +34,9 @@ GO_BINDATA = $(GO_PATH)/bin/go-bindata
 PLATFORMS := windows linux darwin
 os = $(word 1, $@)
 ARCH = amd64
+
+RELEASE_BIN = skywalking-license-eye-$(VERSION)-bin
+RELEASE_SRC = skywalking-license-eye-$(VERSION)-src
 
 all: clean lint license test build
 
@@ -81,3 +80,31 @@ clean:
 	-rm -rf bin
 	-rm -rf assets/*.gen.go
 	-rm -rf coverage.txt
+	-rm -rf "$(RELEASE_BIN)"*
+	-rm -rf "$(RELEASE_SRC)"*
+
+.PHONY: verify
+verify: clean license lint test
+
+release-src: clean
+	-mkdir $(RELEASE_SRC)
+	-cp ../NOTICE $(RELEASE_SRC)
+	-rsync -av . $(RELEASE_SRC) --exclude $(RELEASE_SRC) --exclude .DS_Store
+	-tar -zcvf $(RELEASE_SRC).tgz $(RELEASE_SRC)
+	-rm -rf "$(RELEASE_SRC)"
+
+release-bin: build
+	-mkdir $(RELEASE_BIN)
+	-cp -R bin $(RELEASE_BIN)
+	-cp -R dist/* $(RELEASE_BIN)
+	-cp -R CHANGES.md $(RELEASE_BIN)
+	-cp -R README.adoc $(RELEASE_BIN)
+	-cp -R ../NOTICE $(RELEASE_BIN)
+	-tar -zcvf $(RELEASE_BIN).tgz $(RELEASE_BIN)
+	-rm -rf "$(RELEASE_BIN)"
+
+release: verify release-src release-bin
+	gpg --batch --yes --armor --detach-sig $(RELEASE_SRC).tgz
+	shasum -a 512 $(RELEASE_SRC).tgz > $(RELEASE_SRC).tgz.sha512
+	gpg --batch --yes --armor --detach-sig $(RELEASE_BIN).tgz
+	shasum -a 512 $(RELEASE_BIN).tgz > $(RELEASE_BIN).tgz.sha512

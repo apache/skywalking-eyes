@@ -577,6 +577,7 @@ C:
   codemirror_mode: clike
   codemirror_mime_type: text/x-csrc
   language_id: 41
+  comment_style_id: SlashAsterisk
 C#:
   type: programming
   ace_mode: csharp
@@ -592,6 +593,7 @@ C#:
     - ".csx"
     - ".linq"
   language_id: 42
+  comment_style_id: SlashAsterisk
 C++:
   type: programming
   tm_scope: source.c++
@@ -620,6 +622,7 @@ C++:
     - ".tcc"
     - ".tpp"
   language_id: 43
+  comment_style_id: SlashAsterisk
 C-ObjDump:
   type: data
   extensions:
@@ -700,6 +703,7 @@ CSS:
   extensions:
     - ".css"
   language_id: 50
+  comment_style_id: SlashAsterisk
 CSV:
   type: data
   ace_mode: text
@@ -904,6 +908,7 @@ CoffeeScript:
   interpreters:
     - coffee
   language_id: 63
+  comment_style_id: Hashtag
 ColdFusion:
   type: programming
   ace_mode: coldfusion
@@ -1230,6 +1235,7 @@ Dockerfile:
   codemirror_mode: dockerfile
   codemirror_mime_type: text/x-dockerfile
   language_id: 89
+  comment_style_id: Hashtag
 Dogescript:
   type: programming
   color: "#cca760"
@@ -1950,6 +1956,7 @@ Gradle:
   tm_scope: source.groovy.gradle
   ace_mode: text
   language_id: 136
+  comment_style_id: SlashAsterisk
 Grammatical Framework:
   type: programming
   aliases:
@@ -1979,6 +1986,7 @@ GraphQL:
   tm_scope: source.graphql
   ace_mode: text
   language_id: 139
+  comment_style_id: Hashtag
 Graphviz (DOT):
   type: data
   tm_scope: source.dot
@@ -2004,6 +2012,7 @@ Groovy:
   filenames:
     - Jenkinsfile
   language_id: 142
+  comment_style_id: SlashAsterisk
 Groovy Server Pages:
   type: programming
   group: Groovy
@@ -2071,6 +2080,7 @@ HTML:
     - ".xht"
     - ".xhtml"
   language_id: 146
+  comment_style_id: AngleBracket
 HTML+Django:
   type: markup
   tm_scope: text.html.django
@@ -2520,6 +2530,7 @@ JSON with Comments:
     - tsconfig.json
     - tslint.json
   language_id: 423
+  comment_style_id: SlashAsterisk
 JSON5:
   type: data
   extensions:
@@ -2789,6 +2800,7 @@ Kotlin:
   codemirror_mode: clike
   codemirror_mime_type: text/x-kotlin
   language_id: 189
+  comment_style_id: SlashAsterisk
 LFE:
   type: programming
   color: "#4C3023"
@@ -3058,6 +3070,7 @@ Lua:
   interpreters:
     - lua
   language_id: 213
+  comment_style_id: DoubleDash
 M:
   type: programming
   aliases:
@@ -4975,6 +4988,7 @@ SCSS:
   extensions:
     - ".scss"
   language_id: 329
+  comment_style_id: DoubleSlash
 SMT:
   type: programming
   extensions:
@@ -5083,6 +5097,7 @@ SVG:
   codemirror_mode: xml
   codemirror_mime_type: text/xml
   language_id: 337
+  comment_style_id: AngleBracket
 SWIG:
   type: programming
   extensions:
@@ -5125,6 +5140,7 @@ Sass:
   codemirror_mode: sass
   codemirror_mime_type: text/x-sass
   language_id: 340
+  comment_style_id: DoubleSlash
 Scala:
   type: programming
   tm_scope: source.scala
@@ -5140,6 +5156,7 @@ Scala:
   interpreters:
     - scala
   language_id: 341
+  comment_style_id: SlashAsterisk
 Scaml:
   group: HTML
   type: markup
@@ -5458,6 +5475,7 @@ Stylus:
   tm_scope: source.stylus
   ace_mode: stylus
   language_id: 359
+  comment_style_id: SlashAsterisk
 SubRip Text:
   type: data
   extensions:
@@ -5505,6 +5523,7 @@ Swift:
   codemirror_mode: swift
   codemirror_mime_type: text/x-swift
   language_id: 362
+  comment_style_id: SlashAsterisk
 SystemVerilog:
   type: programming
   color: "#DAE1C2"
@@ -5779,6 +5798,7 @@ TypeScript:
   codemirror_mode: javascript
   codemirror_mime_type: application/typescript
   language_id: 378
+  comment_style_id: SlashAsterisk
 Unified Parallel C:
   type: programming
   color: "#4e3617"
@@ -6011,6 +6031,7 @@ Vue:
   tm_scope: text.html.vue
   ace_mode: html
   language_id: 391
+  comment_style_id: AngleBracket
 Wavefront Material:
   type: data
   extensions:
@@ -6299,6 +6320,7 @@ XML Property List:
   codemirror_mode: xml
   codemirror_mime_type: text/xml
   language_id: 75622871
+  comment_style_id: AngleBracket
 XPages:
   type: data
   extensions:

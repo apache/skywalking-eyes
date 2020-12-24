@@ -100,7 +100,7 @@ func (config *ConfigHeader) Finalize() error {
 		config.Paths = []string{"**"}
 	}
 
-	config.PathsIgnore = append(config.PathsIgnore, ".git")
+	config.PathsIgnore = append(config.PathsIgnore, ".git", "**/*.txt")
 
 	if file, err := os.Open(".gitignore"); err == nil {
 		defer func() { _ = file.Close() }()

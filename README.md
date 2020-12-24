@@ -16,4 +16,4 @@ Infra tools that are created and used by the SkyWalking Team.
 
 A full-featured license guard to check and fix license headers and dependencies' licenses.
 
-Read link:license-eye/README.adoc[the doc] on how to use license-eye.
+Read [the doc](license-eye/README.adoc) on how to use license-eye.

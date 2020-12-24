@@ -17,17 +17,17 @@
 //
 = SkyWalking Eyes
 
-<img src="http://skywalking.apache.org/assets/logo.svg" alt="Sky Walking logo" height="90px" align="right" />
-
 Infra tools that are created and used by the SkyWalking Team.
 
-[![Twitter Follow](https://img.shields.io/twitter/follow/asfskywalking.svg?style=for-the-badge&label=Follow&logo=twitter)](https://twitter.com/AsfSkyWalking)
+image::http://skywalking.apache.org/assets/logo.svg[SkyWalking logo,200,200,float="right",align="center"]
 
-# Contact Us
-* Submit [an issue](https://github.com/apache/skywalking/issues/new) by using [INFRA] as title prefix.
-* Mail list: **dev@skywalking.apache.org**. Mail to `dev-subscribe@skywalking.apache.org`, follow the reply to subscribe the mail list.
-* Join `skywalking` channel at [Apache Slack](http://s.apache.org/slack-invite). If the link is not working, find the latest one at [Apache INFRA WIKI](https://cwiki.apache.org/confluence/display/INFRA/Slack+Guest+Invites).
-* Twitter, [ASFSkyWalking](https://twitter.com/ASFSkyWalking)
+image::https://img.shields.io/twitter/follow/asfskywalking.svg?style=for-the-badge&label=Follow&logo=twitter[Twitter Follow,link=https://twitter.com/AsfSkyWalking]
+
+== Contact Us
+* link:https://github.com/apache/skywalking/issues/new[Submit an issue] by using [INFRA] as title prefix.
+* Mailing list: **dev@skywalking.apache.org**. Send an email to dev-subscribe@skywalking.apache.org, follow the reply to subscribe the mail list.
+* link:http://s.apache.org/slack-invite[Join `skywalking` channel] at Apache Slack. If the link is not working, find the latest one at link:https://cwiki.apache.org/confluence/display/INFRA/Slack+Guest+Invites[Apache INFRA WIKI].
+* Twitter, link:https://twitter.com/ASFSkyWalking[ASFSkyWalking]
 
 == License Eye
 

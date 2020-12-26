@@ -35,7 +35,7 @@ header:
   comment: on-failure
 ```
 
-**NOTE**: The full configurations can be found in [the configuration section](#Configurations).
+**NOTE**: The full configurations can be found in [the configuration section](#configurations).
 
 ### Use as a Binary
 

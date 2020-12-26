@@ -44,8 +44,6 @@ jobs:
 
       - name: License Check
         run: make license
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Test
         run: make test

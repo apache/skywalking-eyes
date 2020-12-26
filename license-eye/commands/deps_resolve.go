@@ -1,3 +1,4 @@
+//
 // Licensed to Apache Software Foundation (ASF) under one or more contributor
 // license agreements. See the NOTICE file distributed with
 // this work for additional information regarding copyright
@@ -14,48 +15,31 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
-package header
+package commands
 
 import (
 	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
-	"github.com/apache/skywalking-eyes/license-eye/pkg"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/config"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/header"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/review"
-
+	"github.com/apache/skywalking-eyes/license-eye/pkg/deps"
 	"github.com/spf13/cobra"
 )
 
-var CheckCommand = &cobra.Command{
-	Use:     "check",
-	Aliases: []string{"c"},
-	Long:    "check command walks the specified paths recursively and checks if the specified files have the license header in the config file.",
+var ResolveCommand = &cobra.Command{
+	Use:     "resolve",
+	Aliases: []string{"r"},
+	Long:    "resolves all dependencies of a go.mod file and their transitive dependencies",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var config config.Config
-		var result pkg.Result
+		report := deps.Report{}
 
-		if err := config.Parse(cfgFile); err != nil {
+		if err := deps.Resolve(&Config.Deps, &report); err != nil {
 			return err
 		}
 
-		if len(args) > 0 {
-			logger.Log.Debugln("Overriding paths with command line args.")
-			config.Header.Paths = args
+		for _, result := range report.Resolved {
+			logger.Log.Debugln("Resolved:", result.Dependency)
+			logger.Log.Debugln("License:", result.LicenseFilePath)
 		}
 
-		if err := header.Check(&config.Header, &result); err != nil {
-			return err
-		}
-
-		logger.Log.Infoln(result.String())
-
-		if result.HasFailure() {
-			if err := review.Header(&result, &config); err != nil {
-				logger.Log.Warnln("Failed to create review comments", err)
-			}
-			return result.Error()
-		}
+		logger.Log.Debugln("Skipped:", len(report.Skipped))
 
 		return nil
 	},

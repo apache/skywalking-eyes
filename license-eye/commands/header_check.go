@@ -15,40 +15,41 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package config
+package commands
 
 import (
-	"io/ioutil"
-
 	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/deps"
 	"github.com/apache/skywalking-eyes/license-eye/pkg/header"
+	"github.com/apache/skywalking-eyes/license-eye/pkg/review"
 
-	"gopkg.in/yaml.v3"
+	"github.com/spf13/cobra"
 )
 
-type Config struct {
-	Header header.ConfigHeader `yaml:"header"`
-	Deps   deps.ConfigDeps     `yaml:"dependency"`
-}
+var CheckCommand = &cobra.Command{
+	Use:     "check",
+	Aliases: []string{"c"},
+	Long:    "check command walks the specified paths recursively and checks if the specified files have the license header in the config file.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		var result header.Result
 
-// Parse reads and parses the header check configurations in config file.
-func (config *Config) Parse(file string) error {
-	logger.Log.Infoln("Loading configuration from file:", file)
+		if len(args) > 0 {
+			logger.Log.Debugln("Overriding paths with command line args.")
+			Config.Header.Paths = args
+		}
 
-	if bytes, err := ioutil.ReadFile(file); err != nil {
-		return err
-	} else if err := yaml.Unmarshal(bytes, config); err != nil {
-		return err
-	}
+		if err := header.Check(&Config.Header, &result); err != nil {
+			return err
+		}
 
-	if err := config.Header.Finalize(); err != nil {
-		return err
-	}
+		logger.Log.Infoln(result.String())
 
-	if err := config.Deps.Finalize(file); err != nil {
-		return err
-	}
+		if result.HasFailure() {
+			if err := review.Header(&result, &Config); err != nil {
+				logger.Log.Warnln("Failed to create review comments", err)
+			}
+			return result.Error()
+		}
 
-	return nil
+		return nil
+	},
 }

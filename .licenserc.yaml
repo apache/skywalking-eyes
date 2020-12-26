@@ -74,3 +74,7 @@ header: # `header` section is configurations for source codes license header.
     - '**/assets/assets.gen.go'
 
   comment: on-failure # on what condition license-eye will comment on the pull request, `on-failure`, `always`, `never`.
+
+dependency:
+  files:
+    - license-eye/go.mod

@@ -16,15 +16,13 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package header
+package commands
 
 import (
 	"fmt"
 	"strings"
 
 	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
-	"github.com/apache/skywalking-eyes/license-eye/pkg"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/config"
 	"github.com/apache/skywalking-eyes/license-eye/pkg/header"
 	"github.com/spf13/cobra"
 )
@@ -34,20 +32,15 @@ var FixCommand = &cobra.Command{
 	Aliases: []string{"f"},
 	Long:    "fix command walks the specified paths recursively and fix the license header if the specified files don't have the license header.",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var config config.Config
-		var result pkg.Result
+		var result header.Result
 
-		if err := config.Parse(cfgFile); err != nil {
-			return err
-		}
-
-		if err := header.Check(&config.Header, &result); err != nil {
+		if err := header.Check(&Config.Header, &result); err != nil {
 			return err
 		}
 
 		var errors []string
 		for _, file := range result.Failure {
-			if err := header.Fix(file, &config.Header, &result); err != nil {
+			if err := header.Fix(file, &Config.Header, &result); err != nil {
 				errors = append(errors, err.Error())
 			}
 		}

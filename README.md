@@ -17,3 +17,9 @@ Infra tools that are created and used by the SkyWalking Team.
 A full-featured license guard to check and fix license headers and dependencies' licenses.
 
 Read [the doc](license-eye/README.adoc) on how to use license-eye.
+
+## Quality Eye
+
+The next generation of end-to-end test framework that eyes on software quality.
+
+Read [the doc](quality-eye/README.md) on how the quality-eye is designed.

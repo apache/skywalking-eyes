@@ -24,3 +24,7 @@ github:
     - tools
     - license
     - licensing
+  protected_branches:
+    main:
+      required_status_checks:
+        strict: true

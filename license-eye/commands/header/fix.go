@@ -22,11 +22,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/spf13/cobra"
+
 	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
 	"github.com/apache/skywalking-eyes/license-eye/pkg"
 	"github.com/apache/skywalking-eyes/license-eye/pkg/config"
 	"github.com/apache/skywalking-eyes/license-eye/pkg/header"
-	"github.com/spf13/cobra"
 )
 
 var FixCommand = &cobra.Command{

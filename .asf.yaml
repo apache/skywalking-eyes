@@ -17,7 +17,7 @@
 # 
 
 github:
-  description: Apache SkyWalking Eyes
+  description: Infra tools created and used by Apache SkyWalking
   homepage: https://skywalking.apache.org/
   labels:
     - cli

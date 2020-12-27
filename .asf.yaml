@@ -17,7 +17,7 @@
 # 
 
 github:
-  description: Infra tools created and used by Apache SkyWalking
+  description: A full-featured license tool to check and fix license headers and resolve dependencies' licenses.
   homepage: https://skywalking.apache.org/
   labels:
     - cli

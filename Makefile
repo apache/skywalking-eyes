@@ -87,11 +87,15 @@ clean:
 verify: clean license lint test
 
 release-src: clean
-	-mkdir $(RELEASE_SRC)
-	-cp ../NOTICE $(RELEASE_SRC)
-	-rsync -av . $(RELEASE_SRC) --exclude $(RELEASE_SRC) --exclude .DS_Store
-	-tar -zcvf $(RELEASE_SRC).tgz $(RELEASE_SRC)
-	-rm -rf "$(RELEASE_SRC)"
+	-tar -zcvf $(RELEASE_SRC).tgz \
+	--exclude bin \
+	--exclude .git \
+	--exclude .idea \
+	--exclude .DS_Store \
+	--exclude .github \
+	--exclude $(RELEASE_SRC).tgz \
+	--exclude query-protocol/schema.graphqls \
+	.
 
 release-bin: build
 	-mkdir $(RELEASE_BIN)

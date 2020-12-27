@@ -16,12 +16,15 @@
 # under the License.
 # 
 name: License Eye
-description: A full-featured license guard to check and fix license headers and dependencies' licenses.
+description: A full-featured license tool to check and fix license headers and dependencies' licenses.
 branding:
   icon: book
   color: orange
 runs:
   using: docker
-  image: license-eye/Dockerfile
+  image: Dockerfile
   args:
-    - header check
+    - -v
+    - debug
+    - header
+    - check

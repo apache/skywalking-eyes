@@ -75,7 +75,7 @@ linters-settings:
   lll:
     line-length: 150
   goimports:
-    local-prefixes: github.com/apache/skywalking-cli
+    local-prefixes: github.com/apache/skywalking-eyes/license-eye
   gocritic:
     enabled-tags:
       - diagnostic

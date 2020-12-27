@@ -24,6 +24,7 @@ import (
 	"regexp"
 
 	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
+	"github.com/apache/skywalking-eyes/license-eye/pkg/license"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/tools/go/packages"
 )
@@ -79,7 +80,7 @@ func (resolver *GoModeResolver) ResolvePackages(pkgNames []string, report *Repor
 	packages.Visit(requiredPkgs, func(p *packages.Package) bool {
 		err := resolver.ResolvePackageLicense(p, report)
 		if err != nil {
-			logger.Log.Warnln("Failed to resolve the license of dependency:", p.Name, err)
+			logger.Log.Warnln("Failed to resolve the license of dependency:", p.PkgPath, err)
 		}
 		return true
 	}, nil)
@@ -123,11 +124,15 @@ func (resolver *GoModeResolver) ResolvePackageLicense(p *packages.Package, repor
 			if err != nil {
 				return err
 			}
+			identifier, err := license.Identify(string(content))
+			if err != nil {
+				return err
+			}
 			report.Resolve(&Result{
 				Dependency:      p.PkgPath,
-				LicenseContent:  string(content),
 				LicenseFilePath: licenseFilePath,
-				LicenseSpdxID:   "", // TODO: identify the SPDX ID
+				LicenseContent:  string(content),
+				LicenseSpdxID:   []string{identifier},
 			})
 			return nil
 		}

@@ -30,9 +30,11 @@ var (
 	// meanings, according to the matching guide in https://spdx.dev/license-list/matching-guidelines.
 	// The order matters.
 	normalizers = []Normalizer{
+		VariablesNormalizer,
 		OneLineNormalizer,
 		FlattenSpaceNormalizer,
 		SubstantiveTextsNormalizer,
+		FlattenSpaceNormalizer,
 		strings.ToLower,
 		strings.TrimSpace,
 	}
@@ -116,6 +118,34 @@ var (
 
 		{regexp.MustCompile(`(?i)\b(the )?Apache Software Foundation( \(ASF\))?`), "the ASF"},
 	}
+
+	variables = []struct {
+		regexp      *regexp.Regexp
+		replacement string
+	}{
+		// BSD-3-Clause
+		{
+			regexp.MustCompile(`(?im)(^(Copyright \(c\)) (\d{4}) (.+?) (All rights reserved\.)?$\n?)+`),
+			"$2 [year] [owner]. $5",
+		},
+		{
+			regexp.MustCompile(`(?i)(neither the name of) (.+?) (nor the names of)`),
+			"$1 the copyright holder $3",
+		},
+		// MIT
+		{ // remove optional header
+			regexp.MustCompile(`(?im)^The MIT License \(MIT\)$`),
+			"",
+		},
+		{
+			regexp.MustCompile(`(?im)^(Copyright \(c\)) (\d{4}) (.+?)$`),
+			"$1 [year] [owner]",
+		},
+		{
+			regexp.MustCompile(`(?im)\(including the next paragraph\)`),
+			"",
+		},
+	}
 )
 
 // NormalizePattern applies a chain of Normalizers to the license pattern to make it cleaner for identification.
@@ -168,4 +198,13 @@ func CommentIndicatorNormalizer(text string) string {
 // FlattenSpaceNormalizer flattens continuous spaces into a single space.
 func FlattenSpaceNormalizer(text string) string {
 	return flattenSpace.ReplaceAllString(text, " ")
+}
+
+// VariablesNormalizer replace the variables actual value into variable name.
+func VariablesNormalizer(text string) string {
+	for _, v := range variables {
+		text = v.regexp.ReplaceAllString(text, v.replacement)
+	}
+
+	return text
 }

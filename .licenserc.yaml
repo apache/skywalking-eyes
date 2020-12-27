@@ -69,6 +69,7 @@ header: # `header` section is configurations for source codes license header.
     - '**/go.sum'
     - 'LICENSE'
     - 'NOTICE'
+    - '**/assets/header-templates/**'
     - '**/assets/lcs-templates/**'
     - '**/assets/languages.yaml'
     - '**/assets/assets.gen.go'

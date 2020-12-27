@@ -35,8 +35,7 @@ var ResolveCommand = &cobra.Command{
 		}
 
 		for _, result := range report.Resolved {
-			logger.Log.Debugln("Resolved:", result.Dependency)
-			logger.Log.Debugln("License:", result.LicenseFilePath)
+			logger.Log.Debugln("Pkg: ", result.Dependency, " License:", result.LicenseSpdxID)
 		}
 
 		logger.Log.Debugln("Skipped:", len(report.Skipped))

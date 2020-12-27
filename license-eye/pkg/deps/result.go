@@ -28,7 +28,7 @@ type Result struct {
 	Dependency      string
 	LicenseFilePath string
 	LicenseContent  string
-	LicenseSpdxID   string
+	LicenseSpdxID   []string
 }
 
 // Report is a collection of resolved Result.

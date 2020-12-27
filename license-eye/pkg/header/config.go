@@ -137,12 +137,12 @@ func (config *ConfigHeader) GetLicenseContent() string {
 
 func readLicenseFromSpdx(config *ConfigHeader) (string, error) {
 	spdxID, owner := config.License.SpdxID, config.License.CopyrightOwner
-	filename := fmt.Sprintf("assets/lcs-templates/%v.txt", spdxID)
+	filename := fmt.Sprintf("assets/header-templates/%v.txt", spdxID)
 
 	if spdxID == "Apache-2.0" && ASFNames.MatchString(owner) {
 		// Note that the Apache Software Foundation uses a different source header that is related to our use of a CLA.
 		// Our instructions for our project's source headers are here (https://www.apache.org/legal/src-headers.html#headers).
-		filename = "assets/lcs-templates/Apache-2.0-ASF.txt"
+		filename = "assets/header-templates/Apache-2.0-ASF.txt"
 	}
 
 	content, err := assets.Asset(filename)

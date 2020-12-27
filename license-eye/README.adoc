@@ -195,7 +195,7 @@ include::assets/styles.yaml[tags=SlashAsterisk]
 == Contribution
 
 - If you find any file type should be supported by the aforementioned configurations but is not listed there, feel free to link:https://github.com/apache/skywalking-eyes/pulls[open a pull request] to add the configuration into the 2 files.
-- If you find the license template of an SPDX ID is not supported, feel free to link:https://github.com/apache/skywalking-eyes/pulls[open a pull request] to add it into link:assets/lcs-templates[the template folder].
+- If you find the license template of an SPDX ID is not supported, feel free to link:https://github.com/apache/skywalking-eyes/pulls[open a pull request] to add it into link:assets/header-templates[the template folder].
 
 == License
 

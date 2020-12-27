@@ -18,7 +18,9 @@
 package commands
 
 import (
-	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
+	"fmt"
+	"strings"
+
 	"github.com/apache/skywalking-eyes/license-eye/pkg/deps"
 	"github.com/spf13/cobra"
 )
@@ -34,11 +36,18 @@ var ResolveCommand = &cobra.Command{
 			return err
 		}
 
-		for _, result := range report.Resolved {
-			logger.Log.Debugln("Pkg: ", result.Dependency, " License:", result.LicenseSpdxID)
-		}
+		fmt.Println(report.String())
 
-		logger.Log.Debugln("Skipped:", len(report.Skipped))
+		if skipped := len(report.Skipped); skipped > 0 {
+			pkgs := make([]string, skipped)
+			for i, s := range report.Skipped {
+				pkgs[i] = s.Dependency
+			}
+			return fmt.Errorf(
+				"failed to identify the licenses of following packages:\n%s",
+				strings.Join(pkgs, "\n"),
+			)
+		}
 
 		return nil
 	},

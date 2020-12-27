@@ -81,6 +81,10 @@ func (resolver *GoModeResolver) ResolvePackages(pkgNames []string, report *Repor
 		err := resolver.ResolvePackageLicense(p, report)
 		if err != nil {
 			logger.Log.Warnln("Failed to resolve the license of dependency:", p.PkgPath, err)
+			report.Skip(&Result{
+				Dependency:    p.PkgPath,
+				LicenseSpdxID: []string{Unknown},
+			})
 		}
 		return true
 	}, nil)

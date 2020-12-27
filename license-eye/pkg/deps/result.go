@@ -17,6 +17,12 @@
 // under the License.
 package deps
 
+import (
+	"fmt"
+	"math"
+	"strings"
+)
+
 type SpdxID string
 
 const (
@@ -45,4 +51,32 @@ func (report *Report) Resolve(result *Result) {
 // Skip marks the dependency's license is skipped for some reasons.
 func (report *Report) Skip(result *Result) {
 	report.Skipped = append(report.Skipped, result)
+}
+
+func (report *Report) String() string {
+	dWidth, lWidth := .0, .0
+	for _, r := range report.Skipped {
+		dWidth = math.Max(float64(len(r.Dependency)), dWidth)
+		for _, s := range r.LicenseSpdxID {
+			lWidth = math.Max(float64(len(s)), lWidth)
+		}
+	}
+	for _, r := range report.Resolved {
+		dWidth = math.Max(float64(len(r.Dependency)), dWidth)
+		for _, s := range r.LicenseSpdxID {
+			lWidth = math.Max(float64(len(s)), lWidth)
+		}
+	}
+
+	rowTemplate := fmt.Sprintf("%%-%dv | %%%dv\n", int(dWidth), int(lWidth))
+	s := fmt.Sprintf(rowTemplate, "Dependency", "License")
+	s += fmt.Sprintf(rowTemplate, strings.Repeat("-", int(dWidth)), strings.Repeat("-", int(lWidth)))
+	for _, r := range report.Resolved {
+		s += fmt.Sprintf(rowTemplate, r.Dependency, strings.Join(r.LicenseSpdxID, ","))
+	}
+	for _, r := range report.Skipped {
+		s += fmt.Sprintf(rowTemplate, r.Dependency, Unknown)
+	}
+
+	return s
 }

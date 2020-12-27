@@ -23,4 +23,9 @@ branding:
 runs:
   using: docker
   image: Dockerfile
-  entrypoint: /bin/license-eye -v debug header check
+  args:
+    - /bin/license-eye
+    - -v
+    - debug
+    - header
+    - check

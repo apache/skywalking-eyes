@@ -1,3 +1,4 @@
+//
 // Licensed to Apache Software Foundation (ASF) under one or more contributor
 // license agreements. See the NOTICE file distributed with
 // this work for additional information regarding copyright
@@ -14,41 +15,38 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
-package config
+package license
 
 import (
-	"io/ioutil"
+	"fmt"
+	"path/filepath"
+	"strings"
 
-	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/deps"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/header"
-
-	"gopkg.in/yaml.v3"
+	"github.com/apache/skywalking-eyes/license-eye/assets"
 )
 
-type Config struct {
-	Header header.ConfigHeader `yaml:"header"`
-	Deps   deps.ConfigDeps     `yaml:"dependency"`
-}
+const templatesDir = "assets/lcs-templates"
 
-// Parse reads and parses the header check configurations in config file.
-func (config *Config) Parse(file string) error {
-	logger.Log.Infoln("Loading configuration from file:", file)
+// Identify identifies the Spdx ID of the given license content
+func Identify(content string) (string, error) {
+	content = Normalize(content)
 
-	if bytes, err := ioutil.ReadFile(file); err != nil {
-		return err
-	} else if err := yaml.Unmarshal(bytes, config); err != nil {
-		return err
+	templates, err := assets.AssetDir(templatesDir)
+	if err != nil {
+		return "", err
 	}
 
-	if err := config.Header.Finalize(); err != nil {
-		return err
+	for _, template := range templates {
+		t, err := assets.Asset(filepath.Join(templatesDir, template))
+		if err != nil {
+			return "", err
+		}
+		license := string(t)
+		license = Normalize(license)
+		if license == content {
+			return strings.TrimSuffix(template, filepath.Ext(template)), nil
+		}
 	}
 
-	if err := config.Deps.Finalize(file); err != nil {
-		return err
-	}
-
-	return nil
+	return "", fmt.Errorf("cannot identify license content")
 }

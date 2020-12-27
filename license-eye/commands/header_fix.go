@@ -1,3 +1,4 @@
+//
 // Licensed to Apache Software Foundation (ASF) under one or more contributor
 // license agreements. See the NOTICE file distributed with
 // this work for additional information regarding copyright
@@ -15,46 +16,39 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package header
+package commands
 
 import (
-	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
-	"github.com/apache/skywalking-eyes/license-eye/pkg"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/config"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/header"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/review"
+	"fmt"
+	"strings"
 
+	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
+	"github.com/apache/skywalking-eyes/license-eye/pkg/header"
 	"github.com/spf13/cobra"
 )
 
-var CheckCommand = &cobra.Command{
-	Use:     "check",
-	Aliases: []string{"c"},
-	Long:    "check command walks the specified paths recursively and checks if the specified files have the license header in the config file.",
+var FixCommand = &cobra.Command{
+	Use:     "fix",
+	Aliases: []string{"f"},
+	Long:    "fix command walks the specified paths recursively and fix the license header if the specified files don't have the license header.",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var config config.Config
-		var result pkg.Result
+		var result header.Result
 
-		if err := config.Parse(cfgFile); err != nil {
+		if err := header.Check(&Config.Header, &result); err != nil {
 			return err
 		}
 
-		if len(args) > 0 {
-			logger.Log.Debugln("Overriding paths with command line args.")
-			config.Header.Paths = args
-		}
-
-		if err := header.Check(&config.Header, &result); err != nil {
-			return err
+		var errors []string
+		for _, file := range result.Failure {
+			if err := header.Fix(file, &Config.Header, &result); err != nil {
+				errors = append(errors, err.Error())
+			}
 		}
 
 		logger.Log.Infoln(result.String())
 
-		if result.HasFailure() {
-			if err := review.Header(&result, &config); err != nil {
-				logger.Log.Warnln("Failed to create review comments", err)
-			}
-			return result.Error()
+		if len(errors) > 0 {
+			return fmt.Errorf(strings.Join(errors, "\n"))
 		}
 
 		return nil

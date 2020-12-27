@@ -24,7 +24,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/apache/skywalking-eyes/license-eye/pkg"
 	"gopkg.in/yaml.v3"
 )
 
@@ -49,7 +48,7 @@ func TestCheckFile(t *testing.T) {
 	type args struct {
 		name       string
 		file       string
-		result     *pkg.Result
+		result     *Result
 		wantErr    bool
 		hasFailure bool
 	}
@@ -65,7 +64,7 @@ func TestCheckFile(t *testing.T) {
 			cases = append(cases, args{
 				name:       file,
 				file:       file,
-				result:     &pkg.Result{},
+				result:     &Result{},
 				wantErr:    false,
 				hasFailure: false,
 			})
@@ -100,7 +99,7 @@ func TestCheckFileFailure(t *testing.T) {
 	type args struct {
 		name       string
 		file       string
-		result     *pkg.Result
+		result     *Result
 		wantErr    bool
 		hasFailure bool
 	}
@@ -116,7 +115,7 @@ func TestCheckFileFailure(t *testing.T) {
 			cases = append(cases, args{
 				name:       file,
 				file:       file,
-				result:     &pkg.Result{},
+				result:     &Result{},
 				wantErr:    false,
 				hasFailure: true,
 			})

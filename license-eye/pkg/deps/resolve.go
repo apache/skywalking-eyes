@@ -1,3 +1,4 @@
+//
 // Licensed to Apache Software Foundation (ASF) under one or more contributor
 // license agreements. See the NOTICE file distributed with
 // this work for additional information regarding copyright
@@ -14,27 +15,34 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
-package header
+package deps
 
 import (
-	"github.com/spf13/cobra"
+	"fmt"
 )
 
-var (
-	// cfgFile is the config path to the config file of header command.
-	cfgFile string
-)
-
-var Header = &cobra.Command{
-	Use:     "header",
-	Aliases: []string{"h"},
-	Short:   "License header related commands; e.g. check, fix, etc.",
-	Long:    "`header` command walks the specified paths recursively and checks if the specified files have the license header in the config file.",
+type Resolver interface {
+	CanResolve(string) bool
+	Resolve(string, *Report) error
 }
 
-func init() {
-	Header.PersistentFlags().StringVarP(&cfgFile, "config", "c", ".licenserc.yaml", "the config file")
-	Header.AddCommand(CheckCommand)
-	Header.AddCommand(FixCommand)
+var Resolvers = []Resolver{
+	new(GoModeResolver),
+}
+
+func Resolve(config *ConfigDeps, report *Report) error {
+	for _, file := range config.Files {
+		for _, resolver := range Resolvers {
+			if !resolver.CanResolve(file) {
+				continue
+			}
+			if err := resolver.Resolve(file, report); err != nil {
+				return err
+			}
+			return nil
+		}
+		return fmt.Errorf("unable to find a resolver to resolve dependency declaration file: %v", file)
+	}
+
+	return nil
 }

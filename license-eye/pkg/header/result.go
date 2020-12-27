@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package pkg
+package header
 
 import (
 	"fmt"

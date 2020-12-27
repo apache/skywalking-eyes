@@ -15,40 +15,20 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package config
+package commands
 
 import (
-	"io/ioutil"
-
-	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/deps"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/header"
-
-	"gopkg.in/yaml.v3"
+	"github.com/spf13/cobra"
 )
 
-type Config struct {
-	Header header.ConfigHeader `yaml:"header"`
-	Deps   deps.ConfigDeps     `yaml:"dependency"`
+var Header = &cobra.Command{
+	Use:     "header",
+	Aliases: []string{"h"},
+	Short:   "License header related commands; e.g. check, fix, etc.",
+	Long:    "`header` command walks the specified paths recursively and checks if the specified files have the license header in the config file.",
 }
 
-// Parse reads and parses the header check configurations in config file.
-func (config *Config) Parse(file string) error {
-	logger.Log.Infoln("Loading configuration from file:", file)
-
-	if bytes, err := ioutil.ReadFile(file); err != nil {
-		return err
-	} else if err := yaml.Unmarshal(bytes, config); err != nil {
-		return err
-	}
-
-	if err := config.Header.Finalize(); err != nil {
-		return err
-	}
-
-	if err := config.Deps.Finalize(file); err != nil {
-		return err
-	}
-
-	return nil
+func init() {
+	Header.AddCommand(CheckCommand)
+	Header.AddCommand(FixCommand)
 }

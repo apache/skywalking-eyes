@@ -25,3 +25,7 @@ header:
     - '**/.DS_Store'
     - '**/.json'
     - '**/exclude_test/**'
+
+dependency:
+  files:
+    - ../../go.mod

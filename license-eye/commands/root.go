@@ -18,19 +18,21 @@
 package commands
 
 import (
-	headercommand "github.com/apache/skywalking-eyes/license-eye/commands/header"
 	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
+	"github.com/apache/skywalking-eyes/license-eye/pkg/config"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 var (
-	verbosity string
+	verbosity  string
+	configFile string
+	Config     config.Config
 )
 
-// Root represents the base command when called without any subcommands
-var Root = &cobra.Command{
+// root represents the base command when called without any subcommands
+var root = &cobra.Command{
 	Use:           "license-eye command [flags]",
 	Long:          "A full-featured license guard to check and fix license headers and dependencies' licenses",
 	SilenceUsage:  true,
@@ -41,17 +43,24 @@ var Root = &cobra.Command{
 			return err
 		}
 		logger.Log.SetLevel(level)
+
+		if err := Config.Parse(configFile); err != nil {
+			return err
+		}
+
 		return nil
 	},
 	Version: version,
 }
 
 // Execute sets flags to the root command appropriately.
-// This is called by main.main(). It only needs to happen once to the Root.
+// This is called by main.main(). It only needs to happen once to the root.
 func Execute() error {
-	Root.PersistentFlags().StringVarP(&verbosity, "verbosity", "v", logrus.InfoLevel.String(), "log level (debug, info, warn, error, fatal, panic")
+	root.PersistentFlags().StringVarP(&verbosity, "verbosity", "v", logrus.InfoLevel.String(), "log level (debug, info, warn, error, fatal, panic")
+	root.PersistentFlags().StringVarP(&configFile, "config", "c", ".licenserc.yaml", "the config file")
 
-	Root.AddCommand(headercommand.Header)
+	root.AddCommand(Header)
+	root.AddCommand(Deps)
 
-	return Root.Execute()
+	return root.Execute()
 }

@@ -26,7 +26,6 @@ import (
 	"strings"
 
 	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
-	"github.com/apache/skywalking-eyes/license-eye/pkg"
 	lcs "github.com/apache/skywalking-eyes/license-eye/pkg/license"
 
 	"github.com/bmatcuk/doublestar/v2"
@@ -39,7 +38,7 @@ var (
 )
 
 // Check checks the license headers of the specified paths/globs.
-func Check(config *ConfigHeader, result *pkg.Result) error {
+func Check(config *ConfigHeader, result *Result) error {
 	for _, pattern := range config.Paths {
 		if err := checkPattern(pattern, result, config); err != nil {
 			return err
@@ -51,7 +50,7 @@ func Check(config *ConfigHeader, result *pkg.Result) error {
 
 var seen = make(map[string]bool)
 
-func checkPattern(pattern string, result *pkg.Result, config *ConfigHeader) error {
+func checkPattern(pattern string, result *Result, config *ConfigHeader) error {
 	paths, err := doublestar.Glob(pattern)
 
 	if err != nil {
@@ -72,7 +71,7 @@ func checkPattern(pattern string, result *pkg.Result, config *ConfigHeader) erro
 	return nil
 }
 
-func checkPath(path string, result *pkg.Result, config *ConfigHeader) error {
+func checkPath(path string, result *Result, config *ConfigHeader) error {
 	defer func() { seen[path] = true }()
 
 	if yes, err := config.ShouldIgnore(path); yes || seen[path] || err != nil {
@@ -105,7 +104,7 @@ func checkPath(path string, result *pkg.Result, config *ConfigHeader) error {
 }
 
 // CheckFile checks whether or not the file contains the configured license header.
-func CheckFile(file string, config *ConfigHeader, result *pkg.Result) error {
+func CheckFile(file string, config *ConfigHeader, result *Result) error {
 	if yes, err := config.ShouldIgnore(file); yes || err != nil {
 		if !seen[file] {
 			result.Ignore(file)

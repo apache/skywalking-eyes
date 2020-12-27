@@ -26,13 +26,12 @@ import (
 	"strings"
 
 	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
-	"github.com/apache/skywalking-eyes/license-eye/pkg"
 	"github.com/apache/skywalking-eyes/license-eye/pkg/comments"
 )
 
 // Fix adds the configured license header to the given file.
-func Fix(file string, config *ConfigHeader, result *pkg.Result) error {
-	var r pkg.Result
+func Fix(file string, config *ConfigHeader, result *Result) error {
+	var r Result
 	if err := CheckFile(file, config, &r); err != nil || !r.HasFailure() {
 		logger.Log.Warnln("Try to fix a valid file, do nothing:", file)
 		return err
@@ -51,7 +50,7 @@ func Fix(file string, config *ConfigHeader, result *pkg.Result) error {
 	return nil
 }
 
-func InsertComment(file string, style *comments.CommentStyle, config *ConfigHeader, result *pkg.Result) error {
+func InsertComment(file string, style *comments.CommentStyle, config *ConfigHeader, result *Result) error {
 	stat, err := os.Stat(file)
 	if err != nil {
 		return err

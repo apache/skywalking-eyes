@@ -1,3 +1,4 @@
+//
 // Licensed to Apache Software Foundation (ASF) under one or more contributor
 // license agreements. See the NOTICE file distributed with
 // this work for additional information regarding copyright
@@ -14,40 +15,24 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
-package config
+package deps
 
 import (
-	"io/ioutil"
-
-	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/deps"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/header"
-
-	"gopkg.in/yaml.v3"
+	"path/filepath"
 )
 
-type Config struct {
-	Header header.ConfigHeader `yaml:"header"`
-	Deps   deps.ConfigDeps     `yaml:"dependency"`
+type ConfigDeps struct {
+	Files []string `yaml:"files"`
 }
 
-// Parse reads and parses the header check configurations in config file.
-func (config *Config) Parse(file string) error {
-	logger.Log.Infoln("Loading configuration from file:", file)
-
-	if bytes, err := ioutil.ReadFile(file); err != nil {
-		return err
-	} else if err := yaml.Unmarshal(bytes, config); err != nil {
+func (config *ConfigDeps) Finalize(configFile string) error {
+	configFileAbsPath, err := filepath.Abs(configFile)
+	if err != nil {
 		return err
 	}
 
-	if err := config.Header.Finalize(); err != nil {
-		return err
-	}
-
-	if err := config.Deps.Finalize(file); err != nil {
-		return err
+	for i, file := range config.Files {
+		config.Files[i] = filepath.Join(filepath.Dir(configFileAbsPath), file)
 	}
 
 	return nil

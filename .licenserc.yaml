@@ -69,8 +69,13 @@ header: # `header` section is configurations for source codes license header.
     - '**/go.sum'
     - 'LICENSE'
     - 'NOTICE'
+    - '**/assets/header-templates/**'
     - '**/assets/lcs-templates/**'
     - '**/assets/languages.yaml'
     - '**/assets/assets.gen.go'
 
   comment: on-failure # on what condition license-eye will comment on the pull request, `on-failure`, `always`, `never`.
+
+dependency:
+  files:
+    - license-eye/go.mod

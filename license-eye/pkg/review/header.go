@@ -30,7 +30,6 @@ import (
 	"strings"
 
 	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
-	"github.com/apache/skywalking-eyes/license-eye/pkg"
 	comments2 "github.com/apache/skywalking-eyes/license-eye/pkg/comments"
 	config2 "github.com/apache/skywalking-eyes/license-eye/pkg/config"
 	header2 "github.com/apache/skywalking-eyes/license-eye/pkg/header"
@@ -59,8 +58,8 @@ var (
 )
 
 func init() {
-	if os.Getenv("GITHUB_TOKEN") == "" {
-		logger.Log.Warnln("GITHUB_TOKEN is not set, license-eye won't comment on the pull request")
+	if os.Getenv("INPUT_GITHUB_TOKEN") == "" {
+		logger.Log.Infoln("GITHUB_TOKEN is not set, license-eye won't comment on the pull request")
 		return
 	}
 
@@ -110,7 +109,7 @@ func init() {
 }
 
 // Header reviews the license header, including suggestions on the pull request and an overview of the checks.
-func Header(result *pkg.Result, config *config2.Config) error {
+func Header(result *header2.Result, config *config2.Config) error {
 	if !result.HasFailure() || !IsPR() || gh == nil || config.Header.Comment == header2.Never {
 		return nil
 	}
@@ -171,7 +170,7 @@ func Header(result *pkg.Result, config *config2.Config) error {
 	return nil
 }
 
-func tryReview(result *pkg.Result, config *config2.Config, comments []*github.DraftReviewComment) error {
+func tryReview(result *header2.Result, config *config2.Config, comments []*github.DraftReviewComment) error {
 	tryBestEffortToComment := func() error {
 		if err := doReview(result, comments); err != nil {
 			logger.Log.Warnln("Failed to create review comment, fallback to a plain comment:", err)
@@ -193,7 +192,7 @@ func tryReview(result *pkg.Result, config *config2.Config, comments []*github.Dr
 	return nil
 }
 
-func doReview(result *pkg.Result, comments []*github.DraftReviewComment) error {
+func doReview(result *header2.Result, comments []*github.DraftReviewComment) error {
 	logger.Log.Debugln("Comments:", comments)
 
 	c := Markdown(result)
@@ -257,7 +256,7 @@ func IsPR() bool {
 }
 
 // TODO add fixing guide
-func Markdown(result *pkg.Result) string {
+func Markdown(result *header2.Result) string {
 	return fmt.Sprintf(`
 <!-- %s -->
 [license-eye](https://github.com/apache/skywalking-eyes/tree/main/license-eye) has totally checked %d files.

@@ -29,12 +29,13 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/google/go-github/v33/github"
+	"golang.org/x/oauth2"
+
 	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
 	comments2 "github.com/apache/skywalking-eyes/license-eye/pkg/comments"
 	config2 "github.com/apache/skywalking-eyes/license-eye/pkg/config"
 	header2 "github.com/apache/skywalking-eyes/license-eye/pkg/header"
-	"github.com/google/go-github/v33/github"
-	"golang.org/x/oauth2"
 )
 
 var (

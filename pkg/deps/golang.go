@@ -26,10 +26,11 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/license"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/tools/go/packages"
+
+	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
+	"github.com/apache/skywalking-eyes/license-eye/pkg/license"
 )
 
 type GoModeResolver struct {

@@ -21,8 +21,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/apache/skywalking-eyes/license-eye/pkg/deps"
 	"github.com/spf13/cobra"
+
+	"github.com/apache/skywalking-eyes/license-eye/pkg/deps"
 )
 
 var ResolveCommand = &cobra.Command{

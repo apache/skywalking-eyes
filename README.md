@@ -241,7 +241,7 @@ The `header check` command theoretically supports all kinds of file types, while
 
 ## License
 
-[Apache License 2.0](https://github.com/apache/skywalking/blob/master/LICENSE)
+[Apache License 2.0](https://github.com/apache/skywalking-eyes/blob/master/LICENSE)
 
 ## Contact Us
 * Submit [an issue](https://github.com/apache/skywalking/issues/new) by using [INFRA] as title prefix.

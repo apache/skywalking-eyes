@@ -17,6 +17,6 @@
 # 
 .idea/
 bin/
-license-eye/assets/assets.gen.go
+assets/assets.gen.go
 .DS_Store
 coverage.txt

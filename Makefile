@@ -51,7 +51,7 @@ fix-lint:
 
 .PHONY: license
 license: clean codegen
-	$(GO) run cmd/$(PROJECT)/main.go header check -c ../.licenserc.yaml
+	$(GO) run cmd/$(PROJECT)/main.go header check
 
 .PHONY: codegen
 codegen: clean

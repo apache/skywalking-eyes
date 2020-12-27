@@ -78,4 +78,4 @@ header: # `header` section is configurations for source codes license header.
 
 dependency:
   files:
-    - license-eye/go.mod
+    - go.mod

@@ -24,7 +24,6 @@ runs:
   using: docker
   image: Dockerfile
   args:
-    - /bin/license-eye
     - -v
     - debug
     - header

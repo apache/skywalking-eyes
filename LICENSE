@@ -208,3 +208,12 @@ The Apache SkyWalking Eyes project contains subcomponents with separate copyrigh
 notices and license terms. Your use of the source code for the these
 subcomponents is subject to the terms and conditions of the following
 licenses.
+
+========================================================================
+MIT licenses
+========================================================================
+
+The following components are provided under the MIT license. See project link for details.
+The text of each license is also included at licenses/LICENSE-[project].txt.
+
+    languages.yaml from GitHub: https://github.com/github/linguist/blob/master/lib/linguist/languages.yml MIT

@@ -28,7 +28,7 @@ import (
 var ResolveCommand = &cobra.Command{
 	Use:     "resolve",
 	Aliases: []string{"r"},
-	Long:    "resolves all dependencies of a go.mod file and their transitive dependencies",
+	Long:    "resolves all dependencies of a module and their transitive dependencies",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		report := deps.Report{}
 

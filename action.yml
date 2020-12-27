@@ -23,3 +23,5 @@ branding:
 runs:
   using: docker
   image: license-eye/Dockerfile
+  args:
+    - header check

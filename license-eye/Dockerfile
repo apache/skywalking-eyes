@@ -22,12 +22,18 @@ WORKDIR /license-eye
 
 COPY . .
 
-RUN apk add make curl && make build
+RUN apk add --no-cache make curl && make build
 
 FROM alpine:3 AS bin
 
 COPY --from=build /license-eye/bin/linux/license-eye /bin/license-eye
 
+# Go
+COPY --from=build /usr/local/go/ /usr/local/go/
+ENV PATH="/usr/local/go/bin:$PATH"
+RUN apk add --no-cache gcc musl-dev
+# Go
+
 WORKDIR /github/workspace/
 
-ENTRYPOINT /bin/license-eye header check -v debug
+ENTRYPOINT ["/bin/license-eye", "-v", "debug"]

@@ -18,8 +18,11 @@
 package deps
 
 import (
+	"context"
+	"fmt"
 	"go/build"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"regexp"
 
@@ -53,6 +56,10 @@ func (resolver *GoModeResolver) Resolve(goModFile string, report *Report) error 
 
 	logger.Log.Debugln("Resolving module:", file.Module.Mod)
 
+	if err := os.Chdir(filepath.Dir(goModFile)); err != nil {
+		return err
+	}
+
 	requiredPkgNames := make([]string, len(file.Require))
 	for i, require := range file.Require {
 		requiredPkgNames[i] = require.Mod.Path
@@ -70,7 +77,8 @@ func (resolver *GoModeResolver) Resolve(goModFile string, report *Report) error 
 // ResolvePackages resolves the licenses of the given packages.
 func (resolver *GoModeResolver) ResolvePackages(pkgNames []string, report *Report) error {
 	requiredPkgs, err := packages.Load(&packages.Config{
-		Mode: packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles | packages.NeedImports | packages.NeedDeps,
+		Context: context.Background(),
+		Mode:    packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles | packages.NeedImports | packages.NeedDeps,
 	}, pkgNames...)
 
 	if err != nil {
@@ -105,7 +113,7 @@ func (resolver *GoModeResolver) ResolvePackageLicense(p *packages.Package, repor
 	}
 
 	if len(filesInPkg) == 0 {
-		return nil
+		return fmt.Errorf("empty package")
 	}
 
 	absPath, err := filepath.Abs(filesInPkg[0])

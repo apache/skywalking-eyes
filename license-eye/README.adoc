@@ -100,6 +100,49 @@ INFO Loading configuration from file: test/testdata/.licenserc_for_test_fix.yaml
 INFO Totally checked 16 files, valid: 7, invalid: 8, ignored: 1, fixed: 8
 ----
 
+==== Resolve Dependencies' licenses
+
+[source,bash]
+----
+$ bin/darwin/license-eye -c test/testdata/.licenserc_for_test_check.yaml dep resolve
+INFO GITHUB_TOKEN is not set, license-eye won't comment on the pull request
+INFO Loading configuration from file: test/testdata/.licenserc_for_test_check.yaml
+WARNING Failed to resolve the license of dependency: gopkg.in/yaml.v3 cannot identify license content
+Dependency                                  |      License
+------------------------------------------- | ------------
+github.com/bmatcuk/doublestar/v2            |          MIT
+github.com/sirupsen/logrus                  |          MIT
+golang.org/x/sys/unix                       | BSD-3-Clause
+github.com/spf13/cobra                      |   Apache-2.0
+github.com/spf13/pflag                      | BSD-3-Clause
+vendor/golang.org/x/net/dns/dnsmessage      | BSD-3-Clause
+vendor/golang.org/x/net/route               | BSD-3-Clause
+golang.org/x/oauth2                         | BSD-3-Clause
+golang.org/x/oauth2/internal                | BSD-3-Clause
+vendor/golang.org/x/crypto/cryptobyte       | BSD-3-Clause
+vendor/golang.org/x/crypto/cryptobyte/asn1  | BSD-3-Clause
+golang.org/x/net/context/ctxhttp            | BSD-3-Clause
+vendor/golang.org/x/crypto/chacha20poly1305 | BSD-3-Clause
+vendor/golang.org/x/crypto/chacha20         | BSD-3-Clause
+vendor/golang.org/x/crypto/internal/subtle  | BSD-3-Clause
+vendor/golang.org/x/crypto/poly1305         | BSD-3-Clause
+vendor/golang.org/x/sys/cpu                 | BSD-3-Clause
+vendor/golang.org/x/crypto/curve25519       | BSD-3-Clause
+vendor/golang.org/x/crypto/hkdf             | BSD-3-Clause
+vendor/golang.org/x/net/http/httpguts       | BSD-3-Clause
+vendor/golang.org/x/net/idna                | BSD-3-Clause
+vendor/golang.org/x/text/secure/bidirule    | BSD-3-Clause
+vendor/golang.org/x/text/transform          | BSD-3-Clause
+vendor/golang.org/x/text/unicode/bidi       | BSD-3-Clause
+vendor/golang.org/x/text/unicode/norm       | BSD-3-Clause
+vendor/golang.org/x/net/http/httpproxy      | BSD-3-Clause
+vendor/golang.org/x/net/http2/hpack         | BSD-3-Clause
+gopkg.in/yaml.v3                            |      Unknown
+
+ERROR failed to identify the licenses of following packages:
+gopkg.in/yaml.v3
+----
+
 == Configurations
 
 [source,yaml]
@@ -160,6 +203,10 @@ header: # <1>
     - '**/assets/assets.gen.go'
 
   comment: on-failure # <8>
+
+dependency: # <9>
+  files: # <10>
+    - go.mod
 ----
 <1> `header` section is configurations for source codes license header.
 <2> The link:https://spdx.org/licenses/[SPDX ID] of the license, it's convenient when your license is standard SPDX license, so that you can simply specify this identifier without copying the whole license `content` or `pattern`. This will be used as the content when `fix` command needs to insert a license header.
@@ -169,6 +216,8 @@ header: # <1>
 <6> `paths` are the path list that will be checked (and fixed) by license-eye, default is `['++**++']`. Formats like `++**/*.md++` and `++**/bin/**++` are supported.
 <7> `paths-ignore` are the path list that will be ignored by license-eye. By default, `.git` and the content in `.gitignore` will be inflated into the `paths-ignore` list.
 <8> On what condition {name} will comment the check results on the pull request, `on-failure`, `always`, `never`. Options other than `never` require the environment variable `GITHUB_TOKEN` to be set.
+<9> `dependency` section is configurations for resolving dependencies' licenses.
+<10> `files` are the files that declare the dependencies of a project, typically, `go.mo` in Go project, `pom.xml` in maven project, and `package.json` in NodeJS project. If it's a relative path, it's relative to the `.licenserc.yaml`.
 
 NOTE: When the `SPDX-ID` is Apache-2.0 and the owner is Apache Software foundation, the content would be link:https://www.apache.org/legal/src-headers.html#headers[a dedicated license] link:https://www.apache.org/foundation/license-faq.html#Apply-My-Software[specified by the ASF], otherwise, the license would be link:https://www.apache.org/foundation/license-faq.html#Apply-My-Software[the standard one].
 

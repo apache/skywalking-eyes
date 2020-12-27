@@ -27,7 +27,7 @@ GO_PATH = $(shell $(GO) env GOPATH)
 GO_BUILD = $(GO) build
 GO_TEST = $(GO) test
 GO_LINT = $(GO_PATH)/bin/golangci-lint
-GO_BUILD_LDFLAGS = -X github.com/apache/skywalking-eyes/license-eye/commands.version=$(VERSION)
+GO_BUILD_LDFLAGS = -X github.com/apache/skywalking-eyes/$(PROJECT)/commands.version=$(VERSION)
 
 GO_BINDATA = $(GO_PATH)/bin/go-bindata
 
@@ -35,8 +35,8 @@ PLATFORMS := windows linux darwin
 os = $(word 1, $@)
 ARCH = amd64
 
-RELEASE_BIN = skywalking-license-eye-$(VERSION)-bin
-RELEASE_SRC = skywalking-license-eye-$(VERSION)-src
+RELEASE_BIN = skywalking-$(PROJECT)-$(VERSION)-bin
+RELEASE_SRC = skywalking-$(PROJECT)-$(VERSION)-src
 
 all: clean lint license test build
 
@@ -51,7 +51,7 @@ fix-lint:
 
 .PHONY: license
 license: clean codegen
-	$(GO) run cmd/license-eye/main.go header check -c ../.licenserc.yaml
+	$(GO) run cmd/$(PROJECT)/main.go header check -c ../.licenserc.yaml
 
 .PHONY: codegen
 codegen: clean
@@ -66,14 +66,14 @@ test: clean codegen
 .PHONY: $(PLATFORMS)
 $(PLATFORMS):
 	mkdir -p $(OUT_DIR)
-	GOOS=$(os) GOARCH=$(ARCH) $(GO_BUILD) $(GO_BUILD_FLAGS) -ldflags "$(GO_BUILD_LDFLAGS)" -o $(OUT_DIR)/$(os)/$(PROJECT) cmd/license-eye/main.go
+	GOOS=$(os) GOARCH=$(ARCH) $(GO_BUILD) $(GO_BUILD_FLAGS) -ldflags "$(GO_BUILD_LDFLAGS)" -o $(OUT_DIR)/$(os)/$(PROJECT) cmd/$(PROJECT)/main.go
 
 .PHONY: build
 build: codegen windows linux darwin
 
 .PHONY: docker
 docker:
-	docker build . -t license-eye:latest
+	docker build . -t $(PROJECT):$(VERSION)
 
 .PHONY: clean
 clean:

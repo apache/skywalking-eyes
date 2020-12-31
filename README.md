@@ -41,9 +41,7 @@ header:
 
 **NOTE**: The full configurations can be found in [the configuration section](#configurations).
 
-### Use as a Binary
-
-#### Install
+### Compile from Source
 
 ```bash
 $ git clone https://github.com/apache/skywalking-eyes

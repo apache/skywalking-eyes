@@ -59,7 +59,7 @@ var (
 )
 
 func init() {
-	if os.Getenv("INPUT_GITHUB_TOKEN") == "" {
+	if os.Getenv("GITHUB_TOKEN") == "" {
 		logger.Log.Infoln("GITHUB_TOKEN is not set, license-eye won't comment on the pull request")
 		return
 	}

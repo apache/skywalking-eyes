@@ -20,6 +20,7 @@ package license
 import (
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/apache/skywalking-eyes/license-eye/assets"
@@ -27,8 +28,21 @@ import (
 
 const templatesDir = "assets/lcs-templates"
 
+var dualLicensePatterns = []*regexp.Regexp{
+	regexp.MustCompile(`(?i)This project is covered by two different licenses: (?P<license>[^.]+)`),
+}
+
 // Identify identifies the Spdx ID of the given license content
-func Identify(content string) (string, error) {
+func Identify(pkgPath, content string) (string, error) {
+	for _, pattern := range dualLicensePatterns {
+		matches := pattern.FindStringSubmatch(content)
+		for i, name := range pattern.SubexpNames() {
+			if name == "license" && len(matches) >= i {
+				return matches[i], nil
+			}
+		}
+	}
+
 	content = Normalize(content)
 
 	templates, err := assets.AssetDir(templatesDir)

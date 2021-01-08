@@ -25,6 +25,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"golang.org/x/mod/modfile"
 	"golang.org/x/tools/go/packages"
@@ -33,18 +34,18 @@ import (
 	"github.com/apache/skywalking-eyes/license-eye/pkg/license"
 )
 
-type GoModeResolver struct {
+type GoModResolver struct {
 	Resolver
 }
 
-func (resolver *GoModeResolver) CanResolve(file string) bool {
+func (resolver *GoModResolver) CanResolve(file string) bool {
 	base := filepath.Base(file)
 	logger.Log.Debugln("Base name:", base)
 	return base == "go.mod"
 }
 
 // Resolve resolves licenses of all dependencies declared in the go.mod file.
-func (resolver *GoModeResolver) Resolve(goModFile string, report *Report) error {
+func (resolver *GoModResolver) Resolve(goModFile string, report *Report) error {
 	content, err := ioutil.ReadFile(goModFile)
 	if err != nil {
 		return err
@@ -76,7 +77,7 @@ func (resolver *GoModeResolver) Resolve(goModFile string, report *Report) error 
 }
 
 // ResolvePackages resolves the licenses of the given packages.
-func (resolver *GoModeResolver) ResolvePackages(pkgNames []string, report *Report) error {
+func (resolver *GoModResolver) ResolvePackages(pkgNames []string, report *Report) error {
 	requiredPkgs, err := packages.Load(&packages.Config{
 		Context: context.Background(),
 		Mode:    packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles | packages.NeedImports | packages.NeedDeps,
@@ -87,12 +88,25 @@ func (resolver *GoModeResolver) ResolvePackages(pkgNames []string, report *Repor
 	}
 
 	packages.Visit(requiredPkgs, func(p *packages.Package) bool {
+		if isBuiltIn(p) {
+			logger.Log.Debugln("Built-in package doesn't require license check:", p.PkgPath)
+			return false
+		}
+
+		if len(p.Errors) > 0 {
+			logger.Log.Warnln("Failed to visit package:", p.PkgPath, p.Errors)
+			report.Skip(&Result{
+				Dependency:    p.PkgPath,
+				LicenseSpdxID: Unknown,
+			})
+			return true
+		}
 		err := resolver.ResolvePackageLicense(p, report)
 		if err != nil {
 			logger.Log.Warnln("Failed to resolve the license of dependency:", p.PkgPath, err)
 			report.Skip(&Result{
 				Dependency:    p.PkgPath,
-				LicenseSpdxID: []string{Unknown},
+				LicenseSpdxID: Unknown,
 			})
 		}
 		return true
@@ -103,7 +117,7 @@ func (resolver *GoModeResolver) ResolvePackages(pkgNames []string, report *Repor
 
 var possibleLicenseFileName = regexp.MustCompile(`(?i)^LICENSE|LICENCE(\.txt)?$`)
 
-func (resolver *GoModeResolver) ResolvePackageLicense(p *packages.Package, report *Report) error {
+func (resolver *GoModResolver) ResolvePackageLicense(p *packages.Package, report *Report) error {
 	var filesInPkg []string
 	if len(p.GoFiles) > 0 {
 		filesInPkg = p.GoFiles
@@ -137,7 +151,7 @@ func (resolver *GoModeResolver) ResolvePackageLicense(p *packages.Package, repor
 			if err != nil {
 				return err
 			}
-			identifier, err := license.Identify(string(content))
+			identifier, err := license.Identify(p.PkgPath, string(content))
 			if err != nil {
 				return err
 			}
@@ -145,7 +159,7 @@ func (resolver *GoModeResolver) ResolvePackageLicense(p *packages.Package, repor
 				Dependency:      p.PkgPath,
 				LicenseFilePath: licenseFilePath,
 				LicenseContent:  string(content),
-				LicenseSpdxID:   []string{identifier},
+				LicenseSpdxID:   identifier,
 			})
 			return nil
 		}
@@ -157,11 +171,15 @@ func (resolver *GoModeResolver) ResolvePackageLicense(p *packages.Package, repor
 	return nil
 }
 
-func (resolver *GoModeResolver) shouldStopAt(dir string) bool {
+func (resolver *GoModResolver) shouldStopAt(dir string) bool {
 	for _, srcDir := range build.Default.SrcDirs() {
 		if srcDir == dir {
 			return true
 		}
 	}
 	return false
+}
+
+func isBuiltIn(pkg *packages.Package) bool {
+	return len(pkg.GoFiles) > 0 && strings.HasPrefix(pkg.GoFiles[0], build.Default.GOROOT)
 }

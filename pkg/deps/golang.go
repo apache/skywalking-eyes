@@ -34,18 +34,18 @@ import (
 	"github.com/apache/skywalking-eyes/license-eye/pkg/license"
 )
 
-type GoModeResolver struct {
+type GoModResolver struct {
 	Resolver
 }
 
-func (resolver *GoModeResolver) CanResolve(file string) bool {
+func (resolver *GoModResolver) CanResolve(file string) bool {
 	base := filepath.Base(file)
 	logger.Log.Debugln("Base name:", base)
 	return base == "go.mod"
 }
 
 // Resolve resolves licenses of all dependencies declared in the go.mod file.
-func (resolver *GoModeResolver) Resolve(goModFile string, report *Report) error {
+func (resolver *GoModResolver) Resolve(goModFile string, report *Report) error {
 	content, err := ioutil.ReadFile(goModFile)
 	if err != nil {
 		return err
@@ -77,7 +77,7 @@ func (resolver *GoModeResolver) Resolve(goModFile string, report *Report) error 
 }
 
 // ResolvePackages resolves the licenses of the given packages.
-func (resolver *GoModeResolver) ResolvePackages(pkgNames []string, report *Report) error {
+func (resolver *GoModResolver) ResolvePackages(pkgNames []string, report *Report) error {
 	requiredPkgs, err := packages.Load(&packages.Config{
 		Context: context.Background(),
 		Mode:    packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles | packages.NeedImports | packages.NeedDeps,
@@ -117,7 +117,7 @@ func (resolver *GoModeResolver) ResolvePackages(pkgNames []string, report *Repor
 
 var possibleLicenseFileName = regexp.MustCompile(`(?i)^LICENSE|LICENCE(\.txt)?$`)
 
-func (resolver *GoModeResolver) ResolvePackageLicense(p *packages.Package, report *Report) error {
+func (resolver *GoModResolver) ResolvePackageLicense(p *packages.Package, report *Report) error {
 	var filesInPkg []string
 	if len(p.GoFiles) > 0 {
 		filesInPkg = p.GoFiles
@@ -171,7 +171,7 @@ func (resolver *GoModeResolver) ResolvePackageLicense(p *packages.Package, repor
 	return nil
 }
 
-func (resolver *GoModeResolver) shouldStopAt(dir string) bool {
+func (resolver *GoModResolver) shouldStopAt(dir string) bool {
 	for _, srcDir := range build.Default.SrcDirs() {
 		if srcDir == dir {
 			return true

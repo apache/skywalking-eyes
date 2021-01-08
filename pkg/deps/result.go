@@ -34,7 +34,7 @@ type Result struct {
 	Dependency      string
 	LicenseFilePath string
 	LicenseContent  string
-	LicenseSpdxID   []string
+	LicenseSpdxID   string
 }
 
 // Report is a collection of resolved Result.
@@ -57,22 +57,18 @@ func (report *Report) String() string {
 	dWidth, lWidth := .0, .0
 	for _, r := range report.Skipped {
 		dWidth = math.Max(float64(len(r.Dependency)), dWidth)
-		for _, s := range r.LicenseSpdxID {
-			lWidth = math.Max(float64(len(s)), lWidth)
-		}
+		lWidth = math.Max(float64(len(r.LicenseSpdxID)), lWidth)
 	}
 	for _, r := range report.Resolved {
 		dWidth = math.Max(float64(len(r.Dependency)), dWidth)
-		for _, s := range r.LicenseSpdxID {
-			lWidth = math.Max(float64(len(s)), lWidth)
-		}
+		lWidth = math.Max(float64(len(r.LicenseSpdxID)), lWidth)
 	}
 
 	rowTemplate := fmt.Sprintf("%%-%dv | %%%dv\n", int(dWidth), int(lWidth))
 	s := fmt.Sprintf(rowTemplate, "Dependency", "License")
 	s += fmt.Sprintf(rowTemplate, strings.Repeat("-", int(dWidth)), strings.Repeat("-", int(lWidth)))
 	for _, r := range report.Resolved {
-		s += fmt.Sprintf(rowTemplate, r.Dependency, strings.Join(r.LicenseSpdxID, ","))
+		s += fmt.Sprintf(rowTemplate, r.Dependency, r.LicenseSpdxID)
 	}
 	for _, r := range report.Skipped {
 		s += fmt.Sprintf(rowTemplate, r.Dependency, Unknown)

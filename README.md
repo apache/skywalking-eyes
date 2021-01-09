@@ -45,7 +45,7 @@ header:
 
 ```bash
 $ git clone https://github.com/apache/skywalking-eyes
-$ cd skywalking-eyes/license-eye
+$ cd skywalking-eyes
 $ make build
 ```
 

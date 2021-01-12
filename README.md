@@ -41,6 +41,13 @@ header:
 
 **NOTE**: The full configurations can be found in [the configuration section](#configurations).
 
+### Docker Image
+
+```shell
+$ docker run -it --rm -v $(pwd):/github/workspace apache/skywalking-eyes header check
+$ docker run -it --rm -v $(pwd):/github/workspace apache/skywalking-eyes header fix
+```
+
 ### Compile from Source
 
 ```bash
@@ -118,7 +125,6 @@ gopkg.in/yaml.v3                            |      Unknown
 ERROR failed to identify the licenses of following packages:
 gopkg.in/yaml.v3
 ```
-
 
 ## Configurations
 

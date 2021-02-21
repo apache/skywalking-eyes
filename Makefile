@@ -29,8 +29,6 @@ GO_TEST = $(GO) test
 GO_LINT = $(GO_PATH)/bin/golangci-lint
 GO_BUILD_LDFLAGS = -X github.com/apache/skywalking-eyes/$(PROJECT)/commands.version=$(VERSION)
 
-GO_BINDATA = $(GO_PATH)/bin/go-bindata
-
 PLATFORMS := windows linux darwin
 os = $(word 1, $@)
 ARCH = amd64
@@ -41,7 +39,7 @@ RELEASE_SRC = skywalking-$(PROJECT)-$(VERSION)-src
 all: clean lint license test build
 
 .PHONY: lint
-lint: codegen
+lint:
 	$(GO_LINT) version || curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GO_PATH)/bin
 	$(GO_LINT) run -v ./...
 
@@ -50,16 +48,11 @@ fix-lint:
 	$(GO_LINT) run -v --fix ./...
 
 .PHONY: license
-license: clean codegen
+license: clean
 	$(GO) run cmd/$(PROJECT)/main.go header check
 
-.PHONY: codegen
-codegen: clean
-	$(GO_BINDATA) -v || curl -Lo $(GO_BINDATA) https://github.com/kevinburke/go-bindata/releases/download/v3.11.0/go-bindata-$(OSNAME)-amd64 && chmod +x $(GO_BINDATA)
-	$(GO_BINDATA) --nocompress --nometadata --pkg assets --ignore '.*\.go' -o "assets/assets.gen.go" assets/...
-
 .PHONY: test
-test: clean codegen
+test: clean
 	$(GO_TEST) ./... -coverprofile=coverage.txt -covermode=atomic
 	@>&2 echo "Great, all tests passed."
 
@@ -69,7 +62,7 @@ $(PLATFORMS):
 	GOOS=$(os) GOARCH=$(ARCH) $(GO_BUILD) $(GO_BUILD_FLAGS) -ldflags "$(GO_BUILD_LDFLAGS)" -o $(OUT_DIR)/$(os)/$(PROJECT) cmd/$(PROJECT)/main.go
 
 .PHONY: build
-build: codegen windows linux darwin
+build: windows linux darwin
 
 .PHONY: docker
 docker:

@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"strings"
 
-	"gopkg.in/yaml.v3"
+	assets "github.com/apache/skywalking-eyes/license-eye"
 
-	"github.com/apache/skywalking-eyes/license-eye/assets"
+	"gopkg.in/yaml.v3"
 )
 
 type CommentStyle struct {

@@ -1,6 +1,6 @@
 module github.com/apache/skywalking-eyes/license-eye
 
-go 1.13
+go 1.16
 
 require (
 	github.com/bmatcuk/doublestar/v2 v2.0.4

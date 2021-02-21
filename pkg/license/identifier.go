@@ -23,7 +23,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/apache/skywalking-eyes/license-eye/assets"
+	assets "github.com/apache/skywalking-eyes/license-eye"
 )
 
 const templatesDir = "assets/lcs-templates"
@@ -51,14 +51,15 @@ func Identify(pkgPath, content string) (string, error) {
 	}
 
 	for _, template := range templates {
-		t, err := assets.Asset(filepath.Join(templatesDir, template))
+		templateName := template.Name()
+		t, err := assets.Asset(filepath.Join(templatesDir, templateName))
 		if err != nil {
 			return "", err
 		}
 		license := string(t)
 		license = Normalize(license)
 		if license == content {
-			return strings.TrimSuffix(template, filepath.Ext(template)), nil
+			return strings.TrimSuffix(templateName, filepath.Ext(templateName)), nil
 		}
 	}
 

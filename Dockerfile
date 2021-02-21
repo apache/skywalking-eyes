@@ -18,7 +18,7 @@
 
 # TODO: minimize the docker image size, now 524MB !!!
 
-FROM golang:1.14.3-alpine AS build
+FROM golang:1.16-alpine AS build
 
 WORKDIR /license-eye
 

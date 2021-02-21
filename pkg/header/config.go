@@ -26,7 +26,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apache/skywalking-eyes/license-eye/assets"
+	assets "github.com/apache/skywalking-eyes/license-eye"
 	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
 	"github.com/apache/skywalking-eyes/license-eye/pkg/license"
 

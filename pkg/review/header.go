@@ -144,7 +144,12 @@ func Header(result *header2.Result, config *config2.Config) error {
 				logger.Log.Warnln("Failed to get blob:", changedFile.GetFilename(), changedFile.GetSHA())
 				continue
 			}
-			header, err := header2.GenerateLicenseHeader(comments2.FileCommentStyle(changedFile.GetFilename()), &config.Header)
+			style := comments2.FileCommentStyle(changedFile.GetFilename())
+			if style == nil {
+				logger.Log.Warnln("Failed to determine the comment style of file:", changedFile.GetFilename())
+				continue
+			}
+			header, err := header2.GenerateLicenseHeader(style, &config.Header)
 			if err != nil {
 				logger.Log.Warnln("Failed to generate comment header:", changedFile.GetFilename())
 				continue

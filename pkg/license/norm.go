@@ -45,6 +45,7 @@ var (
 		regexp.MustCompile(`(?m)^\s*//+`),   // //
 		regexp.MustCompile(`(?m)^\s*"""+`),  // """
 		regexp.MustCompile(`(?m)^\s*\(\*+`), // (*
+		regexp.MustCompile(`(?m)^\s*;+`),    // ;
 
 		regexp.MustCompile(`(?m)^\s*/\*+`), // /*
 		regexp.MustCompile(`(?m)^\s*\*+/`), //  */

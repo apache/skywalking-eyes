@@ -60,6 +60,7 @@ var (
 		regexp.MustCompile(`(?m)^\s*-}+`), // -}
 
 		regexp.MustCompile(`(?m)^\s*::`),     // ::
+		regexp.MustCompile(`(?m)^\s*\.\.`),   // ..
 		regexp.MustCompile(`(?mi)^\s*@?REM`), // @REM
 	}
 

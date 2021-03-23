@@ -64,3 +64,8 @@
   start: ';'
   middle: ';'
   end: ';'
+
+- id: DoubleDot
+  start: '..'
+  middle: '..'
+  end: '..'

@@ -6660,6 +6660,7 @@ reStructuredText:
   codemirror_mode: rst
   codemirror_mime_type: text/x-rst
   language_id: 419
+  comment_style_id: DoubleDot
 sed:
   type: programming
   color: "#64b970"

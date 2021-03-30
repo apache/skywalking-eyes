@@ -24,7 +24,7 @@ WORKDIR /license-eye
 
 COPY . .
 
-RUN apk add --no-cache make curl && make build
+RUN apk add --no-cache make curl && make linux
 
 FROM alpine:3 AS bin
 

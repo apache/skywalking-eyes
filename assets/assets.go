@@ -23,7 +23,7 @@ import (
 	"io/fs"
 )
 
-//go:embed assets
+//go:embed *
 var assets embed.FS
 
 func Asset(file string) ([]byte, error) {

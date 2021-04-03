@@ -23,10 +23,10 @@ import (
 	"regexp"
 	"strings"
 
-	assets "github.com/apache/skywalking-eyes/license-eye"
+	"github.com/apache/skywalking-eyes/license-eye/assets"
 )
 
-const templatesDir = "assets/lcs-templates"
+const templatesDir = "lcs-templates"
 
 var dualLicensePatterns = []*regexp.Regexp{
 	regexp.MustCompile(`(?i)This project is covered by two different licenses: (?P<license>[^.]+)`),

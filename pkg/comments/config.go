@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strings"
 
-	assets "github.com/apache/skywalking-eyes/license-eye"
+	"github.com/apache/skywalking-eyes/license-eye/assets"
 
 	"gopkg.in/yaml.v3"
 )
@@ -74,7 +74,7 @@ func init() {
 }
 
 func initLanguages() {
-	content, err := assets.Asset("assets/languages.yaml")
+	content, err := assets.Asset("languages.yaml")
 	if err != nil {
 		panic(fmt.Errorf("should never happen: %w", err))
 	}
@@ -89,7 +89,7 @@ func initLanguages() {
 }
 
 func initCommentStyles() {
-	content, err := assets.Asset("assets/styles.yaml")
+	content, err := assets.Asset("styles.yaml")
 	if err != nil {
 		panic(fmt.Errorf("should never happen: %w", err))
 	}

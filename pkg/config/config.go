@@ -18,8 +18,9 @@
 package config
 
 import (
-	"io/ioutil"
+	"os"
 
+	"github.com/apache/skywalking-eyes/license-eye/assets"
 	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
 	"github.com/apache/skywalking-eyes/license-eye/pkg/deps"
 	"github.com/apache/skywalking-eyes/license-eye/pkg/header"
@@ -33,12 +34,26 @@ type Config struct {
 }
 
 // Parse reads and parses the header check configurations in config file.
-func (config *Config) Parse(file string) error {
-	logger.Log.Infoln("Loading configuration from file:", file)
+func (config *Config) Parse(file string) (err error) {
+	var bytes []byte
 
-	if bytes, err := ioutil.ReadFile(file); err != nil {
-		return err
-	} else if err := yaml.Unmarshal(bytes, config); err != nil {
+	if file != "" {
+		logger.Log.Infoln("Loading configuration from file:", file)
+
+		if bytes, err = os.ReadFile(file); err != nil && !os.IsNotExist(err) {
+			return err
+		}
+	}
+
+	if os.IsNotExist(err) {
+		logger.Log.Infof("No config file is given, using the default config")
+
+		if bytes, err = assets.Asset("default-config.yaml"); err != nil {
+			return err
+		}
+	}
+
+	if err := yaml.Unmarshal(bytes, config); err != nil {
 		return err
 	}
 

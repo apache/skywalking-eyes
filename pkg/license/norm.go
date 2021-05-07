@@ -19,8 +19,12 @@
 package license
 
 import (
+	"reflect"
 	"regexp"
+	"runtime"
 	"strings"
+
+	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
 )
 
 type Normalizer func(string) string
@@ -127,7 +131,7 @@ var (
 	}{
 		// BSD-3-Clause
 		{
-			regexp.MustCompile(`(?im)(^(Copyright \(c\)) (\d{4}) (.+?) (All rights reserved\.)?$\n?)+`),
+			regexp.MustCompile(`(?im)(^(\s*Copyright \(c\)) (\d{4}) (.+?) (All rights reserved\.)?$\n?)+`),
 			"$2 [year] [owner]. $5",
 		},
 		{
@@ -136,11 +140,11 @@ var (
 		},
 		// MIT
 		{ // remove optional header
-			regexp.MustCompile(`(?im)^The MIT License \(MIT\)$`),
+			regexp.MustCompile(`(?im)^\s*The MIT License \(MIT\)$`),
 			"",
 		},
 		{
-			regexp.MustCompile(`(?im)^(Copyright \(c\)) (\d{4}) (.+?)$`),
+			regexp.MustCompile(`(?im)^(\s*Copyright \(c\)) (\d{4}) (.+?)$`),
 			"$1 [year] [owner]",
 		},
 		{
@@ -162,7 +166,9 @@ func NormalizePattern(pattern string) string {
 func NormalizeHeader(header string) string {
 	ns := append([]Normalizer{CommentIndicatorNormalizer}, normalizers...)
 	for _, normalize := range ns {
+		logger.Log.Debugf("After normalized by %+v:", runtime.FuncForPC(reflect.ValueOf(normalize).Pointer()).Name())
 		header = normalize(header)
+		logger.Log.Debugln(header)
 	}
 	return header
 }

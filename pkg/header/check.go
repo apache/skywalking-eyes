@@ -58,14 +58,9 @@ func checkPattern(pattern string, result *Result, config *ConfigHeader) error {
 	}
 
 	for _, path := range paths {
-		if yes, err := config.ShouldIgnore(path); yes || err != nil {
-			result.Ignore(path)
-			continue
-		}
 		if err := checkPath(path, result, config); err != nil {
 			return err
 		}
-		seen[path] = true
 	}
 
 	return nil
@@ -74,7 +69,12 @@ func checkPattern(pattern string, result *Result, config *ConfigHeader) error {
 func checkPath(path string, result *Result, config *ConfigHeader) error {
 	defer func() { seen[path] = true }()
 
-	if yes, err := config.ShouldIgnore(path); yes || seen[path] || err != nil {
+	if seen[path] {
+		return nil
+	}
+
+	if yes, err := config.ShouldIgnore(path); yes || err != nil {
+		result.Ignore(path)
 		return err
 	}
 

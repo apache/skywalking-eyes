@@ -454,6 +454,7 @@ Batchfile:
   ace_mode: batchfile
   color: "#C1F12E"
   language_id: 29
+  comment_style_id: Remark
 Befunge:
   type: programming
   extensions:
@@ -2324,7 +2325,6 @@ INI:
     - ".lektorproject"
     - ".prefs"
     - ".pro"
-    - ".properties"
   filenames:
     - buildozer.spec
   tm_scope: source.ini
@@ -2601,6 +2601,7 @@ Java Properties:
   codemirror_mode: properties
   codemirror_mime_type: text/x-properties
   language_id: 519377561
+  comment_style_id: Hashtag
 Java Server Pages:
   type: programming
   group: Java
@@ -2659,6 +2660,7 @@ JavaScript:
     - v8
     - v8-shell
   language_id: 183
+  comment_style_id: SlashAsterisk
 JavaScript+ERB:
   type: programming
   tm_scope: source.js

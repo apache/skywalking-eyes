@@ -69,3 +69,8 @@
   start: '..'
   middle: '..'
   end: '..'
+
+- id: Remark
+  start: 'rem'
+  middle: 'rem'
+  end: 'rem'

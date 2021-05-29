@@ -31,12 +31,6 @@ import (
 	"github.com/bmatcuk/doublestar/v2"
 )
 
-var (
-	// LicenseLocationThreshold specifies the index threshold where the license header can be located,
-	// after all, a "header" cannot be TOO far from the file start.
-	LicenseLocationThreshold = 80
-)
-
 // Check checks the license headers of the specified paths/globs.
 func Check(config *ConfigHeader, result *Result) error {
 	for _, pattern := range config.Paths {
@@ -129,7 +123,7 @@ func CheckFile(file string, config *ConfigHeader, result *Result) error {
 	content := lcs.NormalizeHeader(string(bs))
 	expected, pattern := config.NormalizedLicense(), config.NormalizedPattern()
 
-	if satisfy(content, expected, pattern) {
+	if satisfy(content, config, expected, pattern) {
 		result.Succeed(file)
 	} else {
 		logger.Log.Debugln("Content is:", content)
@@ -140,9 +134,9 @@ func CheckFile(file string, config *ConfigHeader, result *Result) error {
 	return nil
 }
 
-func satisfy(content, license string, pattern *regexp.Regexp) bool {
+func satisfy(content string, config *ConfigHeader, license string, pattern *regexp.Regexp) bool {
 	if index := strings.Index(content, license); strings.TrimSpace(license) != "" && index >= 0 {
-		return index < LicenseLocationThreshold
+		return index < config.LicenseLocationThreshold
 	}
 
 	if pattern == nil {
@@ -150,5 +144,5 @@ func satisfy(content, license string, pattern *regexp.Regexp) bool {
 	}
 	index := pattern.FindStringIndex(content)
 
-	return len(index) == 2 && index[0] < LicenseLocationThreshold
+	return len(index) == 2 && index[0] < config.LicenseLocationThreshold
 }

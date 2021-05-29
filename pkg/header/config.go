@@ -56,6 +56,10 @@ type ConfigHeader struct {
 	Paths       []string      `yaml:"paths"`
 	PathsIgnore []string      `yaml:"paths-ignore"`
 	Comment     CommentOption `yaml:"comment"`
+
+	// LicenseLocationThreshold specifies the index threshold where the license header can be located,
+	// after all, a "header" cannot be TOO far from the file start.
+	LicenseLocationThreshold int `yaml:"license-location-threshold"`
 }
 
 // NormalizedLicense returns the normalized string of the license content,
@@ -118,6 +122,10 @@ func (config *ConfigHeader) Finalize() error {
 	logger.Log.Debugln("License header is:", config.NormalizedLicense())
 	if p := config.NormalizedPattern(); p != nil {
 		logger.Log.Debugln("Pattern is:", p)
+	}
+
+	if config.LicenseLocationThreshold <= 0 {
+		config.LicenseLocationThreshold = 80
 	}
 
 	return nil

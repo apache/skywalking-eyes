@@ -265,7 +265,7 @@ func IsPR() bool {
 func Markdown(result *header2.Result) string {
 	return fmt.Sprintf(`
 <!-- %s -->
-[license-eye](https://github.com/apache/skywalking-eyes/tree/main/license-eye) has totally checked %d files.
+[license-eye](https://github.com/apache/skywalking-eyes/tree/main/cmd/license-eye) has totally checked %d files.
 | Valid | Invalid | Ignored | Fixed |
 | --- | --- | --- | --- |
 | %d | %d | %d | %d |

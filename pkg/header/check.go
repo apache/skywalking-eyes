@@ -45,7 +45,7 @@ func Check(config *ConfigHeader, result *Result) error {
 var seen = make(map[string]bool)
 
 func checkPattern(pattern string, result *Result, config *ConfigHeader) error {
-	paths, err := doublestar.Glob(pattern)
+	paths, err := glob(pattern)
 
 	if err != nil {
 		return err
@@ -65,10 +65,22 @@ func checkPattern(pattern string, result *Result, config *ConfigHeader) error {
 	return nil
 }
 
+func glob(pattern string) (matches []string, err error) {
+	if pattern == "." {
+		return doublestar.Glob("./")
+	}
+
+	return doublestar.Glob(pattern)
+}
+
 func checkPath(path string, result *Result, config *ConfigHeader) error {
 	defer func() { seen[path] = true }()
 
-	if yes, err := config.ShouldIgnore(path); yes || seen[path] || err != nil {
+	if seen[path] {
+		return nil
+	}
+
+	if yes, err := config.ShouldIgnore(path); yes || err != nil {
 		return err
 	}
 

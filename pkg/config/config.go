@@ -37,12 +37,11 @@ type Config struct {
 func (config *Config) Parse(file string) (err error) {
 	var bytes []byte
 
-	if file != "" {
-		logger.Log.Infoln("Loading configuration from file:", file)
+	// attempt to read configuration from specified file
+	logger.Log.Infoln("Loading configuration from file:", file)
 
-		if bytes, err = os.ReadFile(file); err != nil && !os.IsNotExist(err) {
-			return err
-		}
+	if bytes, err = os.ReadFile(file); err != nil && !os.IsNotExist(err) {
+		return err
 	}
 
 	if os.IsNotExist(err) {

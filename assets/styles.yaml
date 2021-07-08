@@ -74,3 +74,8 @@
   start: 'rem'
   middle: 'rem'
   end: 'rem'
+
+- id: Percent
+  start: '%'
+  middle: '%'
+  end: '%'

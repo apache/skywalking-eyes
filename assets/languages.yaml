@@ -5383,6 +5383,7 @@ Smarty:
   codemirror_mime_type: text/x-smarty
   tm_scope: text.html.smarty
   language_id: 353
+  comment_style_id: CurlyBracketAsterisk
 Solidity:
   type: programming
   color: "#AA6746"

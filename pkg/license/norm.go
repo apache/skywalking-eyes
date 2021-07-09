@@ -69,6 +69,8 @@ var (
 		regexp.MustCompile(`(?mi)^\s*%+`),    // % e.g. matlab
 		regexp.MustCompile(`(?m)^\s*{#+`),    // {#
 		regexp.MustCompile(`(?m)^\s*#+}`),    // #}
+		regexp.MustCompile(`(?m)^\s*{\*+`),   // {*
+		regexp.MustCompile(`(?m)^\s*\*+}`),   // *}
 	}
 
 	flattenSpace = regexp.MustCompile(`\s+`)

@@ -84,3 +84,8 @@
   start: '{#'
   middle: ~
   end: '#}'
+
+- id: CurlyBracketAsterisk
+  start: '{*'
+  middle: ~
+  end: '*}'

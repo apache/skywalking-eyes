@@ -79,3 +79,8 @@
   start: '%'
   middle: '%'
   end: '%'
+
+- id: CurlyBracketHashtag
+  start: '{#'
+  middle: ~
+  end: '#}'

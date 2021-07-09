@@ -27,11 +27,13 @@ import (
 )
 
 type CommentStyle struct {
-	ID     string `yaml:"id"`
-	After  string `yaml:"after"`
-	Start  string `yaml:"start"`
-	Middle string `yaml:"middle"`
-	End    string `yaml:"end"`
+	ID           string `yaml:"id"`
+	After        string `yaml:"after"`
+	Start        string `yaml:"start"`
+	Middle       string `yaml:"middle"`
+	End          string `yaml:"end"`
+	EnsureAfter  string `yaml:"ensure_after"`
+	EnsureBefore string `yaml:"ensure_before"`
 }
 
 func (style *CommentStyle) Validate() error {

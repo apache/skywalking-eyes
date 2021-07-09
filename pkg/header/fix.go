@@ -86,6 +86,9 @@ func rewriteContent(style *comments.CommentStyle, content []byte, licenseHeader 
 	afterPattern := regexp.MustCompile(style.After)
 	location := afterPattern.FindIndex(content)
 	if location == nil || len(location) != 2 {
+		if style.EnsureAfter != "" {
+			return append([]byte(style.EnsureAfter+"\n"+licenseHeader+style.EnsureBefore), content...)
+		}
 		return append([]byte(licenseHeader), content...)
 	}
 	return append(content[0:location[1]],

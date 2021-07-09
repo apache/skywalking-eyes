@@ -89,3 +89,11 @@
   start: '{*'
   middle: ~
   end: '*}'
+
+- id: PhpTag
+  after: '(?mi)^<\?php(\s+declare\s*\(\s*strict_types\s*=\s*[01]{1}\s*\)\s*;)?$'
+  start: '/*'
+  middle: ' *'
+  end: ' */'
+  ensure_after: '<?php'
+  ensure_before: '?>'

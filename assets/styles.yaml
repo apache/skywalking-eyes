@@ -80,6 +80,11 @@
   middle: '%'
   end: '%'
 
+- id: CurlyBracketHashtag
+  start: '{#'
+  middle: ~
+  end: '#}'
+
 - id: CurlyBracketAsterisk
   start: '{*'
   middle: ~

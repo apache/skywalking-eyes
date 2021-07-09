@@ -67,6 +67,8 @@ var (
 		regexp.MustCompile(`(?m)^\s*\.\.`),   // ..
 		regexp.MustCompile(`(?mi)^\s*@?REM`), // @REM
 		regexp.MustCompile(`(?mi)^\s*%+`),    // % e.g. matlab
+		regexp.MustCompile(`(?m)^\s*{#+`),    // {#
+		regexp.MustCompile(`(?m)^\s*#+}`),    // #}
 		regexp.MustCompile(`(?m)^\s*{\*+`),   // {*
 		regexp.MustCompile(`(?m)^\s*\*+}`),   // *}
 	}

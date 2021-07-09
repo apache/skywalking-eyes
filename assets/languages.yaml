@@ -5783,6 +5783,7 @@ Twig:
   codemirror_mode: twig
   codemirror_mime_type: text/x-twig
   language_id: 377
+  comment_style_id: CurlyBracketHashtag
 Type Language:
   type: data
   aliases:

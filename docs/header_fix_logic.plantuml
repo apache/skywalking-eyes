@@ -19,7 +19,6 @@
 
 title "Apache/Skywalking-Eyes: Header fix process activity diagram"
 footer apache/skywalking-eyes
-scale 2
 
 (*) --> "Start of 'header fix'. Processing files\nwithout proper headers file by file." as startNode
 

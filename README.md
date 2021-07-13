@@ -244,8 +244,8 @@ The `header check` command theoretically supports all kinds of file types, while
 
 ## Technical Documentation
 
-- There is an [activity diagram](./docs/header_fix_logic_activity_diag.svg) explaining the implemented license header 
-  fixing mechanism in-depth.
+- There is an [activity diagram](https://www.plantuml.com/plantuml/proxy?cache=yes&format=svg&src=https://raw.githubusercontent.com/apache/skywalking-eyes/main/docs/header_fix_logic.plantuml) explaining the implemented license header 
+  fixing mechanism in-depth. The diagram's source file can be found [here](./docs/header_fix_logic.plantuml).
 
 ## Contribution
 

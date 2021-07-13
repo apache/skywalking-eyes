@@ -201,6 +201,104 @@ import Foundation.Hashing.Hashable`},
 " Apache License 2.0
 echo 'Hello' | echo 'world!'
 `},
+		{
+			name:          "Php-1",
+			style:         comments.FileCommentStyle("test.php"),
+			content:       ``,
+			licenseHeader: getLicenseHeader("test.php", t.Error),
+			expectedContent: `<?php
+/*
+ * Apache License 2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * Apache License 2.0
+ */
+?>`,
+		}, {
+			name:  "Php-2",
+			style: comments.FileCommentStyle("test.php"),
+			content: `<?php declare(strict_types=1);
+echo "Test";
+`,
+			licenseHeader: getLicenseHeader("test.php", t.Error),
+			expectedContent: `<?php declare(strict_types=1);
+/*
+ * Apache License 2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * Apache License 2.0
+ */
+echo "Test";
+`,
+		}, {
+			name:  "Php-3",
+			style: comments.FileCommentStyle("test.php"),
+			content: `<?php
+echo "Test";
+`,
+			licenseHeader: getLicenseHeader("test.php", t.Error),
+			expectedContent: `<?php
+/*
+ * Apache License 2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * Apache License 2.0
+ */
+echo "Test";
+`,
+		}, {
+			name:  "Php-4",
+			style: comments.FileCommentStyle("test.php"),
+			content: `<?php
+`,
+			licenseHeader: getLicenseHeader("test.php", t.Error),
+			expectedContent: `<?php
+/*
+ * Apache License 2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * Apache License 2.0
+ */
+`,
+		}, {
+			name:  "Php-5",
+			style: comments.FileCommentStyle("test.php"),
+			content: `<?php
+/**
+ * This is a php docblock
+ */
+namespace test\test2;
+`,
+			licenseHeader: getLicenseHeader("test.php", t.Error),
+			expectedContent: `<?php
+/*
+ * Apache License 2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * Apache License 2.0
+ */
+/**
+ * This is a php docblock
+ */
+namespace test\test2;
+`,
+		}, {
+			name:  "Php-6",
+			style: comments.FileCommentStyle("test.php"),
+			content: `<?
+/**
+ * This is a php docblock
+ */
+namespace test\test2;
+`,
+			licenseHeader: getLicenseHeader("test.php", t.Error),
+			expectedContent: `<?
+/*
+ * Apache License 2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * Apache License 2.0
+ */
+/**
+ * This is a php docblock
+ */
+namespace test\test2;
+`,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

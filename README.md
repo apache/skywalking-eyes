@@ -59,19 +59,23 @@ $ make build
 #### Check License Header
 
 ```bash
-$ bin/darwin/license-eye -c test/testdata/.licenserc_for_test_fix.yaml header check
+$ bin/darwin/license-eye -c test/testdata/.licenserc_for_test_check.yaml header check
 
-INFO Loading configuration from file: test/testdata/.licenserc_for_test.yaml
-INFO Totally checked 23 files, valid: 8, invalid: 8, ignored: 7, fixed: 0
-ERROR The following files don't have a valid license header:
+INFO Loading configuration from file: test/testdata/.licenserc_for_test_check.yaml 
+INFO Totally checked 30 files, valid: 12, invalid: 12, ignored: 6, fixed: 0 
+ERROR the following files don't have a valid license header: 
 test/testdata/include_test/without_license/testcase.go
 test/testdata/include_test/without_license/testcase.graphql
+test/testdata/include_test/without_license/testcase.ini
 test/testdata/include_test/without_license/testcase.java
 test/testdata/include_test/without_license/testcase.md
+test/testdata/include_test/without_license/testcase.php
 test/testdata/include_test/without_license/testcase.py
 test/testdata/include_test/without_license/testcase.sh
 test/testdata/include_test/without_license/testcase.yaml
 test/testdata/include_test/without_license/testcase.yml
+test/testdata/test-spdx-asf.yaml
+test/testdata/test-spdx.yaml 
 exit status 1
 ```
 
@@ -81,7 +85,7 @@ exit status 1
 $ bin/darwin/license-eye -c test/testdata/.licenserc_for_test_fix.yaml header fix
 
 INFO Loading configuration from file: test/testdata/.licenserc_for_test_fix.yaml
-INFO Totally checked 16 files, valid: 7, invalid: 8, ignored: 1, fixed: 8
+INFO Totally checked 20 files, valid: 10, invalid: 10, ignored: 0, fixed: 10 
 ```
 
 #### Resolve Dependencies' licenses

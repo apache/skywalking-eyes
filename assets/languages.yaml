@@ -6273,7 +6273,6 @@ XML:
     - ".sublime-snippet"
     - ".targets"
     - ".tml"
-    - ".ts"
     - ".tsx"
     - ".ui"
     - ".urdf"

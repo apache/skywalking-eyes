@@ -97,3 +97,8 @@
   end: ' */'
   ensure_after: '<?php'
   ensure_before: '?>'
+
+- id: Apostrophe
+  start: "'"
+  middle: "'"
+  end: "'"

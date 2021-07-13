@@ -4192,6 +4192,7 @@ PlantUML:
   tm_scope: source.wsd
   ace_mode: text
   language_id: 833504686
+  comment_style_id: Apostrophe
 Pod:
   type: prose
   ace_mode: perl

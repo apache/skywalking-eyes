@@ -1,0 +1,44 @@
+@startuml
+
+title "Apache/Skywalking-Eyes: Header fix process activity diagram"
+footer apache/skywalking-eyes
+scale 2
+
+(*) --> "Start of 'header fix'. Processing files\nwithout proper headers file by file." as startNode
+
+partition singleFileProcess {
+startNode --> "Start of single file process" as startFileNode
+
+if "<i>comment_style_id</i> is set for this language/file type" then
+    -->[yes] "Try to fix license header of file"
+
+    if <i>After</i> is set in CommentStyle then
+        -->[yes] Look for <i>After</i>-pattern in file content
+
+        if pattern is found then
+            ------->[yes] "fileContent := contentPart1 + licenseHeader + contentPart2"
+            ---> "End of fixing license header for this file" as endFileProcessingNode
+        else
+            --->[no] "<i>After</i>-pattern not found"
+
+            if "<i>ensure_after</i> is set" then
+                ---->[yes] "fileContent := <i>ensureAfter</i> + licenseHeader + <i>ensureBefore</i> + content"
+                ---> endFileProcessingNode
+            else
+                --->[no] "fileContent := licenseHeader + content" as defaultHeaderFix
+            endif
+
+        endif
+    else
+        -->[no] defaultHeaderFix
+        ---> endFileProcessingNode
+    endif
+else
+    ---->[no] endFileProcessingNode
+endif
+}
+
+endFileProcessingNode --> "End of 'header fix' process" as endNode
+endNode --> (*)
+
+@enduml

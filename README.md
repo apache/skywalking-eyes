@@ -242,6 +242,11 @@ The `header check` command theoretically supports all kinds of file types, while
   3. The leading characters of the middle lines of a block comment.
   4. The leading characters of the ending line of a block comment.
 
+## Technical Documentation
+
+- There is an [activity diagram](./docs/header_fix_logic_activity_diag.svg) explaining the implemented license header 
+  fixing mechanism in-depth.
+
 ## Contribution
 
 - If you find any file type should be supported by the aforementioned configurations, but it's not listed there, feel free to [open a pull request](https://github.com/apache/skywalking-eyes/pulls) to add the configuration into the two files.

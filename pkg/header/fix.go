@@ -21,6 +21,7 @@ package header
 import (
 	"fmt"
 	"io/ioutil"
+	"math"
 	"os"
 	"regexp"
 	"strings"
@@ -91,8 +92,12 @@ func rewriteContent(style *comments.CommentStyle, content []byte, licenseHeader 
 		}
 		return append([]byte(licenseHeader), content...)
 	}
+
+	// if files do not have an empty line at the end, the content slice index given
+	//  at index location[1]+1 could be out of range
+	startIdx := math.Min(float64(location[1]+1), float64(len(content)))
 	return append(content[0:location[1]],
-		append(append([]byte("\n"), []byte(licenseHeader)...), content[location[1]+1:]...)...,
+		append(append([]byte("\n"), []byte(licenseHeader)...), content[int64(startIdx):]...)...,
 	)
 }
 

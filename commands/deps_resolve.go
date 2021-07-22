@@ -45,8 +45,8 @@ var ResolveCommand = &cobra.Command{
 				pkgs[i] = s.Dependency
 			}
 			return fmt.Errorf(
-				"failed to identify the licenses of following packages:\n%s",
-				strings.Join(pkgs, "\n"),
+				"failed to identify the licenses of following packages (%d):\n%s",
+				len(pkgs), strings.Join(pkgs, "\n"),
 			)
 		}
 

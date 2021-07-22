@@ -19,14 +19,20 @@ package license
 
 import (
 	"fmt"
+	"io/fs"
 	"path/filepath"
 	"regexp"
 	"strings"
 
 	"github.com/apache/skywalking-eyes/license-eye/assets"
+	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
 )
 
-const templatesDir = "lcs-templates"
+var templatesDirs = []string{
+	"lcs-templates",
+	// Some projects simply use the header text as their LICENSE content...
+	"header-templates",
+}
 
 var dualLicensePatterns = []*regexp.Regexp{
 	regexp.MustCompile(`(?i)This project is covered by two different licenses: (?P<license>[^.]+)`),
@@ -45,11 +51,23 @@ func Identify(pkgPath, content string) (string, error) {
 
 	content = Normalize(content)
 
-	templates, err := assets.AssetDir(templatesDir)
-	if err != nil {
-		return "", err
+	for _, dir := range templatesDirs {
+		templates, err := assets.AssetDir(dir)
+		if err != nil {
+			return "", err
+		}
+
+		if s, err := identify(dir, templates, content); err == nil {
+			return s, nil
+		}
 	}
 
+	logger.Log.Debugf("Normalized content for %+v:\n%+v\n", pkgPath, content)
+
+	return "", fmt.Errorf("cannot identify license content")
+}
+
+func identify(templatesDir string, templates []fs.DirEntry, content string) (string, error) {
 	for _, template := range templates {
 		templateName := template.Name()
 		t, err := assets.Asset(filepath.Join(templatesDir, templateName))
@@ -58,10 +76,9 @@ func Identify(pkgPath, content string) (string, error) {
 		}
 		license := string(t)
 		license = Normalize(license)
-		if license == content {
+		if strings.Contains(content, license) {
 			return strings.TrimSuffix(templateName, filepath.Ext(templateName)), nil
 		}
 	}
-
 	return "", fmt.Errorf("cannot identify license content")
 }

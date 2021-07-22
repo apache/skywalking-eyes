@@ -28,6 +28,7 @@ type Resolver interface {
 
 var Resolvers = []Resolver{
 	new(GoModResolver),
+	new(NpmResolver),
 }
 
 func Resolve(config *ConfigDeps, report *Report) error {

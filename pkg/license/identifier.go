@@ -19,7 +19,6 @@ package license
 
 import (
 	"fmt"
-	"io/fs"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -38,6 +37,25 @@ var dualLicensePatterns = []*regexp.Regexp{
 	regexp.MustCompile(`(?i)This project is covered by two different licenses: (?P<license>[^.]+)`),
 }
 
+var normalizedTemplates = make(map[string]string)
+
+func init() {
+	for _, dir := range templatesDirs {
+		files, err := assets.AssetDir(dir)
+		if err != nil {
+			logger.Log.Fatalln("Failed to read license template directory:", dir, err)
+		}
+		for _, template := range files {
+			name := template.Name()
+			t, err := assets.Asset(filepath.Join(dir, name))
+			if err != nil {
+				logger.Log.Fatalln("Failed to read license template:", dir, err)
+			}
+			normalizedTemplates[dir+"/"+name] = Normalize(string(t))
+		}
+	}
+}
+
 // Identify identifies the Spdx ID of the given license content
 func Identify(pkgPath, content string) (string, error) {
 	for _, pattern := range dualLicensePatterns {
@@ -51,34 +69,14 @@ func Identify(pkgPath, content string) (string, error) {
 
 	content = Normalize(content)
 
-	for _, dir := range templatesDirs {
-		templates, err := assets.AssetDir(dir)
-		if err != nil {
-			return "", err
-		}
-
-		if s, err := identify(dir, templates, content); err == nil {
-			return s, nil
+	for name, license := range normalizedTemplates {
+		if strings.Contains(content, license) {
+			name = filepath.Base(name)
+			return strings.TrimSuffix(name, filepath.Ext(name)), nil
 		}
 	}
 
 	logger.Log.Debugf("Normalized content for %+v:\n%+v\n", pkgPath, content)
 
-	return "", fmt.Errorf("cannot identify license content")
-}
-
-func identify(templatesDir string, templates []fs.DirEntry, content string) (string, error) {
-	for _, template := range templates {
-		templateName := template.Name()
-		t, err := assets.Asset(filepath.Join(templatesDir, templateName))
-		if err != nil {
-			return "", err
-		}
-		license := string(t)
-		license = Normalize(license)
-		if strings.Contains(content, license) {
-			return strings.TrimSuffix(templateName, filepath.Ext(templateName)), nil
-		}
-	}
 	return "", fmt.Errorf("cannot identify license content")
 }

@@ -34,7 +34,6 @@ var (
 	// meanings, according to the matching guide in https://spdx.dev/license-list/matching-guidelines.
 	// The order matters.
 	normalizers = []Normalizer{
-		VariablesNormalizer,
 		OneLineNormalizer,
 		FlattenSpaceNormalizer,
 		SubstantiveTextsNormalizer,
@@ -127,10 +126,12 @@ var (
 		{regexp.MustCompile(`\(([cC])\)`), "Copyright "},
 		{regexp.MustCompile(`\bhttps://`), "http://"},
 
-		{regexp.MustCompile(`“`), `'`},
-		{regexp.MustCompile(`”`), `'`},
-		{regexp.MustCompile(`’`), "'"},
-		{regexp.MustCompile(`"`), "'"},
+		{regexp.MustCompile(`“+`), `'`},
+		{regexp.MustCompile(`”+`), `'`},
+		{regexp.MustCompile(`’+`), "'"},
+		{regexp.MustCompile("`+"), "'"},
+		{regexp.MustCompile(`"+`), "'"},
+		{regexp.MustCompile(`'+`), "'"},
 
 		{regexp.MustCompile(`(?i)\b(the )?Apache Software Foundation( \(ASF\))?`), "the ASF"},
 
@@ -170,24 +171,11 @@ var (
 			regexp.MustCompile(`(?i)you may not use this (file|library) except`),
 			"you may not use this file except",
 		},
-	}
 
-	variables = []struct {
-		regexp      *regexp.Regexp
-		replacement string
-	}{
-		// BSD-3-Clause
-		// MIT
-		{ // remove optional header
-			regexp.MustCompile(`(?im)^\s*\(?(The )?MIT License( \((MIT|Expat)\))?\)?$`),
-			"",
+		{
+			regexp.MustCompile(`(?i)THIS SOFTWARE IS PROVIDED BY (.+?)'AS IS'`),
+			`THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 'AS IS'`,
 		},
-		// ISC
-		{ // remove optional header
-			regexp.MustCompile(`(?im)^\s*(The )?ISC License$`),
-			"",
-		},
-		// ISC
 
 		{
 			regexp.MustCompile(`(?im)\(including the next paragraph\)`),
@@ -199,6 +187,18 @@ var (
 		regexp      *regexp.Regexp
 		replacement string
 	}{
+		// BSD-3-Clause
+		// MIT
+		{ // remove optional header
+			regexp.MustCompile(`(?im)^\s*\(?(The )?MIT License( \((MIT|Expat)\))?\)?$`),
+			"",
+		},
+		// ISC
+		{ // remove optional header
+			regexp.MustCompile(`(?im)^\s*(The )?ISC License:?$`),
+			"",
+		},
+
 		// leading chars such as >, * just for pretty printing
 		{
 			regexp.MustCompile(`(?m)^[>*]\s+`),
@@ -289,13 +289,4 @@ func CommentIndicatorNormalizer(text string) string {
 // FlattenSpaceNormalizer flattens continuous spaces into a single space.
 func FlattenSpaceNormalizer(text string) string {
 	return flattenSpace.ReplaceAllString(text, " ")
-}
-
-// VariablesNormalizer replace the variables actual value into variable name.
-func VariablesNormalizer(text string) string {
-	for _, v := range variables {
-		text = v.regexp.ReplaceAllString(text, v.replacement)
-	}
-
-	return text
 }

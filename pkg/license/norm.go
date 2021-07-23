@@ -102,7 +102,7 @@ var (
 		{regexp.MustCompile(`(?i)\bjudgement\b`), "judgment"},
 		{regexp.MustCompile(`(?i)\blabeling\b`), "labelling"},
 		{regexp.MustCompile(`(?i)\blabor\b`), "labour"},
-		{regexp.MustCompile(`(?i)\blicense\b`), "licence"},
+		{regexp.MustCompile(`(?i)\blicence\b`), "license"},
 		{regexp.MustCompile(`(?i)\bmaximize\b`), "maximise"},
 		{regexp.MustCompile(`(?i)\bmodeled\b`), "modelled"},
 		{regexp.MustCompile(`(?i)\bmodeling\b`), "modelling"},
@@ -117,18 +117,59 @@ var (
 		{regexp.MustCompile(`(?i)\brealize\b`), "realise"},
 		{regexp.MustCompile(`(?i)\brecognize\b`), "recognise"},
 		{regexp.MustCompile(`(?i)\bsignaling\b`), "signalling"},
-		{regexp.MustCompile(`(?i)\bsublicense\b`), "sub-license"},
-		{regexp.MustCompile(`(?i)\bsub-license\b`), "sub license"},
-		{regexp.MustCompile(`(?i)\bsublicense\b`), "sub license"},
+		{regexp.MustCompile(`(?i)\bsub licen[sc]e\b`), "sublicense"},
+		{regexp.MustCompile(`(?i)\bsub-licen[sc]e\b`), "sublicense"},
 		{regexp.MustCompile(`(?i)\butilization\b`), "utilisation"},
 		{regexp.MustCompile(`(?i)\bwhile\b`), "whilst"},
 		{regexp.MustCompile(`(?i)\bwilfull\b`), "wilful"},
 
 		{regexp.MustCompile(`©`), "Copyright "},
-		{regexp.MustCompile(`\(c\)`), "Copyright "},
+		{regexp.MustCompile(`\(([cC])\)`), "Copyright "},
 		{regexp.MustCompile(`\bhttps://`), "http://"},
 
+		{regexp.MustCompile(`“`), `'`},
+		{regexp.MustCompile(`”`), `'`},
+		{regexp.MustCompile(`’`), "'"},
+		{regexp.MustCompile(`"`), "'"},
+
 		{regexp.MustCompile(`(?i)\b(the )?Apache Software Foundation( \(ASF\))?`), "the ASF"},
+
+		// Prettier chars
+		{regexp.MustCompile(`[-=*]{3,}`), ""},
+
+		// Mozilla Public License, Version 2.0
+		// Mozilla Public License Version 2.0
+		{
+			regexp.MustCompile(`(?i)Mozilla Public License version 2\.0`),
+			"Mozilla Public License, Version 2.0",
+		},
+		// Mozilla Public License, v. 2.0
+		// ...
+		{
+			regexp.MustCompile(`(?i)Mozilla Public License,? v\. ?2\.0`),
+			"Mozilla Public License, v. 2.0",
+		},
+
+		{
+			regexp.MustCompile(`(?i)IN NO EVENT SHALL (.+?) BE LIABLE`),
+			"IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE",
+		},
+		{
+			regexp.MustCompile(`(?i)The names of (its|the) contributors may not be used to endorse`),
+			"Neither the name of the copyright holder nor the names of its contributors may be used to endorse",
+		},
+		{
+			regexp.MustCompile(`(?i)The name (.+?) may not be used to endorse`),
+			"Neither the name of the copyright holder nor the names of its contributors may be used to endorse",
+		},
+		{
+			regexp.MustCompile(`(?i)(neither the name of) (.+?) (nor the names of)`),
+			"$1 the copyright holder $3",
+		},
+		{
+			regexp.MustCompile(`(?i)you may not use this (file|library) except`),
+			"you may not use this file except",
+		},
 	}
 
 	variables = []struct {
@@ -136,26 +177,58 @@ var (
 		replacement string
 	}{
 		// BSD-3-Clause
-		{
-			regexp.MustCompile(`(?im)(^(\s*Copyright \(c\)) (\d{4}) (.+?) (All rights reserved\.)?$\n?)+`),
-			"$2 [year] [owner]. $5",
-		},
-		{
-			regexp.MustCompile(`(?i)(neither the name of) (.+?) (nor the names of)`),
-			"$1 the copyright holder $3",
-		},
 		// MIT
 		{ // remove optional header
-			regexp.MustCompile(`(?im)^\s*The MIT License \(MIT\)$`),
+			regexp.MustCompile(`(?im)^\s*\(?(The )?MIT License( \((MIT|Expat)\))?\)?$`),
 			"",
 		},
-		{
-			regexp.MustCompile(`(?im)^(\s*Copyright \(c\)) (\d{4}) (.+?)$`),
-			"$1 [year] [owner]",
+		// ISC
+		{ // remove optional header
+			regexp.MustCompile(`(?im)^\s*(The )?ISC License$`),
+			"",
 		},
+		// ISC
+
 		{
 			regexp.MustCompile(`(?im)\(including the next paragraph\)`),
 			"",
+		},
+	}
+
+	lineProcessors = []struct {
+		regexp      *regexp.Regexp
+		replacement string
+	}{
+		// leading chars such as >, * just for pretty printing
+		{
+			regexp.MustCompile(`(?m)^[>*]\s+`),
+			" ",
+		},
+		// Listing bullets such as a., b., 1., 2.
+		{
+			regexp.MustCompile(`(?m)^\s*[a-z0-9]\. `),
+			" ",
+		},
+		// Listing bullets such as (a), (b), (1), (2)
+		{
+			regexp.MustCompile(`(?m)^\s*\([a-z0-9]\) `),
+			" ",
+		},
+		// trailing chars such as >, * just for pretty printing
+		{
+			regexp.MustCompile(`(?m)\s+[*]$`),
+			" ",
+		},
+		// Copyright (c) .....
+		{
+			regexp.MustCompile(`(?m)^\s*Copyright (\([cC©]\))?.+$`),
+			"",
+		},
+
+		// This should be the last one processor
+		{
+			regexp.MustCompile("[\n\r]+"),
+			" ",
 		},
 	}
 )
@@ -181,15 +254,19 @@ func NormalizeHeader(header string) string {
 
 // Normalize applies a chain of Normalizers to the license text to make it cleaner for identification.
 func Normalize(license string) string {
-	for _, normalize := range normalizers {
+	ns := append([]Normalizer{CommentIndicatorNormalizer}, normalizers...)
+	for _, normalize := range ns {
 		license = normalize(license)
 	}
 	return license
 }
 
-// OneLineNormalizer simply removes all line breaks to flatten the license text into one line.
+// OneLineNormalizer normalizes the text line by line and finally merge them into one line.
 func OneLineNormalizer(text string) string {
-	return regexp.MustCompile("[\n\r]+").ReplaceAllString(text, " ")
+	for _, s := range lineProcessors {
+		text = s.regexp.ReplaceAllString(text, s.replacement)
+	}
+	return text
 }
 
 // SubstantiveTextsNormalizer normalizes the license text by substituting some words that

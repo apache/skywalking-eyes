@@ -18,20 +18,20 @@
 package deps
 
 import (
-	"context"
-	"fmt"
+	"bytes"
+	"encoding/json"
 	"go/build"
+	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
-	"strings"
-
-	"golang.org/x/mod/modfile"
-	"golang.org/x/tools/go/packages"
 
 	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
 	"github.com/apache/skywalking-eyes/license-eye/pkg/license"
+
+	"golang.org/x/tools/go/packages"
 )
 
 type GoModResolver struct {
@@ -46,30 +46,39 @@ func (resolver *GoModResolver) CanResolve(file string) bool {
 
 // Resolve resolves licenses of all dependencies declared in the go.mod file.
 func (resolver *GoModResolver) Resolve(goModFile string, report *Report) error {
-	content, err := ioutil.ReadFile(goModFile)
-	if err != nil {
-		return err
-	}
-
-	file, err := modfile.Parse(goModFile, content, nil)
-	if err != nil {
-		return err
-	}
-
-	logger.Log.Debugln("Resolving module:", file.Module.Mod)
-
 	if err := os.Chdir(filepath.Dir(goModFile)); err != nil {
 		return err
 	}
 
-	requiredPkgNames := make([]string, len(file.Require))
-	for i, require := range file.Require {
-		requiredPkgNames[i] = require.Mod.Path
+	goModDownload := exec.Command("go", "mod", "download")
+	logger.Log.Debugf("Run command: %v, please wait", goModDownload.String())
+	goModDownload.Stdout = os.Stdout
+	goModDownload.Stderr = os.Stderr
+	if err := goModDownload.Run(); err != nil {
+		return err
 	}
 
-	logger.Log.Debugln("Required packages:", requiredPkgNames)
+	output, err := exec.Command("go", "list", "-m", "-json", "all").Output()
+	if err != nil {
+		return err
+	}
 
-	if err := resolver.ResolvePackages(requiredPkgNames, report); err != nil {
+	modules := make([]*packages.Module, 0)
+	decoder := json.NewDecoder(bytes.NewReader(output))
+	for {
+		var m packages.Module
+		if err := decoder.Decode(&m); err != nil {
+			if err == io.EOF {
+				break
+			}
+			return err
+		}
+		modules = append(modules, &m)
+	}
+
+	logger.Log.Debugln("Module size:", len(modules))
+
+	if err := resolver.ResolvePackages(modules, report); err != nil {
 		return err
 	}
 
@@ -77,67 +86,28 @@ func (resolver *GoModResolver) Resolve(goModFile string, report *Report) error {
 }
 
 // ResolvePackages resolves the licenses of the given packages.
-func (resolver *GoModResolver) ResolvePackages(pkgNames []string, report *Report) error {
-	requiredPkgs, err := packages.Load(&packages.Config{
-		Context: context.Background(),
-		Mode:    packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles | packages.NeedImports | packages.NeedDeps,
-	}, pkgNames...)
-
-	if err != nil {
-		return err
-	}
-
-	packages.Visit(requiredPkgs, func(p *packages.Package) bool {
-		if isBuiltIn(p) {
-			logger.Log.Debugln("Built-in package doesn't require license check:", p.PkgPath)
-			return false
-		}
-
-		if len(p.Errors) > 0 {
-			logger.Log.Warnln("Failed to visit package:", p.PkgPath, p.Errors)
-			report.Skip(&Result{
-				Dependency:    p.PkgPath,
-				LicenseSpdxID: Unknown,
-			})
-			return true
-		}
-		err := resolver.ResolvePackageLicense(p, report)
+func (resolver *GoModResolver) ResolvePackages(modules []*packages.Module, report *Report) error {
+	for _, module := range modules {
+		err := resolver.ResolvePackageLicense(module, report)
 		if err != nil {
-			logger.Log.Warnln("Failed to resolve the license of dependency:", p.PkgPath, err)
+			logger.Log.Warnln("Failed to resolve the license of dependency:", module.Path, err)
 			report.Skip(&Result{
-				Dependency:    p.PkgPath,
+				Dependency:    module.Path,
 				LicenseSpdxID: Unknown,
 			})
 		}
-		return true
-	}, nil)
+	}
 
 	return nil
 }
 
 var possibleLicenseFileName = regexp.MustCompile(`(?i)^LICENSE|LICENCE(\.txt)?$`)
 
-func (resolver *GoModResolver) ResolvePackageLicense(p *packages.Package, report *Report) error {
-	var filesInPkg []string
-	if len(p.GoFiles) > 0 {
-		filesInPkg = p.GoFiles
-	} else if len(p.CompiledGoFiles) > 0 {
-		filesInPkg = p.CompiledGoFiles
-	} else if len(p.OtherFiles) > 0 {
-		filesInPkg = p.OtherFiles
-	}
-
-	if len(filesInPkg) == 0 {
-		return fmt.Errorf("empty package")
-	}
-
-	absPath, err := filepath.Abs(filesInPkg[0])
-	if err != nil {
-		return err
-	}
-	dir := filepath.Dir(absPath)
+func (resolver *GoModResolver) ResolvePackageLicense(module *packages.Module, report *Report) error {
+	dir := module.Dir
 
 	for {
+		logger.Log.Debugf("Directory of %+v is %+v", module.Path, dir)
 		files, err := ioutil.ReadDir(dir)
 		if err != nil {
 			return err
@@ -151,12 +121,12 @@ func (resolver *GoModResolver) ResolvePackageLicense(p *packages.Package, report
 			if err != nil {
 				return err
 			}
-			identifier, err := license.Identify(p.PkgPath, string(content))
+			identifier, err := license.Identify(module.Path, string(content))
 			if err != nil {
 				return err
 			}
 			report.Resolve(&Result{
-				Dependency:      p.PkgPath,
+				Dependency:      module.Path,
 				LicenseFilePath: licenseFilePath,
 				LicenseContent:  string(content),
 				LicenseSpdxID:   identifier,
@@ -172,14 +142,5 @@ func (resolver *GoModResolver) ResolvePackageLicense(p *packages.Package, report
 }
 
 func (resolver *GoModResolver) shouldStopAt(dir string) bool {
-	for _, srcDir := range build.Default.SrcDirs() {
-		if srcDir == dir {
-			return true
-		}
-	}
-	return false
-}
-
-func isBuiltIn(pkg *packages.Package) bool {
-	return len(pkg.GoFiles) > 0 && strings.HasPrefix(pkg.GoFiles[0], build.Default.GOROOT)
+	return dir == build.Default.GOPATH
 }

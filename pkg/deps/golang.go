@@ -20,6 +20,7 @@ package deps
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"go/build"
 	"io"
 	"io/ioutil"
@@ -90,7 +91,7 @@ func (resolver *GoModResolver) ResolvePackages(modules []*packages.Module, repor
 	for _, module := range modules {
 		err := resolver.ResolvePackageLicense(module, report)
 		if err != nil {
-			logger.Log.Warnln("Failed to resolve the license of dependency:", module.Path, err)
+			logger.Log.Warnf("Failed to resolve the license of <%s>: %v\n", module.Path, err)
 			report.Skip(&Result{
 				Dependency:    module.Path,
 				LicenseSpdxID: Unknown,
@@ -101,7 +102,7 @@ func (resolver *GoModResolver) ResolvePackages(modules []*packages.Module, repor
 	return nil
 }
 
-var possibleLicenseFileName = regexp.MustCompile(`(?i)^LICENSE|LICENCE(\.txt)?$`)
+var possibleLicenseFileName = regexp.MustCompile(`(?i)^LICENSE|LICENCE(\.txt)?|COPYING|COPYING(\.txt)?$`)
 
 func (resolver *GoModResolver) ResolvePackageLicense(module *packages.Module, report *Report) error {
 	dir := module.Dir
@@ -133,14 +134,14 @@ func (resolver *GoModResolver) ResolvePackageLicense(module *packages.Module, re
 			})
 			return nil
 		}
-		if resolver.shouldStopAt(dir) {
+		if resolver.shouldStopAt(dir, module.Dir) {
 			break
 		}
 		dir = filepath.Dir(dir)
 	}
-	return nil
+	return fmt.Errorf("cannot find license file")
 }
 
-func (resolver *GoModResolver) shouldStopAt(dir string) bool {
-	return dir == build.Default.GOPATH
+func (resolver *GoModResolver) shouldStopAt(dir, moduleDir string) bool {
+	return dir == moduleDir || dir == build.Default.GOPATH
 }

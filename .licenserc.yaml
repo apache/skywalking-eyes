@@ -84,4 +84,3 @@ header: # `header` section is configurations for source codes license header.
 dependency:
   files:
     - go.mod
-    - test/testdata/pom.xml

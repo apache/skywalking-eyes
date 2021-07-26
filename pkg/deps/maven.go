@@ -1,3 +1,20 @@
+//
+// Licensed to Apache Software Foundation (ASF) under one or more contributor
+// license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright
+// ownership. Apache Software Foundation (ASF) licenses this file to you under
+// the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 package deps
 
 import (
@@ -17,22 +34,49 @@ import (
 	"github.com/apache/skywalking-eyes/license-eye/pkg/license"
 )
 
+var maven string
+
 func init() {
-	var err error
-	_, err = exec.Command("mvn", "--version").Output()
+	err := CheckMVN()
 	if err != nil {
-		return
+		logger.Log.Errorln("an error occurred when checking maven tool:", err)
+	}
+}
+
+// CheckMVN use mvn by default, use mvn if mvnw is not found
+func CheckMVN() error {
+	var err error
+
+	logger.Log.Debugln("searching mvnw ...")
+	_, err = exec.Command("./mvnw", "--version").Output()
+	if err == nil {
+		maven = "./mvnw"
+		logger.Log.Debugln("use mvnw")
+		return nil
 	}
 
-	Resolvers = append(Resolvers, new(MavenPomResolver))
+	logger.Log.Debugln("mvnw is not found, searching mvn ...")
+	_, err = exec.Command("mvn", "--version").Output()
+	if err == nil {
+		maven = "mvn"
+		logger.Log.Debugln("use mvn")
+		return nil
+	}
+
+	return fmt.Errorf("neither found mvnw nor mvn")
 }
 
 // TempDirGenerator Create and destroy one temporary directory
 type TempDirGenerator interface {
 	Create() (string, error)
-	Destroy() error
+	Destroy()
 }
 
+func NewTempDirGenerator() TempDirGenerator {
+	return new(tempDir)
+}
+
+// tempDir an implementation of the TempDirGenerator
 type tempDir struct {
 	dir string
 }
@@ -46,45 +90,67 @@ func (t *tempDir) Create() (string, error) {
 	return tmpDir, nil
 }
 
-func (t *tempDir) Destroy() error {
+func (t *tempDir) Destroy() {
 	if t.dir == "" {
-		return fmt.Errorf("the temporary directory does not exist")
+		logger.Log.Errorf("the temporary directory does not exist")
+		return
 	}
-	return os.RemoveAll(t.dir)
-}
 
-func NewTempDirGenerator() TempDirGenerator {
-	return new(tempDir)
+	err := os.RemoveAll(t.dir)
+	if err != nil {
+		logger.Log.Errorln(err)
+	}
 }
 
 var possiblePomFileName = regexp.MustCompile(`(?i)^pom\.xml|.+\.pom$`)
 
 type MavenPomResolver struct{}
 
-func (resolver *MavenPomResolver) CanResolve(file string) bool {
-	base := filepath.Base(file)
+// CanResolve determine whether the file can be resolve by name of the file
+func (resolver *MavenPomResolver) CanResolve(mavenPomFile string) bool {
+	if maven == "" {
+		return false
+	}
+
+	// switch to the directory where the file is located for searching mvnw
+	dir, base := resolver.Split(mavenPomFile)
+	if err := os.Chdir(dir); err != nil {
+		logger.Log.Errorf("an error occurred when entering dir <%s> to parser file <%s>:%v\n", dir, base, err)
+		return false
+	}
+
 	logger.Log.Debugln("Base name:", base)
 	return possiblePomFileName.MatchString(base)
 }
 
+// Split a simple wraper of filepath.Split
+func (resolver *MavenPomResolver) Split(path string) (dir, file string) {
+	dir, file = filepath.Split(path)
+	if dir == "" {
+		dir = "./"
+	}
+	return
+}
+
 // Resolve resolves licenses of all dependencies declared in the pom.xml file.
-func (resolver *MavenPomResolver) Resolve(mavenPomFile string, report *Report) (err error) {
-	dir, base := filepath.Split(mavenPomFile)
+func (resolver *MavenPomResolver) Resolve(mavenPomFile string, report *Report) error {
+	dir, base := resolver.Split(mavenPomFile)
 	if err := os.Chdir(dir); err != nil {
-		return err
+		return fmt.Errorf("an error occurred when entering dir <%s> to parser file <%s>:%v", dir, base, err)
 	}
 
 	tempDirGenerator := NewTempDirGenerator()
 	dependenciesDir, err := tempDirGenerator.Create()
 	if err != nil {
-		return err
+		return fmt.Errorf("an error occurred when create temporary dir: %v", err)
 	}
 	defer tempDirGenerator.Destroy()
 
-	// mvn dependency:copy-dependencies -DoutputDirectory=lib
-	_, err = exec.Command("mvn", "dependency:copy-dependencies", "-f", base, fmt.Sprintf("-DoutputDirectory=%s", dependenciesDir)).Output()
+	cmd := exec.Command(maven, "dependency:copy-dependencies", "-f", base,
+		fmt.Sprintf("-DoutputDirectory=%s", dependenciesDir), "-DincludeScope=runtime")
+	_, err = cmd.Output()
 	if err != nil {
-		return err
+		return fmt.Errorf("an error occurred when execute maven command 「%v」: %v", cmd.String(), err)
 	}
 
 	jarFiles, err := ioutil.ReadDir(dependenciesDir)
@@ -94,7 +160,7 @@ func (resolver *MavenPomResolver) Resolve(mavenPomFile string, report *Report) (
 
 	logger.Log.Debugln("jars size:", len(jarFiles))
 
-	if err = resolver.ResolveJarFiles(dependenciesDir, jarFiles, report); err != nil {
+	if err := resolver.ResolveJarFiles(dependenciesDir, jarFiles, report); err != nil {
 		return err
 	}
 
@@ -119,6 +185,7 @@ func (resolver *MavenPomResolver) ResolveJarFiles(dir string, jarFiles []fs.File
 
 var possibleLicenseFileNameInJar = regexp.MustCompile(`(?i)^(\S*)?LICEN[SC]E(\S*\.txt)?$`)
 
+// ResolveJarLicense search license file of the jar package, then identify it
 func (resolver *MavenPomResolver) ResolveJarLicense(dependencyPath string, jar fs.FileInfo, report *Report) (err error) {
 	compressedJar, err := zip.OpenReader(dependencyPath)
 	if err != nil {
@@ -126,37 +193,41 @@ func (resolver *MavenPomResolver) ResolveJarLicense(dependencyPath string, jar f
 	}
 	defer compressedJar.Close()
 
+	// traverse all files in jar
 	for _, compressedFile := range compressedJar.File {
-		if possibleLicenseFileNameInJar.MatchString(compressedFile.Name) {
-			file, err := compressedFile.Open()
-			if err != nil {
-				return err
-			}
-
-			buf := bytes.NewBuffer(nil)
-			w := bufio.NewWriter(buf)
-			_, err = io.Copy(w, file)
-			if err != nil {
-				return err
-			}
-			w.Flush()
-			content := buf.String()
-			file.Close()
-
-			licenseFilePath := filepath.Join(dependencyPath, compressedFile.Name)
-			identifier, err := license.Identify(dependencyPath, string(content))
-			if err != nil {
-				return err
-			}
-
-			report.Resolve(&Result{
-				Dependency:      filepath.Base(dependencyPath),
-				LicenseFilePath: licenseFilePath,
-				LicenseContent:  content,
-				LicenseSpdxID:   identifier,
-			})
-			return nil
+		archiveFile := compressedFile.Name
+		if !possibleLicenseFileNameInJar.MatchString(archiveFile) {
+			continue
 		}
+
+		file, err := compressedFile.Open()
+		if err != nil {
+			return err
+		}
+
+		buf := bytes.NewBuffer(nil)
+		w := bufio.NewWriter(buf)
+		_, err = io.CopyN(w, file, int64(compressedFile.UncompressedSize64))
+		if err != nil {
+			return err
+		}
+
+		w.Flush()
+		content := buf.String()
+		file.Close()
+
+		identifier, err := license.Identify(dependencyPath, content)
+		if err != nil {
+			return err
+		}
+
+		report.Resolve(&Result{
+			Dependency:      filepath.Base(dependencyPath),
+			LicenseFilePath: archiveFile,
+			LicenseContent:  content,
+			LicenseSpdxID:   identifier,
+		})
+		return nil
 	}
-	return nil
+	return fmt.Errorf("cannot find license file")
 }

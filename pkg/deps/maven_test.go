@@ -137,24 +137,26 @@ func TestResolve(t *testing.T) {
 		pom.SetDependency([]Dependency{test.dep})
 		pom.Dump(pomFile)
 
-		report := deps.Report{}
-		if err := resolver.Resolve(pomFile, &report); err != nil {
-			t.Error(err)
-		}
-
-		if test.skip && len(report.Resolved) != 0 {
-			t.Errorf("these files from dependency %v should be skip but they are not:\n%v", test.dep, report.String())
-		}
-
-		if skipped := len(report.Skipped); skipped > 0 {
-			pkgs := make([]string, skipped)
-			for i, s := range report.Skipped {
-				pkgs[i] = s.Dependency
+		if resolver.CanResolve(pomFile) {
+			report := deps.Report{}
+			if err := resolver.Resolve(pomFile, &report); err != nil {
+				t.Error(err)
 			}
-			t.Errorf(
-				"failed to identify the licenses of following packages (%d):\n%s",
-				len(pkgs), strings.Join(pkgs, "\n"),
-			)
+
+			if test.skip && len(report.Resolved) != 0 {
+				t.Errorf("these files from dependency %v should be skip but they are not:\n%v", test.dep, report.String())
+			}
+
+			if skipped := len(report.Skipped); skipped > 0 {
+				pkgs := make([]string, skipped)
+				for i, s := range report.Skipped {
+					pkgs[i] = s.Dependency
+				}
+				t.Errorf(
+					"failed to identify the licenses of following packages (%d):\n%s",
+					len(pkgs), strings.Join(pkgs, "\n"),
+				)
+			}
 		}
 	}
 }

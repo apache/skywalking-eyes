@@ -34,38 +34,6 @@ import (
 	"github.com/apache/skywalking-eyes/license-eye/pkg/license"
 )
 
-var maven string
-
-func init() {
-	err := CheckMVN()
-	if err != nil {
-		logger.Log.Errorln("an error occurred when checking maven tool:", err)
-	}
-}
-
-// CheckMVN use mvn by default, use mvn if mvnw is not found
-func CheckMVN() error {
-	var err error
-
-	logger.Log.Debugln("searching mvnw ...")
-	_, err = exec.Command("./mvnw", "--version").Output()
-	if err == nil {
-		maven = "./mvnw"
-		logger.Log.Debugln("use mvnw")
-		return nil
-	}
-
-	logger.Log.Debugln("mvnw is not found, searching mvn ...")
-	_, err = exec.Command("mvn", "--version").Output()
-	if err == nil {
-		maven = "mvn"
-		logger.Log.Debugln("use mvn")
-		return nil
-	}
-
-	return fmt.Errorf("neither found mvnw nor mvn")
-}
-
 // TempDirGenerator Create and destroy one temporary directory
 type TempDirGenerator interface {
 	Create() (string, error)
@@ -104,18 +72,22 @@ func (t *tempDir) Destroy() {
 
 var possiblePomFileName = regexp.MustCompile(`(?i)^pom\.xml|.+\.pom$`)
 
-type MavenPomResolver struct{}
+type MavenPomResolver struct {
+	maven string
+}
 
 // CanResolve determine whether the file can be resolve by name of the file
 func (resolver *MavenPomResolver) CanResolve(mavenPomFile string) bool {
-	if maven == "" {
-		return false
-	}
-
 	// switch to the directory where the file is located for searching mvnw
 	dir, base := resolver.Split(mavenPomFile)
 	if err := os.Chdir(dir); err != nil {
 		logger.Log.Errorf("an error occurred when entering dir <%s> to parser file <%s>:%v\n", dir, base, err)
+		return false
+	}
+
+	err := resolver.CheckMVN()
+	if err != nil {
+		logger.Log.Errorln("an error occurred when checking maven tool:", err)
 		return false
 	}
 
@@ -132,6 +104,29 @@ func (resolver *MavenPomResolver) Split(path string) (dir, file string) {
 	return
 }
 
+// CheckMVN use mvn by default, use mvn if mvnw is not found
+func (resolver *MavenPomResolver) CheckMVN() error {
+	var err error
+
+	logger.Log.Debugln("searching mvnw ...")
+	_, err = exec.Command("./mvnw", "--version").Output()
+	if err == nil {
+		resolver.maven = "./mvnw"
+		logger.Log.Debugln("use mvnw")
+		return nil
+	}
+
+	logger.Log.Debugln("mvnw is not found, searching mvn ...")
+	_, err = exec.Command("mvn", "--version").Output()
+	if err == nil {
+		resolver.maven = "mvn"
+		logger.Log.Debugln("use mvn")
+		return nil
+	}
+
+	return fmt.Errorf("neither found mvnw nor mvn")
+}
+
 // Resolve resolves licenses of all dependencies declared in the pom.xml file.
 func (resolver *MavenPomResolver) Resolve(mavenPomFile string, report *Report) error {
 	dir, base := resolver.Split(mavenPomFile)
@@ -146,10 +141,11 @@ func (resolver *MavenPomResolver) Resolve(mavenPomFile string, report *Report) e
 	}
 	defer tempDirGenerator.Destroy()
 
-	cmd := exec.Command(maven, "dependency:copy-dependencies", "-f", base,
-		fmt.Sprintf("-DoutputDirectory=%s", dependenciesDir), "-DincludeScope=runtime")
-	_, err = cmd.Output()
-	if err != nil {
+	cmd := exec.Command(resolver.maven, "dependency:copy-dependencies", "-f", base,
+		fmt.Sprintf("-DoutputDirectory=%s", dependenciesDir), "-DincludeScope=runtime") // #nosec G204
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err = cmd.Run(); err != nil {
 		return fmt.Errorf("an error occurred when execute maven command 「%v」: %v", cmd.String(), err)
 	}
 

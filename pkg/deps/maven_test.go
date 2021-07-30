@@ -19,10 +19,9 @@ package deps_test
 
 import (
 	"bufio"
-	"encoding/xml"
+	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/apache/skywalking-eyes/license-eye/pkg/deps"
@@ -35,8 +34,8 @@ func TestCanResolve(t *testing.T) {
 		exp      bool
 	}{
 		{"pom.xml", true},
-		{"POM.XML", true},
-		{"log4j-1.2.12.pom", true},
+		{"POM.XML", false},
+		{"log4j-1.2.12.pom", false},
 		{".pom", false},
 	} {
 		b := resolver.CanResolve(test.fileName)
@@ -46,71 +45,25 @@ func TestCanResolve(t *testing.T) {
 	}
 }
 
-type PomFile struct {
-	XMLName        xml.Name     `xml:"project"`
-	NameSpace      string       `xml:"xmlns,attr"`
-	SchemeInstance string       `xml:"xmlns:xsi,attr"`
-	SchemaLocation string       `xml:"xsi:schemaLocation,attr"`
-	ModelVersion   string       `xml:"modelVersion"`
-	GroupID        string       `xml:"groupId"`
-	ArtifactID     string       `xml:"artifactId"`
-	Version        string       `xml:"version"`
-	Dependencies   []Dependency `xml:"dependencies>dependency"`
-	Description    string       `xml:",innerxml"`
-}
-
-type Dependency struct {
-	GroupID    string `xml:"groupId"`
-	ArtifactID string `xml:"artifactId"`
-	Version    string `xml:"version"`
-	Scope      string `xml:"scope,omitempty"`
-}
-
-func newPomFile() *PomFile {
-	return &PomFile{
-		NameSpace:      "http://maven.apache.org/POM/4.0.0",
-		SchemeInstance: "http://www.w3.org/2001/XMLSchema-instance",
-		SchemaLocation: "http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd",
-		ModelVersion:   "4.0.0",
-		GroupID:        "apache",
-		ArtifactID:     "skywalking-eyes",
-		Version:        "1.0",
-	}
-}
-
-func (pom *PomFile) AddDependency(dep Dependency) {
-	pom.Dependencies = append(pom.Dependencies, dep)
-}
-
-func (pom *PomFile) SetDependency(deps []Dependency) {
-	pom.Dependencies = deps
-}
-
-func (pom *PomFile) Dump(fileName string) error {
+func dump(fileName, content string) error {
 	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	data, err := xml.Marshal(pom)
+	write := bufio.NewWriter(file)
+	_, err = write.WriteString(content)
 	if err != nil {
 		return err
 	}
 
-	write := bufio.NewWriter(file)
-	write.WriteString(xml.Header)
-	_, err = write.Write(data)
-	if err != nil {
-		return err
-	}
 	write.Flush()
 	return nil
 }
 
 func TestResolve(t *testing.T) {
 	resolver := new(deps.MavenPomResolver)
-	pom := newPomFile()
 
 	tempDir := deps.NewTempDirGenerator()
 	path, err := tempDir.Create()
@@ -119,32 +72,85 @@ func TestResolve(t *testing.T) {
 		return
 	}
 	defer tempDir.Destroy()
+
 	pomFile := filepath.Join(path, "pom.xml")
 
 	for _, test := range []struct {
-		dep  Dependency
-		skip bool
+		pomContent string
+		cnt        int
 	}{
-		{Dependency{"junit", "junit", "4.13.2", ""}, false},
-		{Dependency{"junit", "junit", "4.13.2", "test"}, true},
-		{Dependency{"org.apache.commons", "commons-math3", "3.6.1", ""}, false},
-		{Dependency{"org.apache.commons", "commons-math3", "3.6.1", "test"}, true},
-		{Dependency{"commons-logging", "commons-logging", "1.2", "compile"}, false},
-		{Dependency{"commons-logging", "commons-logging", "1.2", "test"}, true},
-		{Dependency{"org.apache.skywalking", "skywalking-sharing-server-plugin", "8.6.0", "runtime"}, false},
-		{Dependency{"org.apache.skywalking", "skywalking-sharing-server-plugin", "8.6.0", "test"}, true},
+		{`<?xml version="1.0" encoding="UTF-8"?>
+		<project xmlns="http://maven.apache.org/POM/4.0.0"
+			xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+			<modelVersion>4.0.0</modelVersion>
+
+			<groupId>apache</groupId>
+			<artifactId>skywalking-eyes</artifactId>
+			<version>1.0</version>
+
+			<dependencies>
+				<!-- https://mvnrepository.com/artifact/junit/junit -->
+				<dependency>
+					<groupId>junit</groupId>
+					<artifactId>junit</artifactId>
+					<version>4.12</version>
+				</dependency>
+				<!-- https://mvnrepository.com/artifact/commons-logging/commons-logging -->
+				<dependency>
+					<groupId>commons-logging</groupId>
+					<artifactId>commons-logging</artifactId>
+					<version>1.2</version>
+				</dependency>
+				<dependency>
+					<groupId>org.apache.skywalking</groupId>
+					<artifactId>skywalking-sharing-server-plugin</artifactId>
+					<version>8.6.0</version>
+					<scope>test</scope>
+				</dependency>
+			</dependencies>
+		</project>`, 3},
+		{`<?xml version="1.0" encoding="UTF-8"?>
+	<project xmlns="http://maven.apache.org/POM/4.0.0"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+		<modelVersion>4.0.0</modelVersion>
+	
+		<groupId>apache</groupId>
+		<artifactId>skywalking-eyes</artifactId>
+		<version>1.0</version>
+	
+		<dependencies>
+			<!-- https://mvnrepository.com/artifact/junit/junit -->
+			<dependency>
+				<groupId>junit</groupId>
+				<artifactId>junit</artifactId>
+				<version>4.12</version>
+			</dependency>
+			<!-- https://mvnrepository.com/artifact/commons-logging/commons-logging -->
+			<dependency>
+				<groupId>commons-logging</groupId>
+				<artifactId>commons-logging</artifactId>
+				<version>1.2</version>
+			</dependency>
+			<!-- https://mvnrepository.com/artifact/org.apache.skywalking/skywalking-sharing-server-plugin -->
+			<dependency>
+				<groupId>org.apache.skywalking</groupId>
+				<artifactId>skywalking-sharing-server-plugin</artifactId>
+				<version>8.6.0</version>
+			</dependency>
+		</dependencies>
+	</project>`, 107},
 	} {
-		pom.SetDependency([]Dependency{test.dep})
-		pom.Dump(pomFile)
+		dump(pomFile, test.pomContent)
 
 		if resolver.CanResolve(pomFile) {
 			report := deps.Report{}
 			if err := resolver.Resolve(pomFile, &report); err != nil {
 				t.Error(err)
+				return
 			}
 
-			if test.skip && len(report.Resolved) != 0 {
-				t.Errorf("these files from dependency %v should be skip but they are not:\n%v", test.dep, report.String())
+			if len(report.Resolved)+len(report.Skipped) != test.cnt {
+				t.Errorf("the expected number of jar packages is: %d, but actually: %d. result:\n%v", test.cnt, len(report.Resolved)+len(report.Skipped), report.String())
 			}
 
 			if skipped := len(report.Skipped); skipped > 0 {
@@ -152,11 +158,12 @@ func TestResolve(t *testing.T) {
 				for i, s := range report.Skipped {
 					pkgs[i] = s.Dependency
 				}
+
 				t.Errorf(
-					"failed to identify the licenses of following packages (%d):\n%s",
-					len(pkgs), strings.Join(pkgs, "\n"),
-				)
+					"there are %v dependencies in total, failed to identify the licenses of following packages (%d):\n", test.cnt,
+					len(pkgs))
 			}
+			fmt.Println(report.String())
 		}
 	}
 }

@@ -111,13 +111,13 @@ release: verify release-src release-bin
 .PHONY: docs-gen
 docs-gen:
 	-if [ ! -f "plantuml.jar" ]; then curl -sL -o plantuml.jar https://repo1.maven.org/maven2/net/sourceforge/plantuml/plantuml/$(PLANTUML_VERSION)/plantuml-$(PLANTUML_VERSION).jar; fi;
-	-java -jar plantuml.jar -tsvg -nometadata docs/*.plantuml
+	-java -jar plantuml.jar -tsvg -nometadata "docs/*.plantuml"
 
 .PHONY: verify-docs
 verify-docs: docs-gen
-	-if [ ! -z "`git status -s docs`" ]; then \
-    		echo "Following files are not consistent with CI:"; \
-    		git status -s docs; \
-    		git diff --color --word-diff --exit-code docs; \
-    		exit 1; \
-	 fi
+	@if [ ! -z "`git status -s docs`" ]; then \
+		echo "Following diagram files are not consistent with CI:"; \
+		git status -s docs; \
+		git diff --color --word-diff --exit-code docs; \
+		exit 1; \
+	fi

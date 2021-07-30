@@ -1,8 +1,0 @@
-@startuml
-
-!pragma layout smetana
-
-title "Apache/Skywalking-Eyes: Header fix process activity diagram"
-footer apache/skywalking-eyes
-
-@enduml

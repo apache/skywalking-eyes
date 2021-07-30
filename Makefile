@@ -29,6 +29,8 @@ GO_TEST = $(GO) test
 GO_LINT = $(GO_PATH)/bin/golangci-lint
 GO_BUILD_LDFLAGS = -X github.com/apache/skywalking-eyes/$(PROJECT)/commands.version=$(VERSION)
 
+PLANTUML_VERSION = 1.2021.9
+
 PLATFORMS := windows linux darwin
 os = $(word 1, $@)
 ARCH = amd64
@@ -77,7 +79,7 @@ clean:
 	-rm -rf "$(RELEASE_SRC)"*
 
 .PHONY: verify
-verify: clean license lint test
+verify: clean license lint test verify-docs
 
 release-src: clean
 	-tar -zcvf $(RELEASE_SRC).tgz \
@@ -105,3 +107,18 @@ release: verify release-src release-bin
 	shasum -a 512 $(RELEASE_SRC).tgz > $(RELEASE_SRC).tgz.sha512
 	gpg --batch --yes --armor --detach-sig $(RELEASE_BIN).tgz
 	shasum -a 512 $(RELEASE_BIN).tgz > $(RELEASE_BIN).tgz.sha512
+
+.PHONY: docs-gen
+docs-gen:
+	-if [ ! -f "plantuml.jar" ]; then curl -sL -o plantuml.jar https://repo1.maven.org/maven2/net/sourceforge/plantuml/plantuml/$(PLANTUML_VERSION)/plantuml-$(PLANTUML_VERSION).jar; fi;
+	-java -jar plantuml.jar -version
+	-java -jar plantuml.jar -tsvg -nometadata docs/*.plantuml
+
+.PHONY: verify-docs
+verify-docs: docs-gen
+	-if [ ! -z "`git status -s docs`" ]; then \
+    		echo "Following files are not consistent with CI:"; \
+    		git status -s docs; \
+    		git diff --color --exit-code docs; \
+    		exit 1; \
+	 fi

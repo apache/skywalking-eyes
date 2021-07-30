@@ -252,9 +252,6 @@ var (
 	reSearchLicenseInManifestFile = regexp.MustCompile(`(?im)^.*?licen[cs]e.*?(http.+)`)
 )
 
-// 可能有许可文件的地方: pom.xml, MANIFEST.MF, LICENSE.txt, NOTICE.txt
-// about.html, COPYING
-
 // ResolveLicenseFromJar search for the license in the jar package, and it may appear in MANIFEST.MF, LICENSE.txt, NOTICE.txt
 func (resolver *MavenPomResolver) ResolveLicenseFromJar(state *State, dep *Dependency, report *Report) (err error) {
 	jarPath := filepath.Join(resolver.repo, dep.Path(), dep.Jar())
@@ -289,7 +286,7 @@ func (resolver *MavenPomResolver) ResolveLicenseFromJar(state *State, dep *Depen
 		if err != nil {
 			return err
 		}
-		norm := regexp.MustCompile(`(?im)\n +`)
+		norm := regexp.MustCompile(`(?im)[\r\n]+ +`)
 		content := norm.ReplaceAllString(buf.String(), "")
 
 		r := reSearchLicenseInManifestFile.FindStringSubmatch(content)
@@ -298,7 +295,7 @@ func (resolver *MavenPomResolver) ResolveLicenseFromJar(state *State, dep *Depen
 				Dependency:      dep.Jar(),
 				LicenseFilePath: dep.Path(),
 				LicenseContent:  r[1],
-				LicenseSpdxID:   "found in manifest: " + r[1],
+				LicenseSpdxID:   r[1],
 			})
 			return nil
 		}

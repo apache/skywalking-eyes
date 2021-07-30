@@ -21,8 +21,8 @@ name: PlantUML SVG Diagram Consistency
 on:
   pull_request:
     paths:
-      - 'docs/*.plantuml'
-      - 'docs/*.svg'
+      - 'docs/**.plantuml'
+      - 'docs/**.svg'
   push:
     branches:
       - main

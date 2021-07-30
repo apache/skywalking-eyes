@@ -20,7 +20,7 @@
 ' the following line cares about avoiding the need of graphviz dependency by PlantUML (in CI))
 !pragma layout smetana
 
-title "Apache/Skywalking-Eyes: Header fix process activity diagram"
+title "Apache/Skywalking-Eyes: Header fix process activity diagram - NOT CONSISTENT!"
 footer apache/skywalking-eyes
 
 (*) --> "Start of 'header fix'. Processing files\nwithout proper headers file by file." as startNode

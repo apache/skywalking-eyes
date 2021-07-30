@@ -31,9 +31,10 @@ import (
 	"regexp"
 	"strings"
 
+	"golang.org/x/net/html/charset"
+
 	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
 	"github.com/apache/skywalking-eyes/license-eye/pkg/license"
-	"golang.org/x/net/html/charset"
 )
 
 type MavenPomResolver struct {

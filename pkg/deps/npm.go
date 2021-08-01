@@ -74,7 +74,7 @@ func (resolver *NpmResolver) Resolve(pkgFile string, report *Report) error {
 	pkgs := resolver.GetInstalledPkgs(pkgDir)
 
 	// Walk through each package's root directory to resolve licenses
-	// First
+	// Resolve from a package's package.json file or its license file
 	for _, pkg := range pkgs {
 		if err := resolver.ResolvePackageLicense(pkg.Name, pkg.Path, report); err != nil {
 			logger.Log.Warnln("Failed to resolve the license of dependency:", pkg.Name, err)
@@ -173,7 +173,7 @@ func (resolver *NpmResolver) GetInstalledPkgs(pkgDir string) []*Package {
 }
 
 // ResolvePackageLicense resolves the licenses of the given packages.
-// First, try to parse the package's package.json file to check the license file
+// First, try to find and parse the package's package.json file to check the license file
 // If the previous step fails, then try to identify the package's LICENSE file
 func (resolver *NpmResolver) ResolvePackageLicense(pkgName string, pkgPath string, report *Report) error {
 	var resolveErrs error

@@ -175,7 +175,7 @@ func (resolver *NpmResolver) GetInstalledPkgs(pkgDir string) []*Package {
 // ResolvePackageLicense resolves the licenses of the given packages.
 // First, try to find and parse the package's package.json file to check the license file
 // If the previous step fails, then try to identify the package's LICENSE file
-func (resolver *NpmResolver) ResolvePackageLicense(pkgName string, pkgPath string, report *Report) error {
+func (resolver *NpmResolver) ResolvePackageLicense(pkgName, pkgPath string, report *Report) error {
 	var resolveErrs error
 	expectedPkgFile := filepath.Join(pkgPath, PkgFileName)
 	lcs, err := resolver.ResolvePkgFile(expectedPkgFile)
@@ -213,7 +213,7 @@ func (resolver *NpmResolver) ResolvePkgFile(pkgFile string) (string, error) {
 }
 
 // ResolveLcsFile tries to find the license file to identify the license
-func (resolver *NpmResolver) ResolveLcsFile(pkgName string, pkgPath string) (string, error) {
+func (resolver *NpmResolver) ResolveLcsFile(pkgName, pkgPath string) (string, error) {
 	depFiles, err := ioutil.ReadDir(pkgPath)
 	if err != nil {
 		return "", err

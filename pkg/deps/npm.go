@@ -130,12 +130,12 @@ func (resolver *NpmResolver) InstallPkgs() {
 	}
 }
 
-// ListPkgPaths runs command 'npm ls --all --parseable' to list all the installed packages' paths, one path per line
+// ListPkgPaths runs npm command to list all the production only packages' absolute paths, one path per line
 // Note that although the flag `--long` can show more information line like a package's name,
 // its realization and printing format is not uniform in different npm-cli versions
 func (resolver *NpmResolver) ListPkgPaths() (io.Reader, error) {
 	buffer := &bytes.Buffer{}
-	cmd := exec.Command("npm", "ls", "--all", "--parseable")
+	cmd := exec.Command("npm", "ls", "--all", "--production", "--parseable")
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = buffer
 	// Error occurs all the time in npm commands, so no return statement here

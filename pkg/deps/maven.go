@@ -61,7 +61,15 @@ func (resolver *MavenPomResolver) Resolve(mavenPomFile string, report *Report) e
 
 	deps, err := resolver.LoadDependencies()
 	if err != nil {
-		return err
+		// attempt to download dependencies
+		if err = resolver.DownloadDeps(); err != nil {
+			return fmt.Errorf("dependencies download error")
+		}
+		// load again
+		deps, err = resolver.LoadDependencies()
+		if err != nil {
+			return err
+		}
 	}
 
 	if err := resolver.ResolveDependencies(deps, report); err != nil {
@@ -79,14 +87,8 @@ func (resolver *MavenPomResolver) CheckMVN() error {
 		return fmt.Errorf("neither found mvnw nor mvn")
 	}
 
-	logger.Log.Debugln("mvnw is not found, will use mvn by default")
-
 	if err := resolver.FindLocalRepository(); err != nil {
 		return fmt.Errorf("can not find the local repository: %v", err)
-	}
-
-	if err := resolver.DownloadDeps(); err != nil {
-		return fmt.Errorf("dependencies download error")
 	}
 
 	return nil
@@ -112,11 +114,20 @@ func (resolver *MavenPomResolver) FindLocalRepository() error {
 }
 
 func (resolver *MavenPomResolver) DownloadDeps() error {
-	cmd := exec.Command(resolver.maven, "process-resources") // #nosec G204
+	cmd := exec.Command(resolver.maven, "dependency:resolve") // #nosec G204
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	return cmd.Run()
+	err := cmd.Run()
+	if err == nil {
+		return nil
+	}
+	// the failure may be caused by the lack of sub modules, try to install it
+	install := exec.Command(resolver.maven, "clean", "install", "-DskipTests") // #nosec G204
+	install.Stdout = os.Stdout
+	install.Stderr = os.Stderr
+
+	return install.Run()
 }
 
 func (resolver *MavenPomResolver) LoadDependencies() ([]*Dependency, error) {

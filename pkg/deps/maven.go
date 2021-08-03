@@ -250,7 +250,7 @@ loop:
 		}
 	}
 
-	if license.Seem(comments) {
+	if SeemLicense(comments) {
 		return comments, nil
 	}
 
@@ -258,10 +258,15 @@ loop:
 }
 
 var (
-	reHaveLicenseFIle             = regexp.MustCompile(`(?i)^(\S*)?LICEN[SC]E(\S*\.txt)?$`)
+	reMaybeLicense                = regexp.MustCompile(`(?i)licen[sc]e|copyright|copying`)
 	reHaveManifestFile            = regexp.MustCompile(`(?i)^(\S*/)?manifest\.MF$`)
 	reSearchLicenseInManifestFile = regexp.MustCompile(`(?im)^.*?licen[cs]e.*?(http.+)`)
 )
+
+// SeemLicense determine whether the content of the file may be a license file
+func SeemLicense(content string) bool {
+	return reMaybeLicense.MatchString(content)
+}
 
 // ResolveLicenseFromJar search for the license in the jar package, and it may appear in MANIFEST.MF, LICENSE.txt, NOTICE.txt
 func (resolver *MavenPomResolver) ResolveLicenseFromJar(state *State, dep *Dependency, report *Report) (err error) {
@@ -281,7 +286,7 @@ func (resolver *MavenPomResolver) ResolveLicenseFromJar(state *State, dep *Depen
 		case reHaveManifestFile.MatchString(archiveFile):
 			manifestFile = compressedFile
 
-		case reHaveLicenseFIle.MatchString(archiveFile):
+		case possibleLicenseFileName.MatchString(archiveFile):
 			*state |= FoundLicenseInJarLicenseFile
 			buf, err := resolver.ReadFileFromZip(compressedFile)
 			if err != nil {

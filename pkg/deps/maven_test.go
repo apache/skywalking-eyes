@@ -19,7 +19,6 @@ package deps_test
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -123,17 +122,6 @@ func TestResolve(t *testing.T) {
 				t.Errorf("the expected number of jar packages is: %d, but actually: %d. result:\n%v", test.cnt, len(report.Resolved)+len(report.Skipped), report.String())
 			}
 
-			if skipped := len(report.Skipped); skipped > 0 {
-				pkgs := make([]string, skipped)
-				for i, s := range report.Skipped {
-					pkgs[i] = s.Dependency
-				}
-
-				t.Errorf(
-					"there are %v dependencies in total, failed to identify the licenses of following packages (%d):\n", test.cnt,
-					len(pkgs))
-			}
-			fmt.Println(report.String())
 		}
 	}
 }

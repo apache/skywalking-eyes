@@ -80,10 +80,3 @@ func Identify(pkgPath, content string) (string, error) {
 
 	return "", fmt.Errorf("cannot identify license content")
 }
-
-var seemLicense = regexp.MustCompile(`(?i)licen[sc]e|copyright|copying`)
-
-// Seem determine whether the content of the file may be a license file
-func Seem(content string) bool {
-	return seemLicense.MatchString(content)
-}

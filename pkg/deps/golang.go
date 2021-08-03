@@ -98,11 +98,10 @@ func (resolver *GoModResolver) ResolvePackages(modules []*packages.Module, repor
 			})
 		}
 	}
-
 	return nil
 }
 
-var possibleLicenseFileName = regexp.MustCompile(`(?i)^LICENSE|LICENCE(\.txt)?|COPYING|COPYING(\.txt)?$`)
+var possibleLicenseFileName = regexp.MustCompile(`(?i)^LICENSE|LICENCE(\.txt)?|COPYING(\.txt)?$`)
 
 func (resolver *GoModResolver) ResolvePackageLicense(module *packages.Module, report *Report) error {
 	dir := module.Dir

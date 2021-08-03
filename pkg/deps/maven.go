@@ -1,0 +1,607 @@
+//
+// Licensed to Apache Software Foundation (ASF) under one or more contributor
+// license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright
+// ownership. Apache Software Foundation (ASF) licenses this file to you under
+// the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+package deps
+
+import (
+	"archive/zip"
+	"bufio"
+	"bytes"
+	"encoding/xml"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"regexp"
+	"strings"
+
+	"golang.org/x/net/html/charset"
+
+	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
+	"github.com/apache/skywalking-eyes/license-eye/pkg/license"
+)
+
+type MavenPomResolver struct {
+	maven string
+	repo  string
+}
+
+// CanResolve determine whether the file can be resolve by name of the file
+func (resolver *MavenPomResolver) CanResolve(mavenPomFile string) bool {
+	base := filepath.Base(mavenPomFile)
+	logger.Log.Debugln("Base name:", base)
+	return base == "pom.xml"
+}
+
+// Resolve resolves licenses of all dependencies declared in the pom.xml file.
+func (resolver *MavenPomResolver) Resolve(mavenPomFile string, report *Report) error {
+	if err := os.Chdir(filepath.Dir(mavenPomFile)); err != nil {
+		return err
+	}
+
+	if err := resolver.CheckMVN(); err != nil {
+		return err
+	}
+
+	deps, err := resolver.LoadDependencies()
+	if err != nil {
+		// attempt to download dependencies
+		if err = resolver.DownloadDeps(); err != nil {
+			return fmt.Errorf("dependencies download error")
+		}
+		// load again
+		deps, err = resolver.LoadDependencies()
+		if err != nil {
+			return err
+		}
+	}
+
+	if err := resolver.ResolveDependencies(deps, report); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// CheckMVN check available maven tools, find local repositories and download all dependencies
+func (resolver *MavenPomResolver) CheckMVN() error {
+	if err := resolver.FindMaven("./mvnw"); err == nil {
+		logger.Log.Debugln("mvnw is found, will use mvnw by default")
+	} else if err := resolver.FindMaven("mvn"); err != nil {
+		return fmt.Errorf("neither found mvnw nor mvn")
+	}
+
+	if err := resolver.FindLocalRepository(); err != nil {
+		return fmt.Errorf("can not find the local repository: %v", err)
+	}
+
+	return nil
+}
+
+func (resolver *MavenPomResolver) FindMaven(execName string) error {
+	if _, err := exec.Command(execName, "--version").Output(); err != nil {
+		return err
+	}
+
+	resolver.maven = execName
+	return nil
+}
+
+func (resolver *MavenPomResolver) FindLocalRepository() error {
+	output, err := exec.Command(resolver.maven, "help:evaluate", "-Dexpression=settings.localRepository", "-q", "-DforceStdout").Output() // #nosec G204
+	if err != nil {
+		return err
+	}
+
+	resolver.repo = string(output)
+	return nil
+}
+
+func (resolver *MavenPomResolver) DownloadDeps() error {
+	cmd := exec.Command(resolver.maven, "dependency:resolve") // #nosec G204
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	err := cmd.Run()
+	if err == nil {
+		return nil
+	}
+	// the failure may be caused by the lack of sub modules, try to install it
+	install := exec.Command(resolver.maven, "clean", "install", "-Dcheckstyle.skip=true", "-Drat.skip=true", "-Dmaven.test.skip=true") // #nosec G204
+	install.Stdout = os.Stdout
+	install.Stderr = os.Stderr
+
+	return install.Run()
+}
+
+func (resolver *MavenPomResolver) LoadDependencies() ([]*Dependency, error) {
+	buf := bytes.NewBuffer(nil)
+
+	cmd := exec.Command(resolver.maven, "dependency:tree") // #nosec G204
+	cmd.Stdout = bufio.NewWriter(buf)
+	cmd.Stderr = os.Stderr
+
+	logger.Log.Debugf("Run command: 「%v」, please wait", cmd.String())
+	err := cmd.Run()
+	if err != nil {
+		return nil, err
+	}
+
+	deps := LoadDependencies(buf.Bytes())
+	return deps, nil
+}
+
+// ResolveDependencies resolves the licenses of the given dependencies
+func (resolver *MavenPomResolver) ResolveDependencies(deps []*Dependency, report *Report) error {
+	for _, dep := range deps {
+		state := NotFound
+		err := resolver.ResolveLicense(&state, dep, report)
+		if err != nil {
+			logger.Log.Warnf("Failed to resolve the license of <%s>: %v\n", dep.Jar(), state.String())
+			report.Skip(&Result{
+				Dependency:    dep.Jar(),
+				LicenseSpdxID: Unknown,
+			})
+		}
+	}
+	return nil
+}
+
+// ResolveLicense search all possible locations of the license, such as pom file, jar package
+func (resolver *MavenPomResolver) ResolveLicense(state *State, dep *Dependency, report *Report) error {
+	err := resolver.ResolveLicenseFromJar(state, dep, report)
+	if err == nil {
+		return nil
+	}
+
+	return resolver.ResolveLicenseFromPom(state, dep, report)
+}
+
+// ResolveLicenseFromPom search for license in the pom file, which may appear in the header comments or in license element of xml
+func (resolver *MavenPomResolver) ResolveLicenseFromPom(state *State, dep *Dependency, report *Report) (err error) {
+	pomFile := filepath.Join(resolver.repo, dep.Path(), dep.Pom())
+
+	pom, err := resolver.ReadLicensesFromPom(pomFile)
+	if err != nil {
+		return err
+	} else if pom != nil && len(pom.Licenses) != 0 {
+		report.Resolve(&Result{
+			Dependency:      dep.Jar(),
+			LicenseFilePath: dep.Path(),
+			LicenseContent:  pom.Raw(),
+			LicenseSpdxID:   pom.AllLicenses(),
+		})
+
+		return nil
+	}
+
+	headerComments, err := resolver.ReadHeaderCommentsFromPom(pomFile)
+	if err != nil {
+		return err
+	} else if headerComments != "" {
+		*state |= FoundLicenseInPomHeader
+		return resolver.IdentifyLicense(dep, headerComments, report)
+	}
+
+	return fmt.Errorf("not found in pom file")
+}
+
+func (resolver *MavenPomResolver) ReadLicensesFromPom(pomFile string) (*PomFile, error) {
+	file, err := os.Open(pomFile)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	dec := xml.NewDecoder(file)
+	dec.CharsetReader = charset.NewReaderLabel
+
+	pom := new(PomFile)
+	err = dec.Decode(pom)
+	if err != nil {
+		return nil, err
+	}
+
+	return pom, nil
+}
+
+func (resolver *MavenPomResolver) ReadHeaderCommentsFromPom(pomFile string) (string, error) {
+	file, err := os.Open(pomFile)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	var comments string
+
+	dec := xml.NewDecoder(file)
+	dec.CharsetReader = charset.NewReaderLabel
+loop:
+	for {
+		tok, err := dec.Token()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return "", err
+		}
+
+		switch tok := tok.(type) {
+		// search header only
+		case xml.StartElement:
+			break loop
+		case xml.Comment:
+			comments += string(tok.Copy())
+		}
+	}
+
+	if SeemLicense(comments) {
+		return comments, nil
+	}
+
+	return "", nil
+}
+
+var (
+	reMaybeLicense                = regexp.MustCompile(`(?i)licen[sc]e|copyright|copying`)
+	reHaveManifestFile            = regexp.MustCompile(`(?i)^(\S*/)?manifest\.MF$`)
+	reSearchLicenseInManifestFile = regexp.MustCompile(`(?im)^.*?licen[cs]e.*?(http.+)`)
+)
+
+// SeemLicense determine whether the content of the file may be a license file
+func SeemLicense(content string) bool {
+	return reMaybeLicense.MatchString(content)
+}
+
+// ResolveLicenseFromJar search for the license in the jar package, and it may appear in MANIFEST.MF, LICENSE.txt, NOTICE.txt
+func (resolver *MavenPomResolver) ResolveLicenseFromJar(state *State, dep *Dependency, report *Report) (err error) {
+	jarPath := filepath.Join(resolver.repo, dep.Path(), dep.Jar())
+	compressedJar, err := zip.OpenReader(jarPath)
+	if err != nil {
+		return err
+	}
+	defer compressedJar.Close()
+
+	var manifestFile *zip.File
+
+	// traverse all files in jar
+	for _, compressedFile := range compressedJar.File {
+		archiveFile := compressedFile.Name
+		switch {
+		case reHaveManifestFile.MatchString(archiveFile):
+			manifestFile = compressedFile
+
+		case possibleLicenseFileName.MatchString(archiveFile):
+			*state |= FoundLicenseInJarLicenseFile
+			buf, err := resolver.ReadFileFromZip(compressedFile)
+			if err != nil {
+				return err
+			}
+
+			return resolver.IdentifyLicense(dep, buf.String(), report)
+		}
+	}
+
+	if manifestFile != nil {
+		buf, err := resolver.ReadFileFromZip(manifestFile)
+		if err != nil {
+			return err
+		}
+		norm := regexp.MustCompile(`(?im)[\r\n]+ +`)
+		content := norm.ReplaceAllString(buf.String(), "")
+
+		r := reSearchLicenseInManifestFile.FindStringSubmatch(content)
+		if len(r) != 0 {
+			report.Resolve(&Result{
+				Dependency:      dep.Jar(),
+				LicenseFilePath: dep.Path(),
+				LicenseContent:  r[1],
+				LicenseSpdxID:   r[1],
+			})
+			return nil
+		}
+	}
+
+	return fmt.Errorf("cannot find license content")
+}
+
+func (resolver *MavenPomResolver) ReadFileFromZip(archiveFile *zip.File) (*bytes.Buffer, error) {
+	file, err := archiveFile.Open()
+	if err != nil {
+		return nil, err
+	}
+
+	buf := bytes.NewBuffer(nil)
+	w := bufio.NewWriter(buf)
+	_, err = io.CopyN(w, file, int64(archiveFile.UncompressedSize64))
+	if err != nil {
+		return nil, err
+	}
+
+	w.Flush()
+	file.Close()
+	return buf, nil
+}
+
+func (resolver *MavenPomResolver) IdentifyLicense(dep *Dependency, content string, report *Report) error {
+	identifier, err := license.Identify(dep.Path(), content)
+	if err != nil {
+		return err
+	}
+
+	report.Resolve(&Result{
+		Dependency:      dep.Jar(),
+		LicenseFilePath: dep.Path(),
+		LicenseContent:  content,
+		LicenseSpdxID:   identifier,
+	})
+	return nil
+}
+
+func LoadDependencies(data []byte) []*Dependency {
+	depsTree := LoadDependenciesTree(data)
+
+	cnt := 0
+	for _, dep := range depsTree {
+		cnt += dep.Count()
+	}
+
+	deps := make([]*Dependency, 0, cnt)
+
+	queue := []*Dependency{}
+	for _, depTree := range depsTree {
+		queue = append(queue, depTree)
+		for len(queue) > 0 {
+			dep := queue[0]
+
+			queue = queue[1:]
+			queue = append(queue, dep.TransitiveDeps...)
+
+			deps = append(deps, dep.Clone())
+		}
+	}
+	return deps
+}
+
+func LoadDependenciesTree(data []byte) []*Dependency {
+	type Elem struct {
+		*Dependency
+		level int
+	}
+
+	stack := []Elem{}
+	unique := make(map[string]struct{})
+
+	reFind := regexp.MustCompile(`(?im)^.*? ([\| ]*)(\+\-|\\\-) (\b.+):(\b.+):(\b.+):(\b.+):(\b.+)$`)
+	rawDeps := reFind.FindAllSubmatch(data, -1)
+
+	deps := make([]*Dependency, 0, len(rawDeps))
+	for _, rawDep := range rawDeps {
+		gid := strings.Split(string(rawDep[3]), ".")
+		dep := &Dependency{
+			GroupID:    gid,
+			ArtifactID: string(rawDep[4]),
+			Packaging:  string(rawDep[5]),
+			Version:    string(rawDep[6]),
+			Scope:      string(rawDep[7]),
+		}
+
+		if _, have := unique[dep.Path()]; have {
+			continue
+		}
+
+		if dep.Scope == "test" || dep.Scope == "provided" || dep.Scope == "system" {
+			continue
+		}
+
+		unique[dep.Path()] = struct{}{}
+
+		level := len(rawDep[1]) / 3
+		dependence := string(rawDep[2])
+
+		if level == 0 {
+			deps = append(deps, dep)
+
+			if len(stack) != 0 {
+				stack = stack[:0]
+			}
+
+			stack = append(stack, Elem{dep, level})
+			continue
+		}
+
+		tail := stack[len(stack)-1]
+
+		if level == tail.level {
+			stack[len(stack)-1] = Elem{dep, level}
+			stack[len(stack)-2].TransitiveDeps = append(stack[len(stack)-2].TransitiveDeps, dep)
+		} else {
+			stack = append(stack, Elem{dep, level})
+			tail.TransitiveDeps = append(tail.TransitiveDeps, dep)
+		}
+
+		if dependence == `\-` {
+			stack = stack[:len(stack)-1]
+		}
+	}
+	return deps
+}
+
+const (
+	FoundLicenseInPomHeader State = 1 << iota
+	FoundLicenseInJarLicenseFile
+	FoundLicenseInJarManifestFile
+	NotFound State = 0
+)
+
+type State int
+
+func (s *State) String() string {
+	if *s == 0 {
+		return "no possible license found"
+	}
+
+	var m []string
+
+	if *s&FoundLicenseInPomHeader != 0 {
+		m = append(m, "failed to resolve license found in pom header")
+	}
+	if *s&FoundLicenseInJarLicenseFile != 0 {
+		m = append(m, "failed to resolve license file found in jar")
+	}
+	if *s&FoundLicenseInJarManifestFile != 0 {
+		m = append(m, "failed to resolve license content from manifest file found in jar")
+	}
+
+	return strings.Join(m, "｜")
+}
+
+type Dependency struct {
+	GroupID                               []string
+	ArtifactID, Version, Packaging, Scope string
+	TransitiveDeps                        []*Dependency
+}
+
+func (dep *Dependency) Clone() *Dependency {
+	return &Dependency{
+		GroupID:    dep.GroupID,
+		ArtifactID: dep.ArtifactID,
+		Version:    dep.Version,
+		Packaging:  dep.Packaging,
+		Scope:      dep.Scope,
+	}
+}
+
+func (dep *Dependency) Count() int {
+	cnt := 1
+	for _, tDep := range dep.TransitiveDeps {
+		cnt += tDep.Count()
+	}
+	return cnt
+}
+
+func (dep *Dependency) Path() string {
+	return fmt.Sprintf("%v/%v/%v", strings.Join(dep.GroupID, "/"), dep.ArtifactID, dep.Version)
+}
+
+func (dep *Dependency) Pom() string {
+	return fmt.Sprintf("%v-%v.pom", dep.ArtifactID, dep.Version)
+}
+
+func (dep *Dependency) Jar() string {
+	return fmt.Sprintf("%v-%v.jar", dep.ArtifactID, dep.Version)
+}
+
+func (dep *Dependency) String() string {
+	buf := bytes.NewBuffer(nil)
+	w := bufio.NewWriter(buf)
+
+	_, err := w.WriteString(fmt.Sprintf("%v -> %v : %v %v", dep.GroupID, dep.ArtifactID, dep.Version, dep.Scope))
+	if err != nil {
+		logger.Log.Error(err)
+	}
+
+	for _, tDep := range dep.TransitiveDeps {
+		_, err = w.WriteString(fmt.Sprintf("\n\t%v", tDep))
+		if err != nil {
+			logger.Log.Error(err)
+		}
+	}
+
+	w.Flush()
+	return buf.String()
+}
+
+// TempDirGenerator Create and destroy one temporary directory
+type TempDirGenerator interface {
+	Create() (string, error)
+	Destroy()
+}
+
+func NewTempDirGenerator() TempDirGenerator {
+	return new(TempDir)
+}
+
+// TempDir an implementation of the TempDirGenerator
+type TempDir struct {
+	dir string
+}
+
+func (t *TempDir) Create() (string, error) {
+	tmpDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return "", err
+	}
+	t.dir = tmpDir
+	return tmpDir, nil
+}
+
+func (t *TempDir) Destroy() {
+	if t.dir == "" {
+		logger.Log.Errorf("the temporary directory does not exist")
+		return
+	}
+
+	err := os.RemoveAll(t.dir)
+	if err != nil {
+		logger.Log.Errorln(err)
+	}
+}
+
+// PomFile is used to extract license from the pom.xml file
+type PomFile struct {
+	XMLName  xml.Name      `xml:"project"`
+	Licenses []*XMLLicense `xml:"licenses>license,omitempty"`
+}
+
+// AllLicenses return all licenses found in pom.xml file
+func (pom *PomFile) AllLicenses() string {
+	licenses := []string{}
+	for _, l := range pom.Licenses {
+		licenses = append(licenses, l.Item())
+	}
+	return strings.Join(licenses, ", ")
+}
+
+// Raw return raw data
+func (pom *PomFile) Raw() string {
+	contents := []string{}
+	for _, l := range pom.Licenses {
+		contents = append(contents, l.Raw())
+	}
+	return strings.Join(contents, "\n")
+}
+
+type XMLLicense struct {
+	Name         string `xml:"name,omitempty"`
+	URL          string `xml:"url,omitempty"`
+	Distribution string `xml:"distribution,omitempty"`
+	Comments     string `xml:"comments,omitempty"`
+}
+
+func (l *XMLLicense) Item() string {
+	return GetLicenseFromURL(l.URL)
+}
+
+func (l *XMLLicense) Raw() string {
+	return fmt.Sprintf(`License: {Name: %s, URL: %s, Distribution: %s, Comments: %s, }`, l.Name, l.URL, l.Distribution, l.Comments)
+}
+
+func GetLicenseFromURL(url string) string {
+	return url
+}

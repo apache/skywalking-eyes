@@ -123,7 +123,7 @@ func (resolver *MavenPomResolver) DownloadDeps() error {
 		return nil
 	}
 	// the failure may be caused by the lack of sub modules, try to install it
-	install := exec.Command(resolver.maven, "clean", "install", "-DskipTests") // #nosec G204
+	install := exec.Command(resolver.maven, "clean", "install", "-Dcheckstyle.skip=true", "-Drat.skip=true", "-Dmaven.test.skip=true") // #nosec G204
 	install.Stdout = os.Stdout
 	install.Stderr = os.Stderr
 

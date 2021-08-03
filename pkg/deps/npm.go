@@ -19,9 +19,10 @@ package deps
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -38,75 +39,52 @@ type NpmResolver struct {
 
 // Package represents package.json
 type Package struct {
-	Name         string            `json:"name"`
-	Version      string            `json:"version"`
-	License      string            `json:"license"`
-	Dependencies map[string]string `json:"dependencies"`
+	Name    string `json:"name"`
+	License string `json:"license"`
+	Path    string
 }
 
-const packageFile = "package.json"
+const PkgFileName = "package.json"
 
 // CanResolve checks whether the given file is the npm package file
 func (resolver *NpmResolver) CanResolve(file string) bool {
 	base := filepath.Base(file)
 	logger.Log.Debugln("Base name:", base)
-	return base == packageFile
+	return base == PkgFileName
 }
 
 // Resolve resolves licenses of all dependencies declared in the package.json file.
-func (resolver *NpmResolver) Resolve(packageFile string, report *Report) error {
-	// Parse the project package file to gather the required dependencies
-	packageInfo, err := resolver.parsePackageFile(packageFile)
-	if err != nil {
+func (resolver *NpmResolver) Resolve(pkgFile string, report *Report) error {
+	workDir := filepath.Dir(pkgFile)
+	if err := os.Chdir(workDir); err != nil {
 		return err
-	}
-	depNames := make([]string, 0, len(packageInfo.Dependencies))
-	for dep := range packageInfo.Dependencies {
-		depNames = append(depNames, dep)
 	}
 
 	// Run command 'npm install' to install or update the required node packages
-	// Query from the command line first whether to skip this procedure
+	// Query from the command line first whether to skip this procedure,
 	// in case that the dependent packages are downloaded and brought up-to-date
-	root := filepath.Dir(packageFile)
 	if needSkip := resolver.NeedSkipInstallPkgs(); !needSkip {
-		if err := resolver.InstallPkgs(root); err != nil {
-			return fmt.Errorf("fail to install depNames: %+v", err)
-		}
+		resolver.InstallPkgs()
 	}
 
-	// Change working directory to node_modules
-	depPath := filepath.Join(root, "node_modules")
-	if err := os.Chdir(depPath); err != nil {
-		return err
-	}
+	// Run command 'npm ls --all --parseable' to list all the installed packages' paths
+	// Use a package directory's relative path from the node_modules directory, to infer its package name
+	// Thus gathering all the installed packages' names and paths
+	pkgDir := filepath.Join(workDir, "node_modules")
+	pkgs := resolver.GetInstalledPkgs(pkgDir)
 
 	// Walk through each package's root directory to resolve licenses
-	// First, try to parse the package's package.json file to check the license file
-	// If the previous step fails, then try to identify the package's LICENSE file
-	for _, depName := range depNames {
-		if err := resolver.ResolvePackageLicense(depName, report); err != nil {
-			logger.Log.Warnln("Failed to resolve the license of dependency:", depName, err)
+	// Resolve from a package's package.json file or its license file
+	for _, pkg := range pkgs {
+		if err := resolver.ResolvePackageLicense(pkg.Name, pkg.Path, report); err != nil {
+			logger.Log.Warnln("Failed to resolve the license of dependency:", pkg.Name, err)
 			report.Skip(&Result{
-				Dependency:    depName,
+				Dependency:    pkg.Name,
 				LicenseSpdxID: Unknown,
 			})
 		}
 	}
 	return nil
-}
-
-// parsePackageFile parses the content of the package file
-func (resolver *NpmResolver) parsePackageFile(packageFile string) (*Package, error) {
-	content, err := ioutil.ReadFile(packageFile)
-	if err != nil {
-		return nil, err
-	}
-	var packageInfo Package
-	if err := json.Unmarshal(content, &packageInfo); err != nil {
-		return nil, err
-	}
-	return &packageInfo, nil
 }
 
 // NeedSkipInstallPkgs queries whether to skip the procedure of installing or updating packages
@@ -141,79 +119,132 @@ func (resolver *NpmResolver) NeedSkipInstallPkgs() bool {
 }
 
 // InstallPkgs runs command 'npm install' to install node packages
-func (resolver *NpmResolver) InstallPkgs(root string) error {
+func (resolver *NpmResolver) InstallPkgs() {
 	cmd := exec.Command("npm", "install")
-	cmd.Dir = root
 	logger.Log.Println(fmt.Sprintf("Run command: %v, please wait", cmd.String()))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	// Error occurs all the time in npm commands, so no return statement here
 	if err := cmd.Run(); err != nil {
-		return err
+		logger.Log.Errorln(err)
 	}
-	return nil
+}
+
+// ListPkgPaths runs npm command to list all the production only packages' absolute paths, one path per line
+// Note that although the flag `--long` can show more information line like a package's name,
+// its realization and printing format is not uniform in different npm-cli versions
+func (resolver *NpmResolver) ListPkgPaths() (io.Reader, error) {
+	buffer := &bytes.Buffer{}
+	cmd := exec.Command("npm", "ls", "--all", "--production", "--parseable")
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = buffer
+	// Error occurs all the time in npm commands, so no return statement here
+	err := cmd.Run()
+	return buffer, err
+}
+
+// GetInstalledPkgs gathers all the installed packages' names and paths
+// it uses a package directory's relative path from the node_modules directory, to infer its package name
+func (resolver *NpmResolver) GetInstalledPkgs(pkgDir string) []*Package {
+	buffer, err := resolver.ListPkgPaths()
+	// Error occurs all the time in npm commands, so no return statement here
+	if err != nil {
+		logger.Log.Errorln(err)
+	}
+	pkgs := make([]*Package, 0)
+	sc := bufio.NewScanner(buffer)
+	for sc.Scan() {
+		absPath := sc.Text()
+		rel, err := filepath.Rel(pkgDir, absPath)
+		if err != nil {
+			logger.Log.Errorln(err)
+			continue
+		}
+		if rel == "" || rel == "." || rel == ".." {
+			continue
+		}
+		pkgName := filepath.ToSlash(rel)
+		pkgs = append(pkgs, &Package{
+			Name: pkgName,
+			Path: absPath,
+		})
+	}
+	return pkgs
 }
 
 // ResolvePackageLicense resolves the licenses of the given packages.
-func (resolver *NpmResolver) ResolvePackageLicense(depName string, report *Report) error {
-	depFiles, err := ioutil.ReadDir(depName)
-	if err != nil {
-		return err
-	}
-
-	// Record the errors encountered when parsing the package.json file
-	packageErr := errors.New("cannot find the package.json file")
-
-	// STEP 1: Try to find and parse the package.json file to capture the license field
-	for _, info := range depFiles {
-		if info.IsDir() || info.Name() != packageFile {
-			continue
-		}
-		packageFilePath := filepath.Join(depName, info.Name())
-		packageInfo, err := resolver.parsePackageFile(packageFilePath)
-		if err != nil {
-			packageErr = err
-			break
-		}
-		if packageInfo.License == "" {
-			packageErr = fmt.Errorf("cannot capture the license field")
-			break
-		}
+// First, try to find and parse the package's package.json file to check the license file
+// If the previous step fails, then try to identify the package's LICENSE file
+func (resolver *NpmResolver) ResolvePackageLicense(pkgName, pkgPath string, report *Report) error {
+	var resolveErrs error
+	expectedPkgFile := filepath.Join(pkgPath, PkgFileName)
+	lcs, err := resolver.ResolvePkgFile(expectedPkgFile)
+	if err == nil {
 		report.Resolve(&Result{
-			Dependency:      depName,
-			LicenseFilePath: "",
-			LicenseContent:  "",
-			LicenseSpdxID:   packageInfo.License,
+			Dependency:    pkgName,
+			LicenseSpdxID: lcs,
 		})
 		return nil
 	}
+	resolveErrs = err
 
-	// Record the errors encountered when identifying the license file
-	licenseErr := errors.New("cannot find the license file")
+	lcs, err = resolver.ResolveLcsFile(pkgName, pkgPath)
+	if err == nil {
+		report.Resolve(&Result{
+			Dependency:    pkgName,
+			LicenseSpdxID: lcs,
+		})
+		return nil
+	}
+	resolveErrs = fmt.Errorf("%+v; %+v", resolveErrs, err)
+	return resolveErrs
+}
 
-	// STEP 2: Try to find the license file to identify the license
+// ResolvePkgFile tries to find and parse the package.json file to capture the license field
+func (resolver *NpmResolver) ResolvePkgFile(pkgFile string) (string, error) {
+	packageInfo, err := resolver.ParsePkgFile(pkgFile)
+	if err != nil {
+		return "", err
+	}
+	if packageInfo.License == "" {
+		return "", fmt.Errorf("cannot capture the license field")
+	}
+	return packageInfo.License, nil
+}
+
+// ResolveLcsFile tries to find the license file to identify the license
+func (resolver *NpmResolver) ResolveLcsFile(pkgName, pkgPath string) (string, error) {
+	depFiles, err := ioutil.ReadDir(pkgPath)
+	if err != nil {
+		return "", err
+	}
 	for _, info := range depFiles {
 		if info.IsDir() || !possibleLicenseFileName.MatchString(info.Name()) {
 			continue
 		}
-		licenseFilePath := filepath.Join(depName, info.Name())
+		licenseFilePath := filepath.Join(pkgPath, info.Name())
 		content, err := ioutil.ReadFile(licenseFilePath)
 		if err != nil {
-			licenseErr = err
-			break
+			return "", err
 		}
-		identifier, err := license.Identify(depName, string(content))
+		identifier, err := license.Identify(pkgName, string(content))
 		if err != nil {
-			licenseErr = err
-			break
+			return "", err
 		}
-		report.Resolve(&Result{
-			Dependency:      depName,
-			LicenseFilePath: licenseFilePath,
-			LicenseContent:  string(content),
-			LicenseSpdxID:   identifier,
-		})
-		return nil
+		return identifier, nil
 	}
+	return "", fmt.Errorf("cannot find the license file")
+}
 
-	return fmt.Errorf("%+v; %+v", packageErr, licenseErr)
+// ParsePkgFile parses the content of the package file
+func (resolver *NpmResolver) ParsePkgFile(pkgFile string) (*Package, error) {
+	content, err := ioutil.ReadFile(pkgFile)
+	if err != nil {
+		return nil, err
+	}
+	var packageInfo Package
+	if err := json.Unmarshal(content, &packageInfo); err != nil {
+		return nil, err
+	}
+	return &packageInfo, nil
 }

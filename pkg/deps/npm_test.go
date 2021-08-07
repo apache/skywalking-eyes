@@ -75,7 +75,7 @@ var TestData = []struct {
 }{
 	{lcsString, "ISC", false},
 	{lcsStruct, "ISC", false},
-	{lcss, "(MIT OR Apache-2.0)", false},
+	{lcss, "MIT OR Apache-2.0", false},
 	{lcsStringEmpty, "", true},
 	{lcsStructEmpty, "", true},
 	{lcssEmpty, "", true},

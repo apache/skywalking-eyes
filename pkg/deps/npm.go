@@ -27,6 +27,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
@@ -37,11 +38,19 @@ type NpmResolver struct {
 	Resolver
 }
 
+// Lcs represents the license style in package.json
+type Lcs struct {
+	Type string `json:"type"`
+	URL  string `json:"url"`
+}
+
 // Package represents package.json
+// License field has inconsistent styles, so we just store the byte array here to postpone unmarshalling
 type Package struct {
-	Name    string `json:"name"`
-	License string `json:"license"`
-	Path    string
+	Name     string          `json:"name"`
+	License  json.RawMessage `json:"license"`
+	Licenses []Lcs           `json:"licenses"`
+	Path     string          `json:"-"`
 }
 
 const PkgFileName = "package.json"
@@ -206,10 +215,50 @@ func (resolver *NpmResolver) ResolvePkgFile(pkgFile string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if packageInfo.License == "" {
-		return "", fmt.Errorf("cannot capture the license field")
+
+	if lcs, ok := resolver.ResolveLicenseField(packageInfo.License); ok {
+		return lcs, nil
 	}
-	return packageInfo.License, nil
+
+	if lcs, ok := resolver.ResolveLicensesField(packageInfo.Licenses); ok {
+		return lcs, nil
+	}
+
+	return "", fmt.Errorf(`cannot parse the "license"/"licenses" field`)
+}
+
+// ResolveLicenseField parses and validates the "license" field in package.json file
+func (resolver *NpmResolver) ResolveLicenseField(rawData []byte) (string, bool) {
+	if len(rawData) > 0 {
+		switch rawData[0] {
+		case '"':
+			var lcs string
+			_ = json.Unmarshal(rawData, &lcs)
+			if lcs != "" {
+				return lcs, true
+			}
+		case '{':
+			var lcs Lcs
+			_ = json.Unmarshal(rawData, &lcs)
+			if t := lcs.Type; t != "" {
+				return t, true
+			}
+		}
+	}
+	return "", false
+}
+
+// ResolveLicensesField parses and validates the "licenses" field in package.json file
+// Additionally, the output is converted into the SPDX license expression syntax version 2.0 string, like "ISC OR GPL-3.0"
+func (resolver *NpmResolver) ResolveLicensesField(licenses []Lcs) (string, bool) {
+	var lcs []string
+	for _, l := range licenses {
+		lcs = append(lcs, l.Type)
+	}
+	if len(lcs) == 0 {
+		return "", false
+	}
+	return strings.Join(lcs, " OR "), true
 }
 
 // ResolveLcsFile tries to find the license file to identify the license

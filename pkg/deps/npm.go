@@ -249,19 +249,16 @@ func (resolver *NpmResolver) ResolveLicenseField(rawData []byte) (string, bool) 
 }
 
 // ResolveLicensesField parses and validates the "licenses" field in package.json file
-// Additionally, the output is converted into the SPDX license expression syntax version 2.0 string, like "(ISC OR GPL-3.0)"
+// Additionally, the output is converted into the SPDX license expression syntax version 2.0 string, like "ISC OR GPL-3.0"
 func (resolver *NpmResolver) ResolveLicensesField(licenses []Lcs) (string, bool) {
-	lcs := ""
+	var lcs []string
 	for _, l := range licenses {
-		lcs += l.Type + " "
+		lcs = append(lcs, l.Type)
 	}
-	lcs = strings.TrimSpace(lcs)
-	if lcs == "" {
+	if len(lcs) == 0 {
 		return "", false
 	}
-	lcs = strings.ReplaceAll(lcs, " ", " OR ")
-	lcs = fmt.Sprintf("(%s)", lcs)
-	return lcs, true
+	return strings.Join(lcs, " OR "), true
 }
 
 // ResolveLcsFile tries to find the license file to identify the license

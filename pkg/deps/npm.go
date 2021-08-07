@@ -224,7 +224,7 @@ func (resolver *NpmResolver) ResolvePkgFile(pkgFile string) (string, error) {
 		return lcs, nil
 	}
 
-	return "", fmt.Errorf("cannot parse the \"license\"/\"licenses\" field")
+	return "", fmt.Errorf(`cannot parse the "license"/"licenses" field`)
 }
 
 // ResolveLicenseField parses and validates the "license" field in package.json file

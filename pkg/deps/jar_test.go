@@ -18,73 +18,67 @@
 package deps_test
 
 import (
-	"bufio"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 
 	"github.com/apache/skywalking-eyes/license-eye/pkg/deps"
 )
 
-func TestCanResolvePomFile(t *testing.T) {
-	resolver := new(deps.MavenPomResolver)
+func TestCanResolveJarFile(t *testing.T) {
+	resolver := new(deps.JarResolver)
 	for _, test := range []struct {
 		fileName string
 		exp      bool
 	}{
-		{"pom.xml", true},
-		{"POM.XML", false},
-		{"log4j-1.2.12.pom", false},
-		{".pom", false},
+		{"1.jar", true},
+		{"/tmp/1.jar", true},
+		{"1.jar2", false},
+		{"protobuf-java-3.13.0.jar", true},
+		{"slf4j-api-1.7.25.jar", true},
 	} {
 		b := resolver.CanResolve(test.fileName)
 		if b != test.exp {
-			t.Errorf("MavenPomResolver.CanResolve(\"%v\") = %v, want %v", test.fileName, b, test.exp)
+			t.Errorf("JarResolver.CanResolve(\"%v\") = %v, want %v", test.fileName, b, test.exp)
 		}
 	}
 }
 
-func dumpPomFile(fileName, content string) error {
-	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+func copyJars(t *testing.T, pomFile, content string) ([]string, error) {
+	dir := filepath.Dir(pomFile)
 
-	write := bufio.NewWriter(file)
-	_, err = write.WriteString(content)
-	if err != nil {
-		return err
+	if err := os.Chdir(dir); err != nil {
+		return nil, err
 	}
 
-	write.Flush()
-	return nil
+	if err := dumpPomFile(pomFile, content); err != nil {
+		return nil, err
+	}
+
+	if _, err := exec.Command("mvn", "dependency:copy-dependencies", "-DoutputDirectory=./lib", "-DincludeScope=runtime").Output(); err != nil {
+		return nil, err
+	}
+
+	jars := []string{}
+	files, err := ioutil.ReadDir(filepath.Join(dir, "lib"))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, file := range files {
+		if !file.IsDir() {
+			jars = append(jars, filepath.Join(dir, "lib", file.Name()))
+		}
+	}
+
+	return jars, nil
 }
 
-func tmpDir() (string, error) {
-	dir, err := ioutil.TempDir("", "")
-	if err != nil {
-		return "", err
-	}
-	return dir, nil
-}
-
-func destroyTmpDir(t *testing.T, dir string) {
-	if dir == "" {
-		t.Errorf("the temporary directory does not exist")
-		return
-	}
-
-	err := os.RemoveAll(dir)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestResolveMaven(t *testing.T) {
-	resolver := new(deps.MavenPomResolver)
+func TestResolveJar(t *testing.T) {
+	resolver := new(deps.JarResolver)
 
 	path, err := tmpDir()
 	if err != nil {
@@ -121,28 +115,34 @@ func TestResolveMaven(t *testing.T) {
 				<artifactId>commons-logging</artifactId>
 				<version>1.2</version>
 			</dependency>
-			<!-- https://mvnrepository.com/artifact/org.apache.skywalking/skywalking-sharing-server-plugin -->
+			<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-math3 -->
 			<dependency>
-				<groupId>org.apache.skywalking</groupId>
-				<artifactId>skywalking-sharing-server-plugin</artifactId>
-				<version>8.6.0</version>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-math3</artifactId>
+				<version>3.6.1</version>
 			</dependency>
 		</dependencies>
-	</project>`, 107},
+	</project>`, 4},
 	} {
-		dumpPomFile(pomFile, test.pomContent)
-
-		if resolver.CanResolve(pomFile) {
-			report := deps.Report{}
-			if err := resolver.Resolve(pomFile, &report); err != nil {
-				t.Error(err)
-				return
-			}
-
-			if len(report.Resolved)+len(report.Skipped) != test.cnt {
-				t.Errorf("the expected number of jar packages is: %d, but actually: %d. result:\n%v", test.cnt, len(report.Resolved)+len(report.Skipped), report.String())
-			}
-			fmt.Println(report.String())
+		jars, err := copyJars(t, pomFile, test.pomContent)
+		if err != nil {
+			t.Error(err)
+			return
 		}
+
+		report := deps.Report{}
+		for _, jar := range jars {
+			if resolver.CanResolve(jar) {
+				if err := resolver.Resolve(jar, &report); err != nil {
+					t.Error(err)
+					return
+				}
+
+			}
+		}
+		if len(report.Resolved)+len(report.Skipped) != test.cnt {
+			t.Errorf("the expected number of jar packages is: %d, but actually: %d. result:\n%v", test.cnt, len(report.Resolved)+len(report.Skipped), report.String())
+		}
+		fmt.Println(report.String())
 	}
 }

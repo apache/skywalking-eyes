@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
 	"github.com/apache/skywalking-eyes/license-eye/pkg/deps"
 )
 
@@ -78,6 +79,11 @@ func copyJars(t *testing.T, pomFile, content string) ([]string, error) {
 }
 
 func TestResolveJar(t *testing.T) {
+	if _, err := exec.Command("mvn", "--version").Output(); err != nil {
+		logger.Log.Warnf("Failed to find mvn, the test `TestResolveJar` was skipped")
+		return
+	}
+
 	resolver := new(deps.JarResolver)
 
 	path, err := tmpDir()

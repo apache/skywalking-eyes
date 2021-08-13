@@ -70,7 +70,9 @@ func Identify(pkgPath, content string) (string, error) {
 	content = Normalize(content)
 
 	for name, license := range normalizedTemplates {
-		if strings.Contains(content, license) {
+		// Should not use `Contains` as a root LICENSE file may include other licenses the project uses,
+		// `Contains` would identify the last one license as the project's license.
+		if strings.HasPrefix(content, license) {
 			name = filepath.Base(name)
 			return strings.TrimSuffix(name, filepath.Ext(name)), nil
 		}

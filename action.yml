@@ -20,9 +20,16 @@ description: A full-featured license tool to check and fix license headers and d
 branding:
   icon: book
   color: orange
+inputs:
+  log:
+    description: The level of log, for example, "debug" or "info"
+    required: false
+    default: info
 runs:
   using: docker
   image: Dockerfile
   args:
+    - -v
+    - ${{ inputs.log }}
     - header
     - check

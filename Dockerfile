@@ -38,4 +38,4 @@ RUN apk add --no-cache gcc musl-dev
 
 WORKDIR /github/workspace/
 
-ENTRYPOINT ["/bin/license-eye", "-v", "debug"]
+ENTRYPOINT ["/bin/license-eye"]

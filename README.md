@@ -22,6 +22,8 @@ To use License-Eye in GitHub Actions, add a step in your GitHub workflow.
   # with:
       # Optional: set the log level. The default value is `info`.
       # log: debug
+      # Optional: set the config file. The default value is `.licenserc.yaml`.
+      # config: .licenserc.yaml
 ```
 
 Add a `.licenserc.yaml` in the root of your project, for Apache Software Foundation projects, the following configuration should be enough.

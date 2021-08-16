@@ -25,11 +25,17 @@ inputs:
     description: The level of log, for example, "debug" or "info"
     required: false
     default: info
+  config:
+    description: The configuration file, for example, ".licenserc.yaml"
+    required: false
+    default: .licenserc.yaml
 runs:
   using: docker
   image: Dockerfile
   args:
     - -v
     - ${{ inputs.log }}
+    - -c
+    - ${{ inputs.config }}
     - header
     - check

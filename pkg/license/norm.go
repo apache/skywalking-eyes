@@ -178,6 +178,11 @@ var (
 		},
 
 		{
+			regexp.MustCompile(`(?im)This license applies to .+? portions of this .+?\. The .+? maintains its own .+? license\.`),
+			"",
+		},
+
+		{
 			regexp.MustCompile(`(?im)\(including the next paragraph\)`),
 			"",
 		},
@@ -222,6 +227,11 @@ var (
 		// Copyright (c) .....
 		{
 			regexp.MustCompile(`(?m)^\s*Copyright (\([cC©]\))?.+$`),
+			"",
+		},
+		// All rights reserved
+		{
+			regexp.MustCompile(`(?m)^\s*All rights reserved\.?$`),
 			"",
 		},
 

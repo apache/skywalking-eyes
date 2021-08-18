@@ -95,6 +95,8 @@ INFO Totally checked 20 files, valid: 10, invalid: 10, ignored: 0, fixed: 10
 
 #### Resolve Dependencies' licenses
 
+This command serves as assistance for human beings to audit the dependencies license, it's exit code is always 0.
+
 ```bash
 $ bin/darwin/license-eye -c test/testdata/.licenserc_for_test_check.yaml dep resolve
 INFO GITHUB_TOKEN is not set, license-eye won't comment on the pull request
@@ -133,6 +135,33 @@ gopkg.in/yaml.v3                            |      Unknown
 
 ERROR failed to identify the licenses of following packages:
 gopkg.in/yaml.v3
+```
+
+#### Check Dependencies' licenses
+
+This command can be used to perform automatic license compatibility check, when there is incompatible licenses found,
+the command will exit with status code 1 and fail the command.
+
+```bash
+$ bin/darwin/license-eye -c test/testdata/.licenserc_for_test_check.yaml dep check
+INFO GITHUB_TOKEN is not set, license-eye won't comment on the pull request 
+INFO Loading configuration from file: .licenserc.yaml 
+WARNING Failed to resolve the license of <github.com/gogo/protobuf>: cannot identify license content 
+WARNING Failed to resolve the license of <github.com/kr/logfmt>: cannot find license file 
+WARNING Failed to resolve the license of <github.com/magiconair/properties>: cannot identify license content 
+WARNING Failed to resolve the license of <github.com/miekg/dns>: cannot identify license content 
+WARNING Failed to resolve the license of <github.com/pascaldekloe/goe>: cannot identify license content 
+WARNING Failed to resolve the license of <github.com/russross/blackfriday/v2>: cannot identify license content 
+WARNING Failed to resolve the license of <gopkg.in/check.v1>: cannot identify license content 
+ERROR the following licenses are incompatible with the main license: Apache-2.0 
+License: Unknown Dependency: github.com/gogo/protobuf
+License: Unknown Dependency: github.com/kr/logfmt
+License: Unknown Dependency: github.com/magiconair/properties
+License: Unknown Dependency: github.com/miekg/dns
+License: Unknown Dependency: github.com/pascaldekloe/goe
+License: Unknown Dependency: github.com/russross/blackfriday/v2
+License: Unknown Dependency: gopkg.in/check.v1 
+exit status 1
 ```
 
 ## Configurations

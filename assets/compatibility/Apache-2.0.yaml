@@ -1,0 +1,92 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+# The compatibility is extracted from https://www.apache.org/legal/resolved.html
+
+compatible:
+  - Apache-2.0
+  - PHP-3.01
+  - BSD-3-Clause
+  - BSD-2-Clause
+  - PostgreSQL
+  - EPL-1.0
+  - ISC
+  - SMLNJ
+  - ICU.txt
+  - NCSA.txt
+  - W3C.txt
+  - Xnet.txt
+  - Zlib.txt
+  - Libpng.txt
+  - AFL-3.0.txt
+  - MS-PL.txt
+  - PSF-2.0.txt
+  - BSL-1.0.txt
+  - WTFPL.txt
+  - Unicode-DFS-2016.txt
+  - Unicode-DFS-2015.txt
+  - ZPL-2.0.txt
+  - Unlicense.txt
+  - HPND.txt
+  - MulanPSL-2.0.txt
+
+incompatible:
+  - Unknown
+  - LGPL-2.0+
+  - LGPL-2.0
+  - LGPL-2.0-only
+  - LGPL-2.0-or-later
+  - LGPL-2.1+
+  - LGPL-2.1
+  - LGPL-2.1-only
+  - LGPL-2.1-or-later
+  - LGPL-3.0+
+  - LGPL-3.0
+  - LGPL-3.0-linking-exception
+  - LGPL-3.0-only
+  - LGPL-3.0-or-later
+  - LGPLLR
+  - GPL-1.0+
+  - GPL-1.0
+  - GPL-1.0-only
+  - GPL-1.0-or-later
+  - GPL-2.0+
+  - GPL-2.0
+  - GPL-2.0-only
+  - GPL-2.0-or-later
+  - GPL-2.0-with-autoconf-exception
+  - GPL-2.0-with-bison-exception
+  - GPL-2.0-with-classpath-exception
+  - GPL-2.0-with-font-exception
+  - GPL-2.0-with-GCC-exception
+  - GPL-3.0+
+  - GPL-3.0
+  - GPL-3.0-linking-exception
+  - GPL-3.0-linking-source-exception
+  - GPL-3.0-only
+  - GPL-3.0-or-later
+  - GPL-3.0-with-autoconf-exception
+  - GPL-3.0-with-GCC-exception
+  - GPL-CC-1.0
+  - QPL-1.0
+  - Sleepycat
+  - SSPL-1.0
+  - CPOL-1.02
+  - NPL-1.0
+  - NPL-1.1

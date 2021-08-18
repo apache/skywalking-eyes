@@ -19,16 +19,15 @@ package commands
 
 import (
 	"github.com/spf13/cobra"
+
+	"github.com/apache/skywalking-eyes/license-eye/pkg/deps"
 )
 
-var Deps = &cobra.Command{
-	Use:     "dependency",
-	Aliases: []string{"d", "deps", "dep", "dependencies"},
-	Short:   "Dependencies related commands; e.g. check, etc.",
-	Long:    "deps command checks all dependencies of a module and their transitive dependencies.",
-}
-
-func init() {
-	Deps.AddCommand(DepsResolveCommand)
-	Deps.AddCommand(DepsCheckCommand)
+var DepsCheckCommand = &cobra.Command{
+	Use:     "check",
+	Aliases: []string{"c"},
+	Long:    "resolves and check license compatibility in all dependencies of a module and their transitive dependencies",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return deps.Check(Config.Header.License.SpdxID, &Config.Deps)
+	},
 }

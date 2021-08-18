@@ -26,7 +26,7 @@ import (
 	"github.com/apache/skywalking-eyes/license-eye/pkg/deps"
 )
 
-var ResolveCommand = &cobra.Command{
+var DepsResolveCommand = &cobra.Command{
 	Use:     "resolve",
 	Aliases: []string{"r"},
 	Long:    "resolves all dependencies of a module and their transitive dependencies",

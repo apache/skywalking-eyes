@@ -31,9 +31,9 @@ FROM alpine:3 AS bin
 COPY --from=build /license-eye/bin/linux/license-eye /bin/license-eye
 
 # Go
-COPY --from=build /usr/local/go/ /usr/local/go/
+COPY --from=build /usr/local/go/bin/go /usr/local/go/bin/go
 ENV PATH="/usr/local/go/bin:$PATH"
-RUN apk add --no-cache gcc musl-dev
+RUN apk add --no-cache bash gcc musl-dev npm
 # Go
 
 WORKDIR /github/workspace/

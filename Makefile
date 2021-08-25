@@ -16,6 +16,7 @@
 # under the License.
 #
 
+HUB ?= docker.io/apache
 PROJECT = license-eye
 VERSION ?= latest
 OUT_DIR = bin
@@ -68,7 +69,11 @@ build: windows linux darwin
 
 .PHONY: docker
 docker:
-	docker build . -t $(PROJECT):$(VERSION)
+	docker build . -t $(HUB)/$(PROJECT):$(VERSION)
+
+.PHONY: docker-push
+docker-push:
+	docker push $(HUB)/$(PROJECT):$(VERSION)
 
 .PHONY: clean
 clean:

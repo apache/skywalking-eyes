@@ -169,11 +169,7 @@ func Header(result *header2.Result, config *config2.Config) error {
 		}
 	}
 
-	if err := tryReview(result, config, comments); err != nil {
-		return err
-	}
-
-	return nil
+	return tryReview(result, config, comments)
 }
 
 func tryReview(result *header2.Result, config *config2.Config, comments []*github.DraftReviewComment) error {

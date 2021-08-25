@@ -60,9 +60,5 @@ func (config *Config) Parse(file string) (err error) {
 		return err
 	}
 
-	if err := config.Deps.Finalize(file); err != nil {
-		return err
-	}
-
-	return nil
+	return config.Deps.Finalize(file)
 }

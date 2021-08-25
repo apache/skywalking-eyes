@@ -79,11 +79,7 @@ func (resolver *GoModResolver) Resolve(goModFile string, report *Report) error {
 
 	logger.Log.Debugln("Module size:", len(modules))
 
-	if err := resolver.ResolvePackages(modules, report); err != nil {
-		return err
-	}
-
-	return nil
+	return resolver.ResolvePackages(modules, report)
 }
 
 // ResolvePackages resolves the licenses of the given packages.

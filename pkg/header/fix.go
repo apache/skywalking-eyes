@@ -44,11 +44,7 @@ func Fix(file string, config *ConfigHeader, result *Result) error {
 		return fmt.Errorf("unsupported file: %v", file)
 	}
 
-	if err := InsertComment(file, style, config, result); err != nil {
-		return err
-	}
-
-	return nil
+	return InsertComment(file, style, config, result)
 }
 
 func InsertComment(file string, style *comments.CommentStyle, config *ConfigHeader, result *Result) error {
@@ -106,15 +102,22 @@ func GenerateLicenseHeader(style *comments.CommentStyle, config *ConfigHeader) (
 		return "", err
 	}
 
-	middleLines := strings.Split(config.GetLicenseContent(), "\n")
-	for i, line := range middleLines {
-		middleLines[i] = strings.TrimRight(fmt.Sprintf("%v %v", style.Middle, line), " ")
+	lines := strings.Split(config.GetLicenseContent(), "\n")
+	for i, line := range lines {
+		if line != "" {
+			lines[i] = fmt.Sprintf("%v %v", style.Middle, line)
+		} else {
+			lines[i] = style.Middle
+		}
 	}
 
-	lines := fmt.Sprintf("%v\n%v\n", style.Start, strings.Join(middleLines, "\n"))
+	if style.Start != style.Middle {
+		lines = append([]string{style.Start}, lines...)
+	}
+
 	if style.End != style.Middle {
-		lines += style.End
+		lines = append(lines, style.End)
 	}
 
-	return strings.TrimSpace(lines) + "\n", nil
+	return strings.Join(lines, "\n") + "\n", nil
 }

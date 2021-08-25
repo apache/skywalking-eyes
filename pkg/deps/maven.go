@@ -70,11 +70,7 @@ func (resolver *MavenPomResolver) Resolve(mavenPomFile string, report *Report) e
 		}
 	}
 
-	if err := resolver.ResolveDependencies(deps, report); err != nil {
-		return err
-	}
-
-	return nil
+	return resolver.ResolveDependencies(deps, report)
 }
 
 // CheckMVN check available maven tools, find local repositories and download all dependencies
@@ -205,7 +201,7 @@ func (resolver *MavenPomResolver) ReadLicensesFromPom(pomFile string) (*PomFile,
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	dec := xml.NewDecoder(file)
 	dec.CharsetReader = charset.NewReaderLabel
@@ -224,7 +220,7 @@ func (resolver *MavenPomResolver) ReadHeaderCommentsFromPom(pomFile string) (str
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	var comments string
 
@@ -300,7 +296,7 @@ func LoadDependenciesTree(data []byte) []*Dependency {
 	stack := []Elem{}
 	unique := make(map[string]struct{})
 
-	reFind := regexp.MustCompile(`(?im)^.*? ([\| ]*)(\+\-|\\\-) (\b.+):(\b.+):(\b.+):(\b.+):(\b.+)$`)
+	reFind := regexp.MustCompile(`(?im)^.*? ([| ]*)(\+-|\\-) (\b.+):(\b.+):(\b.+):(\b.+):(\b.+)$`)
 	rawDeps := reFind.FindAllSubmatch(data, -1)
 
 	deps := make([]*Dependency, 0, len(rawDeps))
@@ -436,7 +432,7 @@ func (dep *Dependency) String() string {
 		}
 	}
 
-	w.Flush()
+	_ = w.Flush()
 	return buf.String()
 }
 

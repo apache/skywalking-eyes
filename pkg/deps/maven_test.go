@@ -22,9 +22,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 
+	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
 	"github.com/apache/skywalking-eyes/license-eye/pkg/deps"
 )
 
@@ -51,7 +53,7 @@ func dumpPomFile(fileName, content string) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	write := bufio.NewWriter(file)
 	_, err = write.WriteString(content)
@@ -59,7 +61,7 @@ func dumpPomFile(fileName, content string) error {
 		return err
 	}
 
-	write.Flush()
+	_ = write.Flush()
 	return nil
 }
 
@@ -84,6 +86,11 @@ func destroyTmpDir(t *testing.T, dir string) {
 }
 
 func TestResolveMaven(t *testing.T) {
+	if _, err := exec.Command("mvn", "--version").Output(); err != nil {
+		logger.Log.Warnf("Failed to find mvn, the test `TestResolveMaven` was skipped")
+		return
+	}
+
 	resolver := new(deps.MavenPomResolver)
 
 	path, err := tmpDir()
@@ -130,7 +137,7 @@ func TestResolveMaven(t *testing.T) {
 		</dependencies>
 	</project>`, 107},
 	} {
-		dumpPomFile(pomFile, test.pomContent)
+		_ = dumpPomFile(pomFile, test.pomContent)
 
 		if resolver.CanResolve(pomFile) {
 			report := deps.Report{}

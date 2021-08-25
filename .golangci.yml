@@ -22,7 +22,7 @@ run:
 linters-settings:
   govet:
     check-shadowing: true
-  golint:
+  revive:
     min-confidence: 0
   gocyclo:
     min-complexity: 20
@@ -106,12 +106,11 @@ linters:
     - gocyclo
     - gofmt
     - goimports
-    - golint
+    - revive
     - gosec
     - gosimple
     - govet
     - ineffassign
-    - interfacer
     - lll
     - misspell
     - nakedret

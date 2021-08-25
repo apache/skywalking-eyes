@@ -133,7 +133,7 @@ func (config *ConfigHeader) Finalize() error {
 
 func (config *ConfigHeader) GetLicenseContent() string {
 	if c := strings.TrimSpace(config.License.Content); c != "" {
-		return c
+		return config.License.Content // Do not change anything in user config
 	}
 	c, err := readLicenseFromSpdx(config)
 	if err != nil {

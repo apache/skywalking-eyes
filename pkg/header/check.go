@@ -99,10 +99,7 @@ func checkPath(path string, result *Result, config *ConfigHeader) error {
 			if p == path { // when p is symbolic link file, it causes infinite recursive calls
 				return nil
 			}
-			if err := checkPath(p, result, config); err != nil {
-				return err
-			}
-			return nil
+			return checkPath(p, result, config)
 		}); err != nil {
 			return err
 		}

@@ -49,8 +49,7 @@ func TestFix(t *testing.T) {
 		},
 		{
 			filename: "Test.py",
-			comments: `#
-# Apache License 2.0
+			comments: `# Apache License 2.0
 #   http://www.apache.org/licenses/LICENSE-2.0
 # Apache License 2.0
 `,
@@ -84,8 +83,7 @@ func TestRewriteContent(t *testing.T) {
 			content: `print_string "hello worlds!\n";;
 `,
 			licenseHeader: getLicenseHeader("test.ml", t.Error),
-			expectedContent: `(*
-(* Apache License 2.0
+			expectedContent: `(* Apache License 2.0
 (*   http://www.apache.org/licenses/LICENSE-2.0
 (* Apache License 2.0
 print_string "hello worlds!\n";;
@@ -93,14 +91,12 @@ print_string "hello worlds!\n";;
 		{
 			name:  "Python with Shebang",
 			style: comments.FileCommentStyle("test.py"),
-			content: `
-#!/usr/bin/env python3
+			content: `#!/usr/bin/env python3
 if __name__ == '__main__':
     print('Hello World')
 `,
 			licenseHeader: getLicenseHeader("test.py", t.Error),
 			expectedContent: `#!/usr/bin/env python3
-#
 # Apache License 2.0
 #   http://www.apache.org/licenses/LICENSE-2.0
 # Apache License 2.0
@@ -110,15 +106,36 @@ if __name__ == '__main__':
 		{
 			name:  "Python",
 			style: comments.FileCommentStyle("test.py"),
-			content: `
-if __name__ == '__main__':
+			content: `if __name__ == '__main__':
     print('Hello World')
 `,
 			licenseHeader: getLicenseHeader("test.py", t.Error),
-			expectedContent: `#
-# Apache License 2.0
+			expectedContent: `# Apache License 2.0
 #   http://www.apache.org/licenses/LICENSE-2.0
 # Apache License 2.0
+if __name__ == '__main__':
+    print('Hello World')
+`},
+		{
+			name:  "Python with Blank Line",
+			style: comments.FileCommentStyle("test.py"),
+			content: `if __name__ == '__main__':
+    print('Hello World')
+`,
+			licenseHeader: getLicenseHeaderCustomConfig("test.py", t.Error, &ConfigHeader{
+				License: LicenseConfig{
+					Content: `Apache License 2.0
+  http://www.apache.org/licenses/LICENSE-2.0
+Apache License 2.0
+
+`,
+				},
+			}),
+			expectedContent: `# Apache License 2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
+# Apache License 2.0
+#
+#
 if __name__ == '__main__':
     print('Hello World')
 `},
@@ -173,8 +190,7 @@ if __name__ == '__main__':
 			style:         comments.FileCommentStyle("test.sql"),
 			content:       `select * from user;`,
 			licenseHeader: getLicenseHeader("test.sql", t.Error),
-			expectedContent: `--
--- Apache License 2.0
+			expectedContent: `-- Apache License 2.0
 --   http://www.apache.org/licenses/LICENSE-2.0
 -- Apache License 2.0
 select * from user;`},
@@ -195,8 +211,7 @@ import Foundation.Hashing.Hashable`},
 			content: `echo 'Hello' | echo 'world!'
 `,
 			licenseHeader: getLicenseHeader("test.vim", t.Error),
-			expectedContent: `"
-" Apache License 2.0
+			expectedContent: `" Apache License 2.0
 "   http://www.apache.org/licenses/LICENSE-2.0
 " Apache License 2.0
 echo 'Hello' | echo 'world!'
@@ -314,6 +329,14 @@ namespace test\test2;
 
 func getLicenseHeader(filename string, tError func(args ...interface{})) string {
 	s, err := GenerateLicenseHeader(comments.FileCommentStyle(filename), config)
+	if err != nil {
+		tError(err)
+	}
+	return s
+}
+
+func getLicenseHeaderCustomConfig(filename string, tError func(args ...interface{}), c *ConfigHeader) string {
+	s, err := GenerateLicenseHeader(comments.FileCommentStyle(filename), c)
 	if err != nil {
 		tError(err)
 	}

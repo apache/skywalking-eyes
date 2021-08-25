@@ -81,9 +81,9 @@ make build
 ```bash
 bin/darwin/license-eye -c test/testdata/.licenserc_for_test_check.yaml header check
 
-INFO Loading configuration from file: test/testdata/.licenserc_for_test_check.yaml 
-INFO Totally checked 30 files, valid: 12, invalid: 12, ignored: 6, fixed: 0 
-ERROR the following files don't have a valid license header: 
+INFO Loading configuration from file: test/testdata/.licenserc_for_test_check.yaml
+INFO Totally checked 30 files, valid: 12, invalid: 12, ignored: 6, fixed: 0
+ERROR the following files don't have a valid license header:
 test/testdata/include_test/without_license/testcase.go
 test/testdata/include_test/without_license/testcase.graphql
 test/testdata/include_test/without_license/testcase.ini
@@ -95,7 +95,7 @@ test/testdata/include_test/without_license/testcase.sh
 test/testdata/include_test/without_license/testcase.yaml
 test/testdata/include_test/without_license/testcase.yml
 test/testdata/test-spdx-asf.yaml
-test/testdata/test-spdx.yaml 
+test/testdata/test-spdx.yaml
 exit status 1
 ```
 
@@ -105,7 +105,7 @@ exit status 1
 bin/darwin/license-eye -c test/testdata/.licenserc_for_test_fix.yaml header fix
 
 INFO Loading configuration from file: test/testdata/.licenserc_for_test_fix.yaml
-INFO Totally checked 20 files, valid: 10, invalid: 10, ignored: 0, fixed: 10 
+INFO Totally checked 20 files, valid: 10, invalid: 10, ignored: 0, fixed: 10
 ```
 
 #### Resolve Dependencies' licenses
@@ -159,23 +159,23 @@ the command will exit with status code 1 and fail the command.
 
 ```bash
 bin/darwin/license-eye -c test/testdata/.licenserc_for_test_check.yaml dep check
-INFO GITHUB_TOKEN is not set, license-eye won't comment on the pull request 
-INFO Loading configuration from file: .licenserc.yaml 
-WARNING Failed to resolve the license of <github.com/gogo/protobuf>: cannot identify license content 
-WARNING Failed to resolve the license of <github.com/kr/logfmt>: cannot find license file 
-WARNING Failed to resolve the license of <github.com/magiconair/properties>: cannot identify license content 
-WARNING Failed to resolve the license of <github.com/miekg/dns>: cannot identify license content 
-WARNING Failed to resolve the license of <github.com/pascaldekloe/goe>: cannot identify license content 
-WARNING Failed to resolve the license of <github.com/russross/blackfriday/v2>: cannot identify license content 
-WARNING Failed to resolve the license of <gopkg.in/check.v1>: cannot identify license content 
-ERROR the following licenses are incompatible with the main license: Apache-2.0 
+INFO GITHUB_TOKEN is not set, license-eye won't comment on the pull request
+INFO Loading configuration from file: .licenserc.yaml
+WARNING Failed to resolve the license of <github.com/gogo/protobuf>: cannot identify license content
+WARNING Failed to resolve the license of <github.com/kr/logfmt>: cannot find license file
+WARNING Failed to resolve the license of <github.com/magiconair/properties>: cannot identify license content
+WARNING Failed to resolve the license of <github.com/miekg/dns>: cannot identify license content
+WARNING Failed to resolve the license of <github.com/pascaldekloe/goe>: cannot identify license content
+WARNING Failed to resolve the license of <github.com/russross/blackfriday/v2>: cannot identify license content
+WARNING Failed to resolve the license of <gopkg.in/check.v1>: cannot identify license content
+ERROR the following licenses are incompatible with the main license: Apache-2.0
 License: Unknown Dependency: github.com/gogo/protobuf
 License: Unknown Dependency: github.com/kr/logfmt
 License: Unknown Dependency: github.com/magiconair/properties
 License: Unknown Dependency: github.com/miekg/dns
 License: Unknown Dependency: github.com/pascaldekloe/goe
 License: Unknown Dependency: github.com/russross/blackfriday/v2
-License: Unknown Dependency: gopkg.in/check.v1 
+License: Unknown Dependency: gopkg.in/check.v1
 exit status 1
 ```
 
@@ -277,7 +277,7 @@ The `header check` command theoretically supports all kinds of file types, while
     comment_style_id: SlashAsterisk
   ```
 
-- [assets/languages.yaml](assets/languages.yaml)
+- [assets/styles.yaml](assets/styles.yaml)
 
   ```yaml
   - id: SlashAsterisk     # (i)
@@ -293,7 +293,7 @@ The `header check` command theoretically supports all kinds of file types, while
 
 ## Technical Documentation
 
-- There is an [activity diagram](./docs/header_fix_logic.svg) explaining the implemented license header 
+- There is an [activity diagram](./docs/header_fix_logic.svg) explaining the implemented license header
   fixing mechanism in-depth. The diagram's source file can be found [here](./docs/header_fix_logic.plantuml).
 
 ## Contribution

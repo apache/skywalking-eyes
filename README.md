@@ -49,22 +49,37 @@ header:
 ### Docker Image
 
 ```shell
-$ docker run -it --rm -v $(pwd):/github/workspace apache/skywalking-eyes header check
-$ docker run -it --rm -v $(pwd):/github/workspace apache/skywalking-eyes header fix
+docker run -it --rm -v $(pwd):/github/workspace apache/skywalking-eyes header check
+docker run -it --rm -v $(pwd):/github/workspace apache/skywalking-eyes header fix
+```
+
+### Docker Image from latest codes
+
+For users and developers who want to help to test the latest codes on main branch, we publish Docker image to GitHub
+Container Registry for every commit in main branch, tagged with the commit sha, if it's the latest commit in main
+branch, it's also tagged with `latest`.
+
+**Note**: these Docker images are not official Apache releases. For official releases, please refer to
+[the download page](https://skywalking.apache.org/downloads/#SkyWalkingEyes) for executable binary and
+[the Docker hub](https://hub.docker.com/r/apache/skywalking-eyes) for Docker images.
+
+```shell
+docker run -it --rm -v $(pwd):/github/workspace ghcr.io/apache/skywalking-eyes/license-eye header check
+docker run -it --rm -v $(pwd):/github/workspace ghcr.io/apache/skywalking-eyes/license-eye header fix
 ```
 
 ### Compile from Source
 
 ```bash
-$ git clone https://github.com/apache/skywalking-eyes
-$ cd skywalking-eyes
-$ make build
+git clone https://github.com/apache/skywalking-eyes
+cd skywalking-eyes
+make build
 ```
 
 #### Check License Header
 
 ```bash
-$ bin/darwin/license-eye -c test/testdata/.licenserc_for_test_check.yaml header check
+bin/darwin/license-eye -c test/testdata/.licenserc_for_test_check.yaml header check
 
 INFO Loading configuration from file: test/testdata/.licenserc_for_test_check.yaml 
 INFO Totally checked 30 files, valid: 12, invalid: 12, ignored: 6, fixed: 0 
@@ -87,7 +102,7 @@ exit status 1
 #### Fix License Header
 
 ```bash
-$ bin/darwin/license-eye -c test/testdata/.licenserc_for_test_fix.yaml header fix
+bin/darwin/license-eye -c test/testdata/.licenserc_for_test_fix.yaml header fix
 
 INFO Loading configuration from file: test/testdata/.licenserc_for_test_fix.yaml
 INFO Totally checked 20 files, valid: 10, invalid: 10, ignored: 0, fixed: 10 
@@ -98,7 +113,7 @@ INFO Totally checked 20 files, valid: 10, invalid: 10, ignored: 0, fixed: 10
 This command serves as assistance for human beings to audit the dependencies license, it's exit code is always 0.
 
 ```bash
-$ bin/darwin/license-eye -c test/testdata/.licenserc_for_test_check.yaml dep resolve
+bin/darwin/license-eye -c test/testdata/.licenserc_for_test_check.yaml dep resolve
 INFO GITHUB_TOKEN is not set, license-eye won't comment on the pull request
 INFO Loading configuration from file: test/testdata/.licenserc_for_test_check.yaml
 WARNING Failed to resolve the license of dependency: gopkg.in/yaml.v3 cannot identify license content
@@ -143,7 +158,7 @@ This command can be used to perform automatic license compatibility check, when 
 the command will exit with status code 1 and fail the command.
 
 ```bash
-$ bin/darwin/license-eye -c test/testdata/.licenserc_for_test_check.yaml dep check
+bin/darwin/license-eye -c test/testdata/.licenserc_for_test_check.yaml dep check
 INFO GITHUB_TOKEN is not set, license-eye won't comment on the pull request 
 INFO Loading configuration from file: .licenserc.yaml 
 WARNING Failed to resolve the license of <github.com/gogo/protobuf>: cannot identify license content 

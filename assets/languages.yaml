@@ -4519,6 +4519,7 @@ R:
     - splus
   extensions:
     - ".r"
+    - ".R"
     - ".rd"
     - ".rsx"
   filenames:
@@ -4531,6 +4532,7 @@ R:
   codemirror_mode: r
   codemirror_mime_type: text/x-rsrc
   language_id: 307
+  comment_style_id: Hashtag
 RAML:
   type: markup
   ace_mode: yaml

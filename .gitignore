@@ -16,7 +16,7 @@
 # under the License.
 # 
 .idea/
-bin/
+/bin/
 assets/assets.gen.go
 .DS_Store
 coverage.txt

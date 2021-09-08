@@ -102,3 +102,10 @@
   start: "'"
   middle: "'"
   end: "'"
+
+- id: PythonStyle
+  # (interpreter binary and encoding comment) | (only interpreter binary) | (only encoding comment)
+  after: '(?m)(^*#!.+$\n^[ \t\f]*#.*?coding[:=][ \t]*([-_.a-zA-Z0-9]+).*$)|(^*#!.+$)|(^[ \t\f]*#.*?coding[:=][ \t]*([-_.a-zA-Z0-9]+).*$)'
+  start: '#'
+  middle: '#'
+  end: '#'

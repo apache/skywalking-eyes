@@ -89,7 +89,7 @@ func TestRewriteContent(t *testing.T) {
 print_string "hello worlds!\n";;
 `},
 		{
-			name:  "Python with Shebang",
+			name:  "Python with interpreter binary",
 			style: comments.FileCommentStyle("test.py"),
 			content: `#!/usr/bin/env python3
 if __name__ == '__main__':
@@ -97,6 +97,38 @@ if __name__ == '__main__':
 `,
 			licenseHeader: getLicenseHeader("test.py", t.Error),
 			expectedContent: `#!/usr/bin/env python3
+# Apache License 2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
+# Apache License 2.0
+if __name__ == '__main__':
+    print('Hello World')
+`},
+		{
+			name:  "Python with interpreter binary and encoding",
+			style: comments.FileCommentStyle("test.py"),
+			content: `#!/usr/bin/env python3
+# -*- coding: latin-1 -*-
+if __name__ == '__main__':
+    print('Hello World')
+`,
+			licenseHeader: getLicenseHeader("test.py", t.Error),
+			expectedContent: `#!/usr/bin/env python3
+# -*- coding: latin-1 -*-
+# Apache License 2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
+# Apache License 2.0
+if __name__ == '__main__':
+    print('Hello World')
+`},
+		{
+			name:  "Python with encoding",
+			style: comments.FileCommentStyle("test.py"),
+			content: `# -*- coding: latin-1 -*-
+if __name__ == '__main__':
+    print('Hello World')
+`,
+			licenseHeader: getLicenseHeader("test.py", t.Error),
+			expectedContent: `# -*- coding: latin-1 -*-
 # Apache License 2.0
 #   http://www.apache.org/licenses/LICENSE-2.0
 # Apache License 2.0

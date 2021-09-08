@@ -52,7 +52,7 @@ func TestCommentStyle(t *testing.T) {
 		commentStyleID string
 	}{
 		{filename: "Test.java", commentStyleID: "SlashAsterisk"},
-		{filename: "Test.py", commentStyleID: "Hashtag"},
+		{filename: "Test.py", commentStyleID: "PythonStyle"},
 	}
 	for _, test := range tests {
 		t.Run(test.filename, func(t *testing.T) {

@@ -4782,6 +4782,7 @@ RenderScript:
   tm_scope: none
   ace_mode: text
   language_id: 323
+  comment_style_id: DoubleSlash
 Rich Text Format:
   type: markup
   extensions:
@@ -4982,7 +4983,7 @@ Rust:
   codemirror_mode: rust
   codemirror_mime_type: text/x-rustsrc
   language_id: 327
-  comment_style_id: SlashAsterisk
+  comment_style_id: DoubleSlash
 SAS:
   type: programming
   color: "#B34936"

@@ -114,6 +114,7 @@ func (config *ConfigHeader) Finalize() error {
 			if strings.HasPrefix(line, "#") || strings.TrimSpace(line) == "" {
 				continue
 			}
+			line = strings.TrimLeft(line, "/")
 			logger.Log.Debugln("Add ignore path from .gitignore:", line)
 			config.PathsIgnore = append(config.PathsIgnore, strings.TrimSpace(line))
 		}

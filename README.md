@@ -112,8 +112,11 @@ INFO Totally checked 20 files, valid: 10, invalid: 10, ignored: 0, fixed: 10
 
 This command serves as assistance for human beings to audit the dependencies license, it's exit code is always 0.
 
+You can also use the `--output` or `-o` to save the dependencies' `LICENSE` files to a specified directory so that
+you can put them in distribution package if needed.
+
 ```bash
-bin/darwin/license-eye -c test/testdata/.licenserc_for_test_check.yaml dep resolve
+bin/darwin/license-eye -c test/testdata/.licenserc_for_test_check.yaml dep resolve -o ./dependencies/licenses
 INFO GITHUB_TOKEN is not set, license-eye won't comment on the pull request
 INFO Loading configuration from file: test/testdata/.licenserc_for_test_check.yaml
 WARNING Failed to resolve the license of dependency: gopkg.in/yaml.v3 cannot identify license content

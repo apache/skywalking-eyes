@@ -19,22 +19,49 @@ package commands
 
 import (
 	"fmt"
+	"os"
+	"regexp"
 	"strings"
 
 	"github.com/spf13/cobra"
 
+	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
 	"github.com/apache/skywalking-eyes/license-eye/pkg/deps"
 )
+
+var outDir string
+
+func init() {
+	DepsResolveCommand.PersistentFlags().StringVarP(&outDir, "output", "o", "",
+		"the directory to output the resolved dependencies' licenses, if not set the dependencies' licenses won't be saved")
+}
+
+var fileNamePattern = regexp.MustCompile(`[^a-zA-Z0-9\\.\-]`)
 
 var DepsResolveCommand = &cobra.Command{
 	Use:     "resolve",
 	Aliases: []string{"r"},
 	Long:    "resolves all dependencies of a module and their transitive dependencies",
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		if outDir == "" {
+			return nil
+		}
+		if err := os.MkdirAll(outDir, 0700); err != nil && !os.IsExist(err) {
+			return err
+		}
+		return nil
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		report := deps.Report{}
 
 		if err := deps.Resolve(&Config.Deps, &report); err != nil {
 			return err
+		}
+
+		if outDir != "" {
+			for _, result := range report.Resolved {
+				writeLicense(result)
+			}
 		}
 
 		fmt.Println(report.String())
@@ -52,4 +79,20 @@ var DepsResolveCommand = &cobra.Command{
 
 		return nil
 	},
+}
+
+func writeLicense(result *deps.Result) {
+	filename := string(fileNamePattern.ReplaceAll([]byte(result.Dependency), []byte("-")))
+	filename = strings.TrimRight(outDir, "/") + "/license-" + filename + ".txt"
+	file, err := os.Create(filename)
+	if err != nil {
+		logger.Log.Errorf("failed to create license file %v: %v", filename, err)
+		return
+	}
+	defer func(file *os.File) { _ = file.Close() }(file)
+	_, err = file.WriteString(result.LicenseContent)
+	if err != nil {
+		logger.Log.Errorf("failed to write license file, %v: %v", filename, err)
+		return
+	}
 }

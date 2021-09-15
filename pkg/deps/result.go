@@ -35,6 +35,7 @@ type Result struct {
 	LicenseFilePath string
 	LicenseContent  string
 	LicenseSpdxID   string
+	ResolveErrors   []error
 }
 
 // Report is a collection of resolved Result.

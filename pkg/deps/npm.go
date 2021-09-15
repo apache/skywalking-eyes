@@ -85,12 +85,12 @@ func (resolver *NpmResolver) Resolve(pkgFile string, report *Report) error {
 	// Walk through each package's root directory to resolve licenses
 	// Resolve from a package's package.json file or its license file
 	for _, pkg := range pkgs {
-		if err := resolver.ResolvePackageLicense(pkg.Name, pkg.Path, report); err != nil {
-			logger.Log.Warnln("Failed to resolve the license of dependency:", pkg.Name, err)
-			report.Skip(&Result{
-				Dependency:    pkg.Name,
-				LicenseSpdxID: Unknown,
-			})
+		if result := resolver.ResolvePackageLicense(pkg.Name, pkg.Path); result.LicenseSpdxID != "" {
+			report.Resolve(result)
+		} else {
+			result.LicenseSpdxID = Unknown
+			report.Skip(result)
+			logger.Log.Warnln("Failed to resolve the license of dependency:", pkg.Name, result.ResolveErrors)
 		}
 	}
 	return nil
@@ -184,47 +184,43 @@ func (resolver *NpmResolver) GetInstalledPkgs(pkgDir string) []*Package {
 // ResolvePackageLicense resolves the licenses of the given packages.
 // First, try to find and parse the package's package.json file to check the license file
 // If the previous step fails, then try to identify the package's LICENSE file
-func (resolver *NpmResolver) ResolvePackageLicense(pkgName, pkgPath string, report *Report) error {
-	var resolveErrs error
-	expectedPkgFile := filepath.Join(pkgPath, PkgFileName)
-	lcs, err := resolver.ResolvePkgFile(expectedPkgFile)
-	if err == nil {
-		report.Resolve(&Result{
-			Dependency:    pkgName,
-			LicenseSpdxID: lcs,
-		})
-		return nil
+// It's a necessary procedure to check the LICENSE file, because the resolver needs to record the license content
+func (resolver *NpmResolver) ResolvePackageLicense(pkgName, pkgPath string) *Result {
+	result := &Result{
+		Dependency: pkgName,
 	}
-	resolveErrs = err
+	// resolve from the package.json file
+	if err := resolver.ResolvePkgFile(result, pkgPath); err != nil {
+		result.ResolveErrors = append(result.ResolveErrors, err)
+	}
 
-	lcs, err = resolver.ResolveLcsFile(pkgName, pkgPath)
-	if err == nil {
-		report.Resolve(&Result{
-			Dependency:    pkgName,
-			LicenseSpdxID: lcs,
-		})
-		return nil
+	// resolve from the LICENSE file
+	if err := resolver.ResolveLcsFile(result, pkgPath); err != nil {
+		result.ResolveErrors = append(result.ResolveErrors, err)
 	}
-	resolveErrs = fmt.Errorf("%+v; %+v", resolveErrs, err)
-	return resolveErrs
+
+	return result
 }
 
 // ResolvePkgFile tries to find and parse the package.json file to capture the license field
-func (resolver *NpmResolver) ResolvePkgFile(pkgFile string) (string, error) {
-	packageInfo, err := resolver.ParsePkgFile(pkgFile)
+func (resolver *NpmResolver) ResolvePkgFile(result *Result, pkgPath string) error {
+	expectedPkgFile := filepath.Join(pkgPath, PkgFileName)
+	packageInfo, err := resolver.ParsePkgFile(expectedPkgFile)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	if lcs, ok := resolver.ResolveLicenseField(packageInfo.License); ok {
-		return lcs, nil
+		result.LicenseSpdxID = lcs
+		return nil
 	}
 
 	if lcs, ok := resolver.ResolveLicensesField(packageInfo.Licenses); ok {
-		return lcs, nil
+		result.LicenseSpdxID = lcs
+		return nil
 	}
 
-	return "", fmt.Errorf(`cannot parse the "license"/"licenses" field`)
+	return fmt.Errorf(`cannot parse the "license"/"licenses" field`)
 }
 
 // ResolveLicenseField parses and validates the "license" field in package.json file
@@ -262,27 +258,33 @@ func (resolver *NpmResolver) ResolveLicensesField(licenses []Lcs) (string, bool)
 }
 
 // ResolveLcsFile tries to find the license file to identify the license
-func (resolver *NpmResolver) ResolveLcsFile(pkgName, pkgPath string) (string, error) {
+func (resolver *NpmResolver) ResolveLcsFile(result *Result, pkgPath string) error {
 	depFiles, err := ioutil.ReadDir(pkgPath)
 	if err != nil {
-		return "", err
+		return err
 	}
 	for _, info := range depFiles {
 		if info.IsDir() || !possibleLicenseFileName.MatchString(info.Name()) {
 			continue
 		}
 		licenseFilePath := filepath.Join(pkgPath, info.Name())
+		result.LicenseFilePath = licenseFilePath
 		content, err := ioutil.ReadFile(licenseFilePath)
 		if err != nil {
-			return "", err
+			return err
 		}
-		identifier, err := license.Identify(pkgName, string(content))
+		result.LicenseContent = string(content)
+		if result.LicenseSpdxID != "" {
+			return nil
+		}
+		identifier, err := license.Identify(result.Dependency, string(content))
 		if err != nil {
-			return "", err
+			return err
 		}
-		return identifier, nil
+		result.LicenseSpdxID = identifier
+		return nil
 	}
-	return "", fmt.Errorf("cannot find the license file")
+	return fmt.Errorf("cannot find the license file")
 }
 
 // ParsePkgFile parses the content of the package file

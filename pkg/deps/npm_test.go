@@ -88,9 +88,9 @@ func TestResolvePkgFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(dir)
-
 	resolver := new(deps.NpmResolver)
 	for _, data := range TestData {
+		result := &deps.Result{}
 		f, err := ioutil.TempFile(dir, "*.json")
 		if err != nil {
 			t.Fatal(err)
@@ -99,9 +99,8 @@ func TestResolvePkgFile(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		lcs, err := resolver.ResolvePkgFile(f.Name())
-		if lcs != data.result && (err != nil) == data.hasErr {
+		err = resolver.ResolvePkgFile(result, f.Name())
+		if result.LicenseSpdxID != data.result && (err != nil) == data.hasErr {
 			t.Fail()
 		}
 		_ = f.Close()

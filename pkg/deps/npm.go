@@ -210,8 +210,6 @@ func (resolver *NpmResolver) ResolvePkgFile(result *Result, pkgPath string) erro
 		return err
 	}
 
-	result.ManifestFilePath = expectedPkgFile
-
 	if lcs, ok := resolver.ResolveLicenseField(packageInfo.License); ok {
 		result.LicenseSpdxID = lcs
 		return nil

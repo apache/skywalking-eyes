@@ -31,10 +31,12 @@ const (
 
 // Result is a single item that represents a resolved dependency license.
 type Result struct {
-	Dependency      string
-	LicenseFilePath string
-	LicenseContent  string
-	LicenseSpdxID   string
+	Dependency       string
+	LicenseFilePath  string
+	LicenseContent   string
+	LicenseSpdxID    string
+	ManifestFilePath string
+	ResolveErrors    []error
 }
 
 // Report is a collection of resolved Result.

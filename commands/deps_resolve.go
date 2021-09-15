@@ -20,6 +20,7 @@ package commands
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -46,6 +47,11 @@ var DepsResolveCommand = &cobra.Command{
 		if outDir == "" {
 			return nil
 		}
+		absPath, err := filepath.Abs(outDir)
+		if err != nil {
+			return err
+		}
+		outDir = absPath
 		if err := os.MkdirAll(outDir, 0700); err != nil && !os.IsExist(err) {
 			return err
 		}
@@ -83,7 +89,7 @@ var DepsResolveCommand = &cobra.Command{
 
 func writeLicense(result *deps.Result) {
 	filename := string(fileNamePattern.ReplaceAll([]byte(result.Dependency), []byte("-")))
-	filename = strings.TrimRight(outDir, "/") + "/license-" + filename + ".txt"
+	filename = filepath.Join(outDir, "license-"+filename+".txt")
 	file, err := os.Create(filename)
 	if err != nil {
 		logger.Log.Errorf("failed to create license file %v: %v", filename, err)

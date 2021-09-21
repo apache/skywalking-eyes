@@ -6279,7 +6279,6 @@ XML:
     - ".sublime-snippet"
     - ".targets"
     - ".tml"
-    - ".tsx"
     - ".ui"
     - ".urdf"
     - ".ux"

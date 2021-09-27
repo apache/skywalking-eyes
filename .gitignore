@@ -21,3 +21,4 @@ assets/assets.gen.go
 .DS_Store
 coverage.txt
 plantuml.jar
+maven_tmp_*/

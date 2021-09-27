@@ -18,16 +18,13 @@
 package deps_test
 
 import (
-	"bufio"
 	"fmt"
 	"io/ioutil"
-	"os"
-	"os/exec"
 	"path/filepath"
 	"testing"
 
-	"github.com/apache/skywalking-eyes/internal/logger"
 	"github.com/apache/skywalking-eyes/pkg/deps"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCanResolvePomFile(t *testing.T) {
@@ -48,108 +45,24 @@ func TestCanResolvePomFile(t *testing.T) {
 	}
 }
 
-func dumpPomFile(fileName, content string) error {
-	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = file.Close() }()
-
-	write := bufio.NewWriter(file)
-	_, err = write.WriteString(content)
-	if err != nil {
-		return err
-	}
-
-	_ = write.Flush()
-	return nil
-}
-
-func tmpDir() (string, error) {
-	dir, err := ioutil.TempDir("", "")
-	if err != nil {
-		return "", err
-	}
-	return dir, nil
-}
-
-func destroyTmpDir(t *testing.T, dir string) {
-	if dir == "" {
-		t.Errorf("the temporary directory does not exist")
-		return
-	}
-
-	err := os.RemoveAll(dir)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
 func TestResolveMaven(t *testing.T) {
-	if _, err := exec.Command("mvn", "--version").Output(); err != nil {
-		logger.Log.Warnf("Failed to find mvn, the test `TestResolveMaven` was skipped")
-		return
-	}
+	testDataPath, err := filepath.Abs("../../test/testdata/deps_test/maven")
 
-	resolver := new(deps.MavenPomResolver)
+	files, err := ioutil.ReadDir(testDataPath)
+	require.NoError(t, err)
 
-	path, err := tmpDir()
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	defer destroyTmpDir(t, path)
+	for _, file := range files {
+		resolver := new(deps.MavenPomResolver)
+		pomFile := filepath.Join(testDataPath, file.Name(), "pom.xml")
 
-	pomFile := filepath.Join(path, "pom.xml")
+		t.Run(file.Name(), func(t *testing.T) {
+			if resolver.CanResolve(pomFile) {
+				report := deps.Report{}
+				err := resolver.Resolve(pomFile, &report)
+				require.NoError(t, err)
 
-	for _, test := range []struct {
-		pomContent string
-		cnt        int
-	}{
-		{`<?xml version="1.0" encoding="UTF-8"?>
-	<project xmlns="http://maven.apache.org/POM/4.0.0"
-		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-		<modelVersion>4.0.0</modelVersion>
-	
-		<groupId>apache</groupId>
-		<artifactId>skywalking-eyes</artifactId>
-		<version>1.0</version>
-	
-		<dependencies>
-			<!-- https://mvnrepository.com/artifact/junit/junit -->
-			<dependency>
-				<groupId>junit</groupId>
-				<artifactId>junit</artifactId>
-				<version>4.12</version>
-			</dependency>
-			<!-- https://mvnrepository.com/artifact/commons-logging/commons-logging -->
-			<dependency>
-				<groupId>commons-logging</groupId>
-				<artifactId>commons-logging</artifactId>
-				<version>1.2</version>
-			</dependency>
-			<!-- https://mvnrepository.com/artifact/org.apache.skywalking/skywalking-sharing-server-plugin -->
-			<dependency>
-				<groupId>org.apache.skywalking</groupId>
-				<artifactId>skywalking-sharing-server-plugin</artifactId>
-				<version>8.6.0</version>
-			</dependency>
-		</dependencies>
-	</project>`, 107},
-	} {
-		_ = dumpPomFile(pomFile, test.pomContent)
-
-		if resolver.CanResolve(pomFile) {
-			report := deps.Report{}
-			if err := resolver.Resolve(pomFile, &report); err != nil {
-				t.Error(err)
-				return
+				fmt.Println(report.String())
 			}
-
-			if len(report.Resolved)+len(report.Skipped) != test.cnt {
-				t.Errorf("the expected number of jar packages is: %d, but actually: %d. result:\n%v", test.cnt, len(report.Resolved)+len(report.Skipped), report.String())
-			}
-			fmt.Println(report.String())
-		}
+		})
 	}
 }

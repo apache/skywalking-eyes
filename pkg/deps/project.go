@@ -156,7 +156,6 @@ func (project *Project) LoadDependencies() ([]*DependencyWrapper, error) {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	errCh := make(chan error)
 	rstCh := make(chan *rst)
 	moduleCh := make(chan *pomFileWrapper)
 
@@ -169,7 +168,7 @@ func (project *Project) LoadDependencies() ([]*DependencyWrapper, error) {
 			return nil, err
 		}
 		wg.Add()
-		go project.worker(wg, dir, moduleCh, rstCh, errCh)
+		go project.worker(wg, dir, moduleCh, rstCh)
 	}
 
 	// start collector
@@ -250,7 +249,7 @@ func (project *Project) sender(wg *waitGroup, modules []*pomFileWrapper, moduleC
 	close(moduleCh)
 }
 
-func (project *Project) worker(wg *waitGroup, tmpDir string, moduleCh <-chan *pomFileWrapper, rstCh chan<- *rst, errCh chan<- error) {
+func (project *Project) worker(wg *waitGroup, tmpDir string, moduleCh <-chan *pomFileWrapper, rstCh chan<- *rst) {
 	defer wg.Done()
 	for module := range moduleCh {
 		if !wg.Running() {

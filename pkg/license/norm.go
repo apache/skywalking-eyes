@@ -24,7 +24,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
+	"github.com/apache/skywalking-eyes/internal/logger"
 )
 
 type Normalizer func(string) string

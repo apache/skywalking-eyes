@@ -53,7 +53,7 @@ docker run -it --rm -v $(pwd):/github/workspace apache/skywalking-eyes header ch
 docker run -it --rm -v $(pwd):/github/workspace apache/skywalking-eyes header fix
 ```
 
-### Docker Image from latest codes
+### Docker Image from the latest codes
 
 For users and developers who want to help to test the latest codes on main branch, we publish Docker image to GitHub
 Container Registry for every commit in main branch, tagged with the commit sha, if it's the latest commit in main
@@ -74,6 +74,12 @@ docker run -it --rm -v $(pwd):/github/workspace ghcr.io/apache/skywalking-eyes/l
 git clone https://github.com/apache/skywalking-eyes
 cd skywalking-eyes
 make build
+```
+
+If you have Go SDK installed, you can also use `go install` command to install the latest code.
+
+```bash
+go install github.com/apache/skywalking-eyes/cmd/license-eye@latest
 ```
 
 #### Check License Header

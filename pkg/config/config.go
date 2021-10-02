@@ -20,10 +20,10 @@ package config
 import (
 	"os"
 
-	"github.com/apache/skywalking-eyes/license-eye/assets"
-	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/deps"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/header"
+	"github.com/apache/skywalking-eyes/assets"
+	"github.com/apache/skywalking-eyes/internal/logger"
+	"github.com/apache/skywalking-eyes/pkg/deps"
+	"github.com/apache/skywalking-eyes/pkg/header"
 
 	"gopkg.in/yaml.v3"
 )

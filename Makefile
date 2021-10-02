@@ -28,7 +28,7 @@ GO_PATH = $(shell $(GO) env GOPATH)
 GO_BUILD = $(GO) build
 GO_TEST = $(GO) test
 GO_LINT = $(GO_PATH)/bin/golangci-lint
-GO_BUILD_LDFLAGS = -X github.com/apache/skywalking-eyes/$(PROJECT)/commands.version=$(VERSION)
+GO_BUILD_LDFLAGS = -X github.com/apache/skywalking-eyes/commands.version=$(VERSION)
 
 PLANTUML_VERSION = 1.2021.9
 

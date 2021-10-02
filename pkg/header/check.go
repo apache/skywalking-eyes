@@ -25,8 +25,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
-	lcs "github.com/apache/skywalking-eyes/license-eye/pkg/license"
+	"github.com/apache/skywalking-eyes/internal/logger"
+	lcs "github.com/apache/skywalking-eyes/pkg/license"
 
 	"github.com/bmatcuk/doublestar/v2"
 )

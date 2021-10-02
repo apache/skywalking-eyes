@@ -22,7 +22,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/apache/skywalking-eyes/license-eye/pkg/comments"
+	"github.com/apache/skywalking-eyes/pkg/comments"
 )
 
 var config = &ConfigHeader{

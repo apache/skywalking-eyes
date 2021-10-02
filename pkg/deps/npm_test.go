@@ -18,7 +18,7 @@
 package deps_test
 
 import (
-	"github.com/apache/skywalking-eyes/license-eye/pkg/deps"
+	"github.com/apache/skywalking-eyes/pkg/deps"
 	"io/ioutil"
 	"os"
 	"testing"

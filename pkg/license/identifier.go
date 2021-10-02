@@ -25,8 +25,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/apache/skywalking-eyes/license-eye/assets"
-	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
+	"github.com/apache/skywalking-eyes/assets"
+	"github.com/apache/skywalking-eyes/internal/logger"
 )
 
 var templatesDirs = []string{

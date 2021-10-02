@@ -31,7 +31,7 @@ import (
 
 	"golang.org/x/net/html/charset"
 
-	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
+	"github.com/apache/skywalking-eyes/internal/logger"
 )
 
 type MavenPomResolver struct {

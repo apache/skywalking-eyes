@@ -18,8 +18,8 @@
 package commands
 
 import (
-	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/config"
+	"github.com/apache/skywalking-eyes/internal/logger"
+	"github.com/apache/skywalking-eyes/pkg/config"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"

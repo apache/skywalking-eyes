@@ -26,8 +26,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/comments"
+	"github.com/apache/skywalking-eyes/internal/logger"
+	"github.com/apache/skywalking-eyes/pkg/comments"
 )
 
 // Fix adds the configured license header to the given file.

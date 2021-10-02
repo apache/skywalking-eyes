@@ -202,8 +202,8 @@ type Parent struct {
 }
 
 type DependencyManagement struct {
-	XMLName xml.Name     `xml:"dependencyManagement"`
-	Value   Dependencies `xml:"dependencies,omitempty"`
+	XMLName      xml.Name     `xml:"dependencyManagement"`
+	Dependencies Dependencies `xml:"dependencies,omitempty"`
 }
 
 type Modules struct {

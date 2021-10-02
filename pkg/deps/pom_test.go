@@ -112,7 +112,7 @@ var unmarshalDependencyManagement = []struct {
 }{
 	{Expect: DependencyManagement{}, XMLValue: ``, Err: io.EOF},
 	{Expect: DependencyManagement{}, XMLValue: `<groupId>skywalking</groupId>`, Err: xml.UnmarshalError("expected element type <dependencyManagement> but have <groupId>")},
-	{Expect: DependencyManagement{XMLName: xml.Name{Local: "dependencyManagement"}, Value: Dependencies{XMLName: xml.Name{Local: "dependencies"}, Value: []*Dependency{{XMLName: xml.Name{Local: "dependency"}, GroupID: "skywalking1"}, {XMLName: xml.Name{Local: "dependency"}, GroupID: "skywalking2"}}}}, XMLValue: `<dependencyManagement><dependencies><dependency><groupId>skywalking1</groupId></dependency><dependency><groupId>skywalking2</groupId></dependency></dependencies></dependencyManagement>`, Err: nil},
+	{Expect: DependencyManagement{XMLName: xml.Name{Local: "dependencyManagement"}, Dependencies: Dependencies{XMLName: xml.Name{Local: "dependencies"}, Value: []*Dependency{{XMLName: xml.Name{Local: "dependency"}, GroupID: "skywalking1"}, {XMLName: xml.Name{Local: "dependency"}, GroupID: "skywalking2"}}}}, XMLValue: `<dependencyManagement><dependencies><dependency><groupId>skywalking1</groupId></dependency><dependency><groupId>skywalking2</groupId></dependency></dependencies></dependencyManagement>`, Err: nil},
 }
 
 func TestUnmarshalDependencyManagement(t *testing.T) {
@@ -289,8 +289,8 @@ var marshalTests = []struct {
 	{Name: "Parent", Value: Parent{GroupID: "skywalking", ArtifactID: "SkyWalking Eyes"}, ExpectXML: `<parent><groupId>skywalking</groupId><artifactId>SkyWalking Eyes</artifactId></parent>`, Err: nil},
 
 	{Name: "DependencyManagement", Value: DependencyManagement{}, ExpectXML: `<dependencyManagement><dependencies></dependencies></dependencyManagement>`, Err: nil},
-	{Name: "DependencyManagement", Value: DependencyManagement{Value: Dependencies{Value: []*Dependency{{GroupID: "skywalking"}}}}, ExpectXML: `<dependencyManagement><dependencies><dependency><groupId>skywalking</groupId></dependency></dependencies></dependencyManagement>`, Err: nil},
-	{Name: "DependencyManagement", Value: DependencyManagement{Value: Dependencies{Value: []*Dependency{{GroupID: "skywalking1"}, {GroupID: "skywalking2"}}}}, ExpectXML: `<dependencyManagement><dependencies><dependency><groupId>skywalking1</groupId></dependency><dependency><groupId>skywalking2</groupId></dependency></dependencies></dependencyManagement>`, Err: nil},
+	{Name: "DependencyManagement", Value: DependencyManagement{Dependencies: Dependencies{Value: []*Dependency{{GroupID: "skywalking"}}}}, ExpectXML: `<dependencyManagement><dependencies><dependency><groupId>skywalking</groupId></dependency></dependencies></dependencyManagement>`, Err: nil},
+	{Name: "DependencyManagement", Value: DependencyManagement{Dependencies: Dependencies{Value: []*Dependency{{GroupID: "skywalking1"}, {GroupID: "skywalking2"}}}}, ExpectXML: `<dependencyManagement><dependencies><dependency><groupId>skywalking1</groupId></dependency><dependency><groupId>skywalking2</groupId></dependency></dependencies></dependencyManagement>`, Err: nil},
 
 	{Name: "Module", Value: Module{Value: ""}, ExpectXML: `<module></module>`, Err: nil},
 	{Name: "Module", Value: Module{Value: "hello world"}, ExpectXML: `<module>hello world</module>`, Err: nil},

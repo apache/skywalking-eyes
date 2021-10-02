@@ -156,8 +156,8 @@ func (project *Project) LoadDependencies() ([]*DependencyWrapper, error) {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	rstCh := make(chan *rst)
-	moduleCh := make(chan *pomFileWrapper)
+	rstCh := make(chan *rst, cpuNumber)
+	moduleCh := make(chan *pomFileWrapper, cpuNumber)
 
 	// start worker
 	for i := 0; i < cpuNumber; i++ {
@@ -391,12 +391,13 @@ func (project *Project) splitParent() {
 }
 
 func (project *Project) Flush() {
+	visitedDeps := make(map[string]bool)
 	for _, pom := range project.modules {
-		project.flush(pom)
+		project.flush(pom, visitedDeps)
 	}
 }
 
-func (project *Project) flush(pom *pomFileWrapper) {
+func (project *Project) flush(pom *pomFileWrapper, visitedDeps map[string]bool) {
 	pom.Clear()
 
 	pom.Parent = pom.externalParent
@@ -414,7 +415,12 @@ loop:
 			}
 		}
 
+		if visitedDeps[DepNameNoVersion(dep)] {
+			continue
+		}
+
 		deps.Value = append(deps.Value, dep)
+		visitedDeps[DepNameNoVersion(dep)] = true
 	}
 	pom.PomFile.Dependencies = deps
 
@@ -423,7 +429,7 @@ loop:
 		if _, have := project.modules[key]; have {
 			continue
 		}
-		depsManager.Value.Value = append(depsManager.Value.Value, dep)
+		depsManager.Dependencies.Value = append(depsManager.Dependencies.Value, dep)
 	}
 	pom.PomFile.DependencyManagement = depsManager
 
@@ -465,7 +471,7 @@ func newPomfile(path, fileName string) (*pomFileWrapper, error) {
 	}
 
 	if pom.DependencyManagement != nil {
-		for _, dep := range pom.DependencyManagement.Value.Value {
+		for _, dep := range pom.DependencyManagement.Dependencies.Value {
 			pom.cacheDepsManager[DepNameNoVersion(dep)] = dep
 		}
 	}

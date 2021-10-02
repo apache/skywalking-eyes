@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	config2 "github.com/apache/skywalking-eyes/license-eye/pkg/config"
+	config2 "github.com/apache/skywalking-eyes/pkg/config"
 )
 
 func TestConfigHeaderSpdxASF(t *testing.T) {

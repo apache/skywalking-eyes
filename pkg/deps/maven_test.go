@@ -26,8 +26,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/deps"
+	"github.com/apache/skywalking-eyes/internal/logger"
+	"github.com/apache/skywalking-eyes/pkg/deps"
 )
 
 func TestCanResolvePomFile(t *testing.T) {

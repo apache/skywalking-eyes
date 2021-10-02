@@ -30,8 +30,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/license"
+	"github.com/apache/skywalking-eyes/internal/logger"
+	"github.com/apache/skywalking-eyes/pkg/license"
 )
 
 type NpmResolver struct {

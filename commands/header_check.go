@@ -18,9 +18,9 @@
 package commands
 
 import (
-	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/header"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/review"
+	"github.com/apache/skywalking-eyes/internal/logger"
+	"github.com/apache/skywalking-eyes/pkg/header"
+	"github.com/apache/skywalking-eyes/pkg/review"
 
 	"github.com/spf13/cobra"
 )

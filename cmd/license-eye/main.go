@@ -20,8 +20,8 @@ package main
 import (
 	"os"
 
-	"github.com/apache/skywalking-eyes/license-eye/commands"
-	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
+	"github.com/apache/skywalking-eyes/commands"
+	"github.com/apache/skywalking-eyes/internal/logger"
 )
 
 func main() {

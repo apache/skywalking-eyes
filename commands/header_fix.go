@@ -24,8 +24,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/header"
+	"github.com/apache/skywalking-eyes/internal/logger"
+	"github.com/apache/skywalking-eyes/pkg/header"
 )
 
 var FixCommand = &cobra.Command{

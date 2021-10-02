@@ -26,9 +26,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apache/skywalking-eyes/license-eye/assets"
-	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
-	"github.com/apache/skywalking-eyes/license-eye/pkg/license"
+	"github.com/apache/skywalking-eyes/assets"
+	"github.com/apache/skywalking-eyes/internal/logger"
+	"github.com/apache/skywalking-eyes/pkg/license"
 
 	"github.com/bmatcuk/doublestar/v2"
 )

@@ -24,8 +24,8 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/apache/skywalking-eyes/license-eye/assets"
-	"github.com/apache/skywalking-eyes/license-eye/internal/logger"
+	"github.com/apache/skywalking-eyes/assets"
+	"github.com/apache/skywalking-eyes/internal/logger"
 )
 
 type compatibilityMatrix struct {

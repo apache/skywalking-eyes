@@ -17,4 +17,4 @@
 //
 package commands
 
-var version string
+var version = "dev"

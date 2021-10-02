@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/apache/skywalking-eyes/license-eye/assets"
+	"github.com/apache/skywalking-eyes/assets"
 
 	"gopkg.in/yaml.v3"
 )

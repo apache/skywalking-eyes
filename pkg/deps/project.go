@@ -95,20 +95,20 @@ func (project *Project) addModule(pom *pomFileWrapper) {
 
 func (project *Project) ConstructDependentGraph() {
 	for k := range project.modules {
-		pom := project.modules[k]
+		module := project.modules[k]
 
-		if pom.Parent != nil {
-			parentName := pom.ParentName()
+		if module.Parent != nil {
+			parentName := module.ParentName()
 			if parent, have := project.modules[parentName]; have {
-				pom.haveParentInProject = have
-				pom.Uncles[parentName] = parent
+				module.haveParentInProject = have
+				module.Uncles[parentName] = parent
 			}
 		}
 
-		uncles := project.GetAllUncles(pom)
+		uncles := project.GetAllUncles(module)
 		for _, uncleName := range uncles {
 			if uncle, have := project.modules[uncleName]; have {
-				pom.Uncles[uncleName] = uncle
+				module.Uncles[uncleName] = uncle
 			}
 		}
 	}
@@ -117,8 +117,8 @@ func (project *Project) ConstructDependentGraph() {
 func (project *Project) GetAllUncles(pom *pomFileWrapper) []string {
 	uncles := []string{}
 
-	for k := range pom.cacheDeps {
-		if _, have := project.modules[k]; have {
+	for k, v := range pom.cacheDeps {
+		if _, have := project.modules[k]; have && v.Scope == "pom" {
 			uncles = append(uncles, k)
 		}
 	}
@@ -126,6 +126,14 @@ func (project *Project) GetAllUncles(pom *pomFileWrapper) []string {
 	for k := range pom.cacheDepsManager {
 		if _, have := project.modules[k]; have {
 			uncles = append(uncles, k)
+		}
+	}
+
+	if pom.PomFile.Profiles != nil {
+		for _, profile := range pom.Profiles.Values {
+			for _, module := range profile.Modules.Values {
+				uncles = append(uncles, module.Value)
+			}
 		}
 	}
 
@@ -338,7 +346,8 @@ func (project *Project) splitModules() []*pomFileWrapper {
 			stack = stack[1:]
 
 			uncle := project.modules[key]
-			pom.Inherit(uncle)
+			pom.InheritDepsManager(uncle)
+			pom.InheritProperties(uncle)
 
 			for uncleName := range uncle.Uncles {
 				if visitedUncles[uncleName] {
@@ -384,6 +393,7 @@ func (project *Project) splitParent() {
 
 			parent := project.modules[parentName]
 			pom.Inherit(parent)
+
 			pom.externalParent = parent.externalParent
 			visitedPom[pom.Name] = true
 		}
@@ -391,18 +401,18 @@ func (project *Project) splitParent() {
 }
 
 func (project *Project) Flush() {
-	visitedDeps := make(map[string]bool)
 	for _, pom := range project.modules {
-		project.flush(pom, visitedDeps)
+		project.flush(pom)
 	}
 }
 
-func (project *Project) flush(pom *pomFileWrapper, visitedDeps map[string]bool) {
+func (project *Project) flush(pom *pomFileWrapper) {
 	pom.Clear()
 
 	pom.Parent = pom.externalParent
 
 	deps := new(Dependencies)
+	depMap := map[string]*Dependency{}
 loop:
 	for key, dep := range pom.cacheDeps {
 		if _, have := project.modules[key]; have {
@@ -415,13 +425,22 @@ loop:
 			}
 		}
 
-		if visitedDeps[DepNameNoVersion(dep)] {
-			continue
-		}
-
-		deps.Value = append(deps.Value, dep)
-		visitedDeps[DepNameNoVersion(dep)] = true
+		depMap[DepNameNoVersion(dep)] = dep
 	}
+	if pom.PomFile.Dependencies != nil {
+		for _, rawDep := range pom.PomFile.Dependencies.Value {
+			dep, have := depMap[DepNameNoVersion(rawDep)]
+			if have {
+				deps.Value = append(deps.Value, dep)
+				delete(depMap, DepNameNoVersion(rawDep))
+			}
+		}
+	}
+
+	for _, dep := range depMap {
+		deps.Value = append(deps.Value, dep)
+	}
+
 	pom.PomFile.Dependencies = deps
 
 	depsManager := new(DependencyManagement)

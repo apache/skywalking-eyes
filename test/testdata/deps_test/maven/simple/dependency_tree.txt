@@ -1,0 +1,141 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] skywalking-eyes                                                    [pom]
+[INFO] skywalking-eyes-module                                             [jar]
+[INFO] 
+[INFO] -----------------------< apache:skywalking-eyes >-----------------------
+[INFO] Building skywalking-eyes 1.0                                       [1/2]
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- maven-dependency-plugin:2.8:tree (default-cli) @ skywalking-eyes ---
+[INFO] apache:skywalking-eyes:pom:1.0
+[INFO] +- junit:junit:jar:4.12:compile
+[INFO] |  \- org.hamcrest:hamcrest-core:jar:1.3:compile
+[INFO] \- commons-logging:commons-logging:jar:1.2:compile
+[INFO] 
+[INFO] -------------------< apache:skywalking-eyes-module >--------------------
+[INFO] Building skywalking-eyes-module 1.0                                [2/2]
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- maven-dependency-plugin:2.8:tree (default-cli) @ skywalking-eyes-module ---
+[INFO] apache:skywalking-eyes-module:jar:1.0
+[INFO] +- org.apache.skywalking:skywalking-sharing-server-plugin:jar:8.6.0:compile
+[INFO] |  +- org.apache.skywalking:server-core:jar:8.6.0:compile
+[INFO] |  |  +- org.yaml:snakeyaml:jar:1.28:compile
+[INFO] |  |  +- org.apache.skywalking:telemetry-api:jar:8.6.0:compile
+[INFO] |  |  +- org.apache.skywalking:configuration-api:jar:8.6.0:compile
+[INFO] |  |  +- org.apache.skywalking:library-client:jar:8.6.0:compile
+[INFO] |  |  |  +- io.grpc:grpc-core:jar:1.32.1:compile
+[INFO] |  |  |  +- com.google.code.gson:gson:jar:2.8.6:compile
+[INFO] |  |  |  +- com.zaxxer:HikariCP:jar:3.1.0:compile
+[INFO] |  |  |  +- commons-dbcp:commons-dbcp:jar:1.4:compile
+[INFO] |  |  |  |  \- commons-pool:commons-pool:jar:1.5.4:compile
+[INFO] |  |  |  +- org.elasticsearch.client:elasticsearch-rest-high-level-client:jar:6.3.2:compile
+[INFO] |  |  |  |  +- org.elasticsearch:elasticsearch:jar:6.3.2:compile
+[INFO] |  |  |  |  |  +- org.elasticsearch:elasticsearch-core:jar:6.3.2:compile
+[INFO] |  |  |  |  |  +- org.elasticsearch:elasticsearch-secure-sm:jar:6.3.2:compile
+[INFO] |  |  |  |  |  +- org.elasticsearch:elasticsearch-x-content:jar:6.3.2:compile
+[INFO] |  |  |  |  |  |  +- com.fasterxml.jackson.core:jackson-core:jar:2.8.10:compile
+[INFO] |  |  |  |  |  |  +- com.fasterxml.jackson.dataformat:jackson-dataformat-smile:jar:2.8.10:compile
+[INFO] |  |  |  |  |  |  +- com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:jar:2.8.10:compile
+[INFO] |  |  |  |  |  |  \- com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:jar:2.8.10:compile
+[INFO] |  |  |  |  |  +- org.apache.lucene:lucene-core:jar:7.3.1:compile
+[INFO] |  |  |  |  |  +- org.apache.lucene:lucene-analyzers-common:jar:7.3.1:compile
+[INFO] |  |  |  |  |  +- org.apache.lucene:lucene-backward-codecs:jar:7.3.1:compile
+[INFO] |  |  |  |  |  +- org.apache.lucene:lucene-grouping:jar:7.3.1:compile
+[INFO] |  |  |  |  |  +- org.apache.lucene:lucene-highlighter:jar:7.3.1:compile
+[INFO] |  |  |  |  |  +- org.apache.lucene:lucene-join:jar:7.3.1:compile
+[INFO] |  |  |  |  |  +- org.apache.lucene:lucene-memory:jar:7.3.1:compile
+[INFO] |  |  |  |  |  +- org.apache.lucene:lucene-misc:jar:7.3.1:compile
+[INFO] |  |  |  |  |  +- org.apache.lucene:lucene-queries:jar:7.3.1:compile
+[INFO] |  |  |  |  |  +- org.apache.lucene:lucene-queryparser:jar:7.3.1:compile
+[INFO] |  |  |  |  |  +- org.apache.lucene:lucene-sandbox:jar:7.3.1:compile
+[INFO] |  |  |  |  |  +- org.apache.lucene:lucene-spatial:jar:7.3.1:compile
+[INFO] |  |  |  |  |  +- org.apache.lucene:lucene-spatial-extras:jar:7.3.1:compile
+[INFO] |  |  |  |  |  +- org.apache.lucene:lucene-spatial3d:jar:7.3.1:compile
+[INFO] |  |  |  |  |  +- org.apache.lucene:lucene-suggest:jar:7.3.1:compile
+[INFO] |  |  |  |  |  +- org.elasticsearch:elasticsearch-cli:jar:6.3.2:compile
+[INFO] |  |  |  |  |  |  \- net.sf.jopt-simple:jopt-simple:jar:5.0.2:compile
+[INFO] |  |  |  |  |  +- com.carrotsearch:hppc:jar:0.7.1:compile
+[INFO] |  |  |  |  |  +- com.tdunning:t-digest:jar:3.2:compile
+[INFO] |  |  |  |  |  +- org.hdrhistogram:HdrHistogram:jar:2.1.9:compile
+[INFO] |  |  |  |  |  \- org.elasticsearch:jna:jar:4.5.1:compile
+[INFO] |  |  |  |  +- org.elasticsearch.client:elasticsearch-rest-client:jar:6.3.2:compile
+[INFO] |  |  |  |  |  +- org.apache.httpcomponents:httpclient:jar:4.5.2:compile
+[INFO] |  |  |  |  |  +- org.apache.httpcomponents:httpcore:jar:4.4.5:compile
+[INFO] |  |  |  |  |  +- org.apache.httpcomponents:httpasyncclient:jar:4.1.2:compile
+[INFO] |  |  |  |  |  +- org.apache.httpcomponents:httpcore-nio:jar:4.4.5:compile
+[INFO] |  |  |  |  |  \- commons-codec:commons-codec:jar:1.10:compile
+[INFO] |  |  |  |  +- org.elasticsearch.plugin:parent-join-client:jar:6.3.2:compile
+[INFO] |  |  |  |  +- org.elasticsearch.plugin:aggs-matrix-stats-client:jar:6.3.2:compile
+[INFO] |  |  |  |  \- org.elasticsearch.plugin:rank-eval-client:jar:6.3.2:compile
+[INFO] |  |  |  \- org.slf4j:jcl-over-slf4j:jar:1.7.25:compile
+[INFO] |  |  +- org.apache.skywalking:library-server:jar:8.6.0:compile
+[INFO] |  |  |  +- org.eclipse.jetty:jetty-server:jar:9.4.40.v20210413:compile
+[INFO] |  |  |  |  +- javax.servlet:javax.servlet-api:jar:3.1.0:compile
+[INFO] |  |  |  |  +- org.eclipse.jetty:jetty-http:jar:9.4.40.v20210413:compile
+[INFO] |  |  |  |  |  \- org.eclipse.jetty:jetty-util:jar:9.4.40.v20210413:compile
+[INFO] |  |  |  |  \- org.eclipse.jetty:jetty-io:jar:9.4.40.v20210413:compile
+[INFO] |  |  |  \- org.eclipse.jetty:jetty-servlet:jar:9.4.40.v20210413:compile
+[INFO] |  |  |     +- org.eclipse.jetty:jetty-security:jar:9.4.40.v20210413:compile
+[INFO] |  |  |     \- org.eclipse.jetty:jetty-util-ajax:jar:9.4.40.v20210413:compile
+[INFO] |  |  +- org.apache.skywalking:apm-datacarrier:jar:8.6.0:compile
+[INFO] |  |  +- org.javassist:javassist:jar:3.25.0-GA:compile
+[INFO] |  |  \- io.vavr:vavr:jar:0.10.3:compile
+[INFO] |  |     \- io.vavr:vavr-match:jar:0.10.3:compile
+[INFO] |  +- org.apache.skywalking:apm-network:jar:8.6.0:compile
+[INFO] |  |  +- io.grpc:grpc-netty:jar:1.32.1:compile
+[INFO] |  |  |  +- io.netty:netty-codec-http2:jar:4.1.51.Final:compile
+[INFO] |  |  |  |  +- io.netty:netty-common:jar:4.1.51.Final:compile
+[INFO] |  |  |  |  +- io.netty:netty-buffer:jar:4.1.51.Final:compile
+[INFO] |  |  |  |  +- io.netty:netty-transport:jar:4.1.51.Final:compile
+[INFO] |  |  |  |  |  \- io.netty:netty-resolver:jar:4.1.51.Final:compile
+[INFO] |  |  |  |  +- io.netty:netty-codec:jar:4.1.51.Final:compile
+[INFO] |  |  |  |  +- io.netty:netty-handler:jar:4.1.51.Final:compile
+[INFO] |  |  |  |  \- io.netty:netty-codec-http:jar:4.1.51.Final:compile
+[INFO] |  |  |  +- io.netty:netty-handler-proxy:jar:4.1.51.Final:runtime
+[INFO] |  |  |  |  \- io.netty:netty-codec-socks:jar:4.1.51.Final:runtime
+[INFO] |  |  |  \- io.perfmark:perfmark-api:jar:0.19.0:runtime
+[INFO] |  |  +- io.grpc:grpc-protobuf:jar:1.32.1:compile
+[INFO] |  |  |  +- io.grpc:grpc-api:jar:1.32.1:compile
+[INFO] |  |  |  |  \- io.grpc:grpc-context:jar:1.32.1:compile
+[INFO] |  |  |  +- com.google.api.grpc:proto-google-common-protos:jar:1.17.0:compile
+[INFO] |  |  |  \- io.grpc:grpc-protobuf-lite:jar:1.32.1:compile
+[INFO] |  |  +- io.grpc:grpc-stub:jar:1.32.1:compile
+[INFO] |  |  \- io.netty:netty-tcnative-boringssl-static:jar:2.0.26.Final:compile
+[INFO] |  +- org.apache.skywalking:library-module:jar:8.6.0:compile
+[INFO] |  |  \- org.apache.skywalking:apm-util:jar:8.6.0:compile
+[INFO] |  +- org.apache.skywalking:library-util:jar:8.6.0:compile
+[INFO] |  |  +- joda-time:joda-time:jar:2.10.5:compile
+[INFO] |  |  +- com.google.protobuf:protobuf-java:jar:3.13.0:compile
+[INFO] |  |  +- com.google.protobuf:protobuf-java-util:jar:3.12.4:compile
+[INFO] |  |  \- org.apache.commons:commons-text:jar:1.4:compile
+[INFO] |  |     \- org.apache.commons:commons-lang3:jar:3.7:compile
+[INFO] |  +- org.slf4j:slf4j-api:jar:1.7.25:compile
+[INFO] |  +- org.slf4j:log4j-over-slf4j:jar:1.7.25:compile
+[INFO] |  +- org.apache.logging.log4j:log4j-core:jar:2.9.0:compile
+[INFO] |  |  \- org.apache.logging.log4j:log4j-api:jar:2.9.0:compile
+[INFO] |  +- org.apache.logging.log4j:log4j-slf4j-impl:jar:2.9.0:compile
+[INFO] |  \- com.google.guava:guava:jar:28.1-jre:compile
+[INFO] |     +- com.google.guava:failureaccess:jar:1.0.1:compile
+[INFO] |     +- com.google.guava:listenablefuture:jar:9999.0-empty-to-avoid-conflict-with-guava:compile
+[INFO] |     +- com.google.code.findbugs:jsr305:jar:3.0.2:compile
+[INFO] |     +- org.checkerframework:checker-qual:jar:2.8.1:compile
+[INFO] |     +- com.google.errorprone:error_prone_annotations:jar:2.3.2:compile
+[INFO] |     \- org.codehaus.mojo:animal-sniffer-annotations:jar:1.18:compile
+[INFO] +- junit:junit:jar:4.12:compile
+[INFO] |  \- org.hamcrest:hamcrest-core:jar:1.3:compile
+[INFO] \- commons-logging:commons-logging:jar:1.2:compile
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for skywalking-eyes 1.0:
+[INFO] 
+[INFO] skywalking-eyes .................................... SUCCESS [  0.564 s]
+[INFO] skywalking-eyes-module ............................. SUCCESS [  1.284 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  2.174 s
+[INFO] Finished at: 2021-09-28T10:39:46Z
+[INFO] ------------------------------------------------------------------------

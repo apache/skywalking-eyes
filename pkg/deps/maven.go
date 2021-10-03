@@ -172,7 +172,7 @@ func (mvn *mavenTool) loadDependencies(params ...string) ([]*DependencyWrapper, 
 		return nil, err
 	}
 
-	deps := loadDependencies(buf.Bytes())
+	deps := LoadDependencies(buf.Bytes())
 	return deps, nil
 }
 
@@ -256,36 +256,30 @@ func SeemLicense(content string) bool {
 	return reMaybeLicense.MatchString(content)
 }
 
-func loadDependencies(data []byte) []*DependencyWrapper {
-	depsTree := LoadDependenciesTree(data)
+func LoadDependencies(data []byte) []*DependencyWrapper {
+	allDeps := []*DependencyWrapper{}
 
-	cnt := 0
-	for _, dep := range depsTree {
-		cnt += dep.Count()
+	depTrees := LoadDependenciesTree(data)
+
+	visited := make(map[string]bool)
+	allDepTrees := make(map[string]bool)
+	for _, depTree := range depTrees {
+		visited[depTree.Path()] = true
+		allDepTrees[depTree.Path()] = true
 	}
 
-	deps := make([]*DependencyWrapper, 0, cnt)
-
-	queue := []*DependencyWrapper{}
-	for _, depTree := range depsTree {
-		queue = append(queue, depTree)
-	loop:
-		for len(queue) > 0 {
-			dep := queue[0]
-
-			queue = queue[1:]
-			queue = append(queue, dep.TransitiveDeps...)
-
-			for _, skip := range skipScppe {
-				if dep.Scope == skip {
-					continue loop
-				}
+	for _, depTree := range depTrees {
+		deps := depTree.Flatten(allDepTrees)
+		for _, dep := range deps {
+			if visited[dep.Path()] {
+				continue
 			}
-
-			deps = append(deps, dep.Clone())
+			visited[dep.Path()] = true
+			allDeps = append(allDeps, dep)
 		}
 	}
-	return deps
+
+	return allDeps
 }
 
 func LoadDependenciesTree(data []byte) []*DependencyWrapper {
@@ -295,42 +289,38 @@ func LoadDependenciesTree(data []byte) []*DependencyWrapper {
 	}
 
 	stack := []Elem{}
-	unique := make(map[string]struct{})
 
-	reFind := regexp.MustCompile(`(?im)^.*? ([| ]*)(\+-|\\-) (.+):(.+):(.+):(.+):(.+)\b( \(.+)?$`)
+	reFind := regexp.MustCompile(`(?im)^\[info\] (([| ]*)(\+-|\\-) )?(.+?):(.+?):(.+?):(.+?)(:(.+?))?( \(.+)?$`)
 	rawDeps := reFind.FindAllSubmatch(data, -1)
 
-	deps := make([]*DependencyWrapper, 0, len(rawDeps))
+	if bytes.Contains(rawDeps[len(rawDeps)-1][0], []byte("Finished at")) {
+		rawDeps = rawDeps[:len(rawDeps)-1]
+	}
+
+	deps := []*DependencyWrapper{}
 	for _, rawDep := range rawDeps {
 		dep := &DependencyWrapper{
-			Packaging: string(rawDep[5]),
 			Dependency: Dependency{
-				GroupID:    string(rawDep[3]),
-				ArtifactID: string(rawDep[4]),
-				Version:    string(rawDep[6]),
-				Scope:      string(rawDep[7]),
+				GroupID:    string(rawDep[4]),
+				ArtifactID: string(rawDep[5]),
+				Type:       string(rawDep[6]),
+				Version:    string(rawDep[7]),
 			},
 		}
 
-		if _, have := unique[dep.Path()]; have {
-			continue
-		}
-
-		unique[dep.Path()] = struct{}{}
-
-		level := len(rawDep[1]) / 3
-		dependence := string(rawDep[2])
-
-		if level == 0 {
+		if len(rawDep[1]) == 0 {
 			deps = append(deps, dep)
-
 			if len(stack) != 0 {
 				stack = stack[:0]
 			}
-
-			stack = append(stack, Elem{dep, level})
+			stack = append(stack, Elem{dep, 0})
 			continue
 		}
+
+		dep.Scope = string(rawDep[9])
+
+		level := len(rawDep[2])/3 + 1
+		dependence := string(rawDep[3])
 
 		tail := stack[len(stack)-1]
 
@@ -380,7 +370,6 @@ func (s *State) String() string {
 
 type DependencyWrapper struct {
 	Dependency
-	Packaging      string
 	TransitiveDeps []*DependencyWrapper
 }
 
@@ -413,6 +402,39 @@ func (dep *DependencyWrapper) Pom() string {
 
 func (dep *DependencyWrapper) Jar() string {
 	return fmt.Sprintf("%v-%v.jar", dep.ArtifactID, dep.Version)
+}
+
+func (dep *DependencyWrapper) Flatten(skip map[string]bool) []*DependencyWrapper {
+	deps := make([]*DependencyWrapper, 0, dep.Count())
+
+	visited := make(map[string]bool)
+	queue := []*DependencyWrapper{}
+	queue = append(queue, dep.TransitiveDeps...)
+loop:
+	for len(queue) > 0 {
+		d := queue[0]
+		queue = queue[1:]
+
+		if skip[d.Path()] {
+			continue
+		}
+
+		if visited[d.Path()] {
+			continue
+		}
+
+		for _, skip := range skipScppe {
+			if d.Scope == skip {
+				continue loop
+			}
+		}
+
+		visited[d.Path()] = true
+		deps = append(deps, d.Clone())
+		queue = append(queue, d.TransitiveDeps...)
+	}
+
+	return deps
 }
 
 func (dep *DependencyWrapper) String() string {

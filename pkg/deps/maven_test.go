@@ -18,13 +18,9 @@
 package deps_test
 
 import (
-	"fmt"
-	"io/ioutil"
-	"path/filepath"
 	"testing"
 
 	"github.com/apache/skywalking-eyes/pkg/deps"
-	"github.com/stretchr/testify/require"
 )
 
 func TestCanResolvePomFile(t *testing.T) {
@@ -42,27 +38,5 @@ func TestCanResolvePomFile(t *testing.T) {
 		if b != test.exp {
 			t.Errorf("MavenPomResolver.CanResolve(\"%v\") = %v, want %v", test.fileName, b, test.exp)
 		}
-	}
-}
-
-func TestResolveMaven(t *testing.T) {
-	testDataPath, err := filepath.Abs("../../test/testdata/deps_test/maven")
-
-	files, err := ioutil.ReadDir(testDataPath)
-	require.NoError(t, err)
-
-	for _, file := range files {
-		resolver := new(deps.MavenPomResolver)
-		pomFile := filepath.Join(testDataPath, file.Name(), "pom.xml")
-
-		t.Run(file.Name(), func(t *testing.T) {
-			if resolver.CanResolve(pomFile) {
-				report := deps.Report{}
-				err := resolver.Resolve(pomFile, &report)
-				require.NoError(t, err)
-
-				fmt.Println(report.String())
-			}
-		})
 	}
 }

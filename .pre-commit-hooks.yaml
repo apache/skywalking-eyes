@@ -1,0 +1,5 @@
+-   id: fix-license
+    name: fix-license
+    entry: license-eye header fix
+    language: golang
+    description: Add license headers to files missing them

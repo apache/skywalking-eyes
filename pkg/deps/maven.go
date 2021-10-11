@@ -151,6 +151,7 @@ func (resolver *MavenPomResolver) ResolveDependencies(deps []*Dependency, report
 			report.Skip(&Result{
 				Dependency:    dep.Jar(),
 				LicenseSpdxID: Unknown,
+				Version:       dep.Version,
 			})
 		}
 	}
@@ -159,7 +160,7 @@ func (resolver *MavenPomResolver) ResolveDependencies(deps []*Dependency, report
 
 // ResolveLicense search all possible locations of the license, such as pom file, jar package
 func (resolver *MavenPomResolver) ResolveLicense(state *State, dep *Dependency, report *Report) error {
-	err := resolver.ResolveJar(state, filepath.Join(resolver.repo, dep.Path(), dep.Jar()), report)
+	err := resolver.ResolveJar(state, filepath.Join(resolver.repo, dep.Path(), dep.Jar()), dep.Version, report)
 	if err == nil {
 		return nil
 	}
@@ -180,6 +181,7 @@ func (resolver *MavenPomResolver) ResolveLicenseFromPom(state *State, dep *Depen
 			LicenseFilePath: pomFile,
 			LicenseContent:  pom.Raw(),
 			LicenseSpdxID:   pom.AllLicenses(),
+			Version:         dep.Version,
 		})
 
 		return nil
@@ -190,7 +192,7 @@ func (resolver *MavenPomResolver) ResolveLicenseFromPom(state *State, dep *Depen
 		return err
 	} else if headerComments != "" {
 		*state |= FoundLicenseInPomHeader
-		return resolver.IdentifyLicense(pomFile, dep.Jar(), headerComments, report)
+		return resolver.IdentifyLicense(pomFile, dep.Jar(), headerComments, dep.Version, report)
 	}
 
 	return fmt.Errorf("not found in pom file")

@@ -125,40 +125,191 @@ you can put them in distribution package if needed.
 bin/darwin/license-eye -c test/testdata/.licenserc_for_test_check.yaml dep resolve -o ./dependencies/licenses
 INFO GITHUB_TOKEN is not set, license-eye won't comment on the pull request
 INFO Loading configuration from file: test/testdata/.licenserc_for_test_check.yaml
-WARNING Failed to resolve the license of dependency: gopkg.in/yaml.v3 cannot identify license content
-Dependency                                  |      License
-------------------------------------------- | ------------
-github.com/bmatcuk/doublestar/v2            |          MIT
-github.com/sirupsen/logrus                  |          MIT
-golang.org/x/sys/unix                       | BSD-3-Clause
-github.com/spf13/cobra                      |   Apache-2.0
-github.com/spf13/pflag                      | BSD-3-Clause
-vendor/golang.org/x/net/dns/dnsmessage      | BSD-3-Clause
-vendor/golang.org/x/net/route               | BSD-3-Clause
-golang.org/x/oauth2                         | BSD-3-Clause
-golang.org/x/oauth2/internal                | BSD-3-Clause
-vendor/golang.org/x/crypto/cryptobyte       | BSD-3-Clause
-vendor/golang.org/x/crypto/cryptobyte/asn1  | BSD-3-Clause
-golang.org/x/net/context/ctxhttp            | BSD-3-Clause
-vendor/golang.org/x/crypto/chacha20poly1305 | BSD-3-Clause
-vendor/golang.org/x/crypto/chacha20         | BSD-3-Clause
-vendor/golang.org/x/crypto/internal/subtle  | BSD-3-Clause
-vendor/golang.org/x/crypto/poly1305         | BSD-3-Clause
-vendor/golang.org/x/sys/cpu                 | BSD-3-Clause
-vendor/golang.org/x/crypto/curve25519       | BSD-3-Clause
-vendor/golang.org/x/crypto/hkdf             | BSD-3-Clause
-vendor/golang.org/x/net/http/httpguts       | BSD-3-Clause
-vendor/golang.org/x/net/idna                | BSD-3-Clause
-vendor/golang.org/x/text/secure/bidirule    | BSD-3-Clause
-vendor/golang.org/x/text/transform          | BSD-3-Clause
-vendor/golang.org/x/text/unicode/bidi       | BSD-3-Clause
-vendor/golang.org/x/text/unicode/norm       | BSD-3-Clause
-vendor/golang.org/x/net/http/httpproxy      | BSD-3-Clause
-vendor/golang.org/x/net/http2/hpack         | BSD-3-Clause
-gopkg.in/yaml.v3                            |      Unknown
+WARNING Failed to resolve the license of <github.com/gogo/protobuf>: cannot identify license content 
+WARNING Failed to resolve the license of <github.com/kr/logfmt>: cannot find license file 
+WARNING Failed to resolve the license of <github.com/magiconair/properties>: cannot identify license content 
+WARNING Failed to resolve the license of <github.com/miekg/dns>: cannot identify license content 
+WARNING Failed to resolve the license of <github.com/pascaldekloe/goe>: cannot identify license content 
+WARNING Failed to resolve the license of <github.com/russross/blackfriday/v2>: cannot identify license content 
+WARNING Failed to resolve the license of <gopkg.in/check.v1>: cannot identify license content 
+Dependency                                         |                       License |              Version
+-------------------------------------------------- | ----------------------------- | --------------------
+cloud.google.com/go                                |                    Apache-2.0 |              v0.46.3
+cloud.google.com/go/bigquery                       |                    Apache-2.0 |               v1.0.1
+cloud.google.com/go/datastore                      |                    Apache-2.0 |               v1.0.0
+cloud.google.com/go/firestore                      |                    Apache-2.0 |               v1.1.0
+cloud.google.com/go/pubsub                         |                    Apache-2.0 |               v1.0.1
+cloud.google.com/go/storage                        |                    Apache-2.0 |               v1.0.0
+dmitri.shuralyov.com/gpu/mtl                       |                  BSD-3-Clause |               v0.0.0
+github.com/BurntSushi/toml                         |                           MIT |               v0.3.1
+github.com/BurntSushi/xgb                          |                  BSD-3-Clause |               v0.0.0
+github.com/OneOfOne/xxhash                         |                    Apache-2.0 |               v1.2.2
+github.com/alecthomas/template                     |                  BSD-3-Clause |               v0.0.0
+github.com/alecthomas/units                        |                           MIT |               v0.0.0
+github.com/armon/circbuf                           |                           MIT |               v0.0.0
+github.com/armon/go-metrics                        |                           MIT |               v0.0.0
+github.com/armon/go-radix                          |                           MIT |               v0.0.0
+github.com/beorn7/perks                            |                           MIT |               v1.0.0
+github.com/bgentry/speakeasy                       |                           MIT |               v0.1.0
+github.com/bketelsen/crypt                         |                           MIT |               v0.0.3
+github.com/bmatcuk/doublestar/v2                   |                           MIT |               v2.0.4
+github.com/cespare/xxhash                          |                           MIT |               v1.1.0
+github.com/client9/misspell                        |                           MIT |               v0.3.4
+github.com/coreos/bbolt                            |                           MIT |               v1.3.2
+github.com/coreos/etcd                             |                    Apache-2.0 | v3.3.13+incompatible
+github.com/coreos/go-semver                        |                    Apache-2.0 |               v0.3.0
+github.com/coreos/go-systemd                       |                    Apache-2.0 |               v0.0.0
+github.com/coreos/pkg                              |                    Apache-2.0 |               v0.0.0
+github.com/cpuguy83/go-md2man/v2                   |                           MIT |               v2.0.0
+github.com/davecgh/go-spew                         |                           ISC |               v1.1.1
+github.com/dgrijalva/jwt-go                        |                           MIT |  v3.2.0+incompatible
+github.com/dgryski/go-sip13                        |                           MIT |               v0.0.0
+github.com/fatih/color                             |                           MIT |               v1.7.0
+github.com/fsnotify/fsnotify                       |                  BSD-3-Clause |               v1.4.7
+github.com/ghodss/yaml                             |                           MIT |               v1.0.0
+github.com/go-gl/glfw                              |                  BSD-3-Clause |               v0.0.0
+github.com/go-kit/kit                              |                           MIT |               v0.8.0
+github.com/go-logfmt/logfmt                        |                           MIT |               v0.4.0
+github.com/go-stack/stack                          |                           MIT |               v1.8.0
+github.com/golang/glog                             |                    Apache-2.0 |               v0.0.0
+github.com/golang/groupcache                       |                    Apache-2.0 |               v0.0.0
+github.com/golang/mock                             |                    Apache-2.0 |               v1.3.1
+github.com/golang/protobuf                         |                  BSD-3-Clause |               v1.3.2
+github.com/google/btree                            |                    Apache-2.0 |               v1.0.0
+github.com/google/go-cmp                           |                  BSD-3-Clause |               v0.3.0
+github.com/google/go-github/v33                    |                  BSD-3-Clause |              v33.0.0
+github.com/google/go-querystring                   |                  BSD-3-Clause |               v1.0.0
+github.com/google/martian                          |                    Apache-2.0 |  v2.1.0+incompatible
+github.com/google/pprof                            |                    Apache-2.0 |               v0.0.0
+github.com/google/renameio                         |                    Apache-2.0 |               v0.1.0
+github.com/googleapis/gax-go/v2                    |                  BSD-3-Clause |               v2.0.5
+github.com/gopherjs/gopherjs                       |                  BSD-2-Clause |               v0.0.0
+github.com/gorilla/websocket                       |                  BSD-2-Clause |               v1.4.2
+github.com/grpc-ecosystem/go-grpc-middleware       |                    Apache-2.0 |               v1.0.0
+github.com/grpc-ecosystem/go-grpc-prometheus       |                    Apache-2.0 |               v1.2.0
+github.com/grpc-ecosystem/grpc-gateway             |                  BSD-3-Clause |               v1.9.0
+github.com/hashicorp/consul/api                    | MPL-2.0-no-copyleft-exception |               v1.1.0
+github.com/hashicorp/consul/sdk                    |                       MPL-2.0 |               v0.1.1
+github.com/hashicorp/errwrap                       | MPL-2.0-no-copyleft-exception |               v1.0.0
+github.com/hashicorp/go-cleanhttp                  |                       MPL-2.0 |               v0.5.1
+github.com/hashicorp/go-immutable-radix            |                       MPL-2.0 |               v1.0.0
+github.com/hashicorp/go-msgpack                    |                  BSD-3-Clause |               v0.5.3
+github.com/hashicorp/go-multierror                 |                       MPL-2.0 |               v1.0.0
+github.com/hashicorp/go-rootcerts                  |                       MPL-2.0 |               v1.0.0
+github.com/hashicorp/go-sockaddr                   |                       MPL-2.0 |               v1.0.0
+github.com/hashicorp/go-syslog                     |                           MIT |               v1.0.0
+github.com/hashicorp/go-uuid                       |                       MPL-2.0 |               v1.0.1
+github.com/hashicorp/go.net                        |                  BSD-3-Clause |               v0.0.1
+github.com/hashicorp/golang-lru                    |                       MPL-2.0 |               v0.5.1
+github.com/hashicorp/hcl                           |                       MPL-2.0 |               v1.0.0
+github.com/hashicorp/logutils                      |                       MPL-2.0 |               v1.0.0
+github.com/hashicorp/mdns                          |                           MIT |               v1.0.0
+github.com/hashicorp/memberlist                    |                       MPL-2.0 |               v0.1.3
+github.com/hashicorp/serf                          |                       MPL-2.0 |               v0.8.2
+github.com/inconshreveable/mousetrap               |                    Apache-2.0 |               v1.0.0
+github.com/jonboulle/clockwork                     |                    Apache-2.0 |               v0.1.0
+github.com/json-iterator/go                        |                           MIT |               v1.1.6
+github.com/jstemmer/go-junit-report                |                           MIT |               v0.0.0
+github.com/jtolds/gls                              |                           MIT | v4.20.0+incompatible
+github.com/julienschmidt/httprouter                |                  BSD-3-Clause |               v1.2.0
+github.com/kisielk/errcheck                        |                           MIT |               v1.1.0
+github.com/kisielk/gotool                          |                           MIT |               v1.0.0
+github.com/konsorten/go-windows-terminal-sequences |                           MIT |               v1.0.1
+github.com/kr/pretty                               |                           MIT |               v0.1.0
+github.com/kr/pty                                  |                           MIT |               v1.1.1
+github.com/kr/text                                 |                           MIT |               v0.1.0
+github.com/mattn/go-colorable                      |                           MIT |               v0.0.9
+github.com/mattn/go-isatty                         |                           MIT |               v0.0.3
+github.com/matttproud/golang_protobuf_extensions   |                    Apache-2.0 |               v1.0.1
+github.com/mitchellh/cli                           |                       MPL-2.0 |               v1.0.0
+github.com/mitchellh/go-homedir                    |                           MIT |               v1.1.0
+github.com/mitchellh/go-testing-interface          |                           MIT |               v1.0.0
+github.com/mitchellh/gox                           |                       MPL-2.0 |               v0.4.0
+github.com/mitchellh/iochan                        |                           MIT |               v1.0.0
+github.com/mitchellh/mapstructure                  |                           MIT |               v1.1.2
+github.com/modern-go/concurrent                    |                    Apache-2.0 |               v0.0.0
+github.com/modern-go/reflect2                      |                    Apache-2.0 |               v1.0.1
+github.com/mwitkow/go-conntrack                    |                    Apache-2.0 |               v0.0.0
+github.com/oklog/ulid                              |                    Apache-2.0 |               v1.3.1
+github.com/pelletier/go-toml                       |                           MIT |               v1.2.0
+github.com/pkg/errors                              |                  BSD-2-Clause |               v0.8.1
+github.com/pmezard/go-difflib                      |                  BSD-3-Clause |               v1.0.0
+github.com/posener/complete                        |                           MIT |               v1.1.1
+github.com/prometheus/client_golang                |                    Apache-2.0 |               v0.9.3
+github.com/prometheus/client_model                 |                    Apache-2.0 |               v0.0.0
+github.com/prometheus/common                       |                    Apache-2.0 |               v0.4.0
+github.com/prometheus/procfs                       |                    Apache-2.0 |               v0.0.0
+github.com/prometheus/tsdb                         |                    Apache-2.0 |               v0.7.1
+github.com/rogpeppe/fastuuid                       |                  BSD-3-Clause |               v0.0.0
+github.com/rogpeppe/go-internal                    |                  BSD-3-Clause |               v1.3.0
+github.com/ryanuber/columnize                      |                           MIT |               v0.0.0
+github.com/sean-/seed                              |                           MIT |               v0.0.0
+github.com/shurcooL/sanitized_anchor_name          |                           MIT |               v1.0.0
+github.com/sirupsen/logrus                         |                           MIT |               v1.7.0
+github.com/smartystreets/assertions                |                           MIT |               v0.0.0
+github.com/smartystreets/goconvey                  |                           MIT |               v1.6.4
+github.com/soheilhy/cmux                           |                    Apache-2.0 |               v0.1.4
+github.com/spaolacci/murmur3                       |                  BSD-3-Clause |               v0.0.0
+github.com/spf13/afero                             |                    Apache-2.0 |               v1.1.2
+github.com/spf13/cast                              |                           MIT |               v1.3.0
+github.com/spf13/cobra                             |                    Apache-2.0 |               v1.1.1
+github.com/spf13/jwalterweatherman                 |                           MIT |               v1.0.0
+github.com/spf13/pflag                             |                  BSD-3-Clause |               v1.0.5
+github.com/spf13/viper                             |                           MIT |               v1.7.0
+github.com/stretchr/objx                           |                           MIT |               v0.1.1
+github.com/stretchr/testify                        |                           MIT |               v1.3.0
+github.com/subosito/gotenv                         |                           MIT |               v1.2.0
+github.com/tmc/grpc-websocket-proxy                |                           MIT |               v0.0.0
+github.com/xiang90/probing                         |                           MIT |               v0.0.0
+github.com/yuin/goldmark                           |                           MIT |               v1.3.5
+go.etcd.io/bbolt                                   |                           MIT |               v1.3.2
+go.opencensus.io                                   |                    Apache-2.0 |              v0.22.0
+go.uber.org/atomic                                 |                           MIT |               v1.4.0
+go.uber.org/multierr                               |                           MIT |               v1.1.0
+go.uber.org/zap                                    |                           MIT |              v1.10.0
+golang.org/x/crypto                                |                  BSD-3-Clause |               v0.0.0
+golang.org/x/exp                                   |                  BSD-3-Clause |               v0.0.0
+golang.org/x/image                                 |                  BSD-3-Clause |               v0.0.0
+golang.org/x/lint                                  |                  BSD-3-Clause |               v0.0.0
+golang.org/x/mobile                                |                  BSD-3-Clause |               v0.0.0
+golang.org/x/mod                                   |                  BSD-3-Clause |               v0.4.2
+golang.org/x/net                                   |                  BSD-3-Clause |               v0.0.0
+golang.org/x/oauth2                                |                  BSD-3-Clause |               v0.0.0
+golang.org/x/sync                                  |                  BSD-3-Clause |               v0.0.0
+golang.org/x/sys                                   |                  BSD-3-Clause |               v0.0.0
+golang.org/x/term                                  |                  BSD-3-Clause |               v0.0.0
+golang.org/x/text                                  |                  BSD-3-Clause |               v0.3.6
+golang.org/x/time                                  |                  BSD-3-Clause |               v0.0.0
+golang.org/x/tools                                 |                  BSD-3-Clause |               v0.1.5
+golang.org/x/xerrors                               |                  BSD-3-Clause |               v0.0.0
+google.golang.org/api                              |                  BSD-3-Clause |              v0.13.0
+google.golang.org/appengine                        |                    Apache-2.0 |               v1.6.1
+google.golang.org/genproto                         |                    Apache-2.0 |               v0.0.0
+google.golang.org/grpc                             |                    Apache-2.0 |              v1.21.1
+gopkg.in/alecthomas/kingpin.v2                     |                           MIT |               v2.2.6
+gopkg.in/errgo.v2                                  |                  BSD-3-Clause |               v2.1.0
+gopkg.in/ini.v1                                    |                    Apache-2.0 |              v1.51.0
+gopkg.in/resty.v1                                  |                           MIT |              v1.12.0
+gopkg.in/yaml.v2                                   |                    Apache-2.0 |               v2.2.8
+gopkg.in/yaml.v3                                   |                MIT and Apache |               v3.0.0
+honnef.co/go/tools                                 |                           MIT |               v0.0.1
+rsc.io/binaryregexp                                |                  BSD-3-Clause |               v0.2.0
+github.com/gogo/protobuf                           |                       Unknown |               v1.2.1
+github.com/kr/logfmt                               |                       Unknown |               v0.0.0
+github.com/magiconair/properties                   |                       Unknown |               v1.8.1
+github.com/miekg/dns                               |                       Unknown |              v1.0.14
+github.com/pascaldekloe/goe                        |                       Unknown |               v0.0.0
+github.com/russross/blackfriday/v2                 |                       Unknown |               v2.0.1
+gopkg.in/check.v1                                  |                       Unknown |               v1.0.0
 
-ERROR failed to identify the licenses of following packages:
-gopkg.in/yaml.v3
+ERROR failed to identify the licenses of following packages (7):
+github.com/gogo/protobuf
+github.com/kr/logfmt
+github.com/magiconair/properties
+github.com/miekg/dns
+github.com/pascaldekloe/goe
+github.com/russross/blackfriday/v2
+gopkg.in/check.v1
 ```
 
 #### Check Dependencies' licenses

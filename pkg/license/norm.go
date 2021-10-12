@@ -164,8 +164,8 @@ var (
 			"Neither the name of the copyright holder nor the names of its contributors may be used to endorse",
 		},
 		{
-			regexp.MustCompile(`(?i)(neither the name of) (.+?) (nor the names of)`),
-			"$1 the copyright holder $3",
+			regexp.MustCompile(`(?i)(neither the name)( of)? (.+?) (nor the names)( of( its authors and)?)?( its)?`),
+			"$1 the copyright holder $4",
 		},
 		{
 			regexp.MustCompile(`(?i)you may not use this (file|library) except`),
@@ -195,7 +195,17 @@ var (
 		// BSD-3-Clause
 		// MIT
 		{ // remove optional header
-			regexp.MustCompile(`(?im)^\s*\(?(The )?MIT License( \((MIT|Expat)\))?\)?$`),
+			regexp.MustCompile(`(?im)^\s*\(?(The )?MIT License( \((MIT|Expat)\))?\)?\s*$`),
+			"",
+		},
+		// The Three Clause BSD License (http://(http://en.wikipedia.org/wiki/bsd_licenses)
+		{ // remove optional header
+			regexp.MustCompile(`(?im)^\s*?the (two|three)? clause bsd license (\(http(s)?://(\w|\.|/)+\))?$`),
+			"",
+		},
+		// BSD 3-Clause License
+		{ // remove optional header
+			regexp.MustCompile(`(?im)^\s*?bsd (2|3)-clause license\s*$`),
 			"",
 		},
 		// ISC
@@ -225,13 +235,24 @@ var (
 			" ",
 		},
 		// Copyright (c) .....
+		// © Copyright .....
 		{
-			regexp.MustCompile(`(?m)^\s*Copyright (\([cC©]\))?.+$`),
+			regexp.MustCompile(`(?m)^\s*([cC©])?\s*Copyright (\([cC©]\))?.+$`),
+			"",
+		},
+		// Portions Copyright (C) ...
+		{
+			regexp.MustCompile(`(?m)^\s*Portions Copyright (\([cC©]\))?.+$`),
 			"",
 		},
 		// All rights reserved
 		{
 			regexp.MustCompile(`(?m)^\s*All rights reserved\.?$`),
+			"",
+		},
+		// ... is distributed under the Simplified BSD License:
+		{
+			regexp.MustCompile(`(?im)^\s*.+ is distributed under the Simplified BSD License\:?$`),
 			"",
 		},
 

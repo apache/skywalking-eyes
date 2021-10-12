@@ -205,7 +205,7 @@ var (
 		},
 		// BSD 3-Clause License
 		{ // remove optional header
-			regexp.MustCompile(`(?im)^\s*?bsd (2|3)-clause license\s*$`),
+			regexp.MustCompile(`(?im)^\s*?bsd ([23])-clause license\s*$`),
 			"",
 		},
 		// ISC

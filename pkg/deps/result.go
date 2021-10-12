@@ -36,6 +36,7 @@ type Result struct {
 	LicenseContent  string
 	LicenseSpdxID   string
 	ResolveErrors   []error
+	Version         string
 }
 
 // Report is a collection of resolved Result.
@@ -55,24 +56,26 @@ func (report *Report) Skip(result *Result) {
 }
 
 func (report *Report) String() string {
-	dWidth, lWidth := .0, .0
+	dWidth, lWidth, vWidth := .0, .0, .0
 	for _, r := range report.Skipped {
 		dWidth = math.Max(float64(len(r.Dependency)), dWidth)
 		lWidth = math.Max(float64(len(r.LicenseSpdxID)), lWidth)
+		vWidth = math.Max(float64(len(r.Version)), vWidth)
 	}
 	for _, r := range report.Resolved {
 		dWidth = math.Max(float64(len(r.Dependency)), dWidth)
 		lWidth = math.Max(float64(len(r.LicenseSpdxID)), lWidth)
+		vWidth = math.Max(float64(len(r.Version)), vWidth)
 	}
 
-	rowTemplate := fmt.Sprintf("%%-%dv | %%%dv\n", int(dWidth), int(lWidth))
-	s := fmt.Sprintf(rowTemplate, "Dependency", "License")
-	s += fmt.Sprintf(rowTemplate, strings.Repeat("-", int(dWidth)), strings.Repeat("-", int(lWidth)))
+	rowTemplate := fmt.Sprintf("%%-%dv | %%%dv | %%%dv\n", int(dWidth), int(lWidth), int(vWidth))
+	s := fmt.Sprintf(rowTemplate, "Dependency", "License", "Version")
+	s += fmt.Sprintf(rowTemplate, strings.Repeat("-", int(dWidth)), strings.Repeat("-", int(lWidth)), strings.Repeat("-", int(vWidth)))
 	for _, r := range report.Resolved {
-		s += fmt.Sprintf(rowTemplate, r.Dependency, r.LicenseSpdxID)
+		s += fmt.Sprintf(rowTemplate, r.Dependency, r.LicenseSpdxID, r.Version)
 	}
 	for _, r := range report.Skipped {
-		s += fmt.Sprintf(rowTemplate, r.Dependency, Unknown)
+		s += fmt.Sprintf(rowTemplate, r.Dependency, Unknown, r.Version)
 	}
 
 	return s

@@ -51,6 +51,7 @@ type Package struct {
 	License  json.RawMessage `json:"license"`
 	Licenses []Lcs           `json:"licenses"`
 	Path     string          `json:"-"`
+	Version  string          `json:"version"`
 }
 
 const PkgFileName = "package.json"
@@ -210,6 +211,7 @@ func (resolver *NpmResolver) ResolvePkgFile(result *Result, pkgPath string) erro
 		return err
 	}
 
+	result.Version = packageInfo.Version
 	if lcs, ok := resolver.ResolveLicenseField(packageInfo.License); ok {
 		result.LicenseSpdxID = lcs
 		return nil

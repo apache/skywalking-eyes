@@ -25,6 +25,7 @@ import (
 	"io"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/apache/skywalking-eyes/internal/logger"
 	"github.com/apache/skywalking-eyes/pkg/license"
@@ -38,7 +39,7 @@ func (resolver *JarResolver) CanResolve(jarFile string) bool {
 
 func (resolver *JarResolver) Resolve(jarFile string, report *Report) error {
 	state := NotFound
-	if err := resolver.ResolveJar(&state, jarFile, report); err != nil {
+	if err := resolver.ResolveJar(&state, jarFile, Unknown, report); err != nil {
 		dep := filepath.Base(jarFile)
 		logger.Log.Warnf("Failed to resolve the license of <%s>: %v\n", dep, state.String())
 		report.Skip(&Result{
@@ -50,7 +51,7 @@ func (resolver *JarResolver) Resolve(jarFile string, report *Report) error {
 	return nil
 }
 
-func (resolver *JarResolver) ResolveJar(state *State, jarFile string, report *Report) error {
+func (resolver *JarResolver) ResolveJar(state *State, jarFile, version string, report *Report) error {
 	dep := filepath.Base(jarFile)
 
 	compressedJar, err := zip.OpenReader(jarFile)
@@ -75,7 +76,7 @@ func (resolver *JarResolver) ResolveJar(state *State, jarFile string, report *Re
 				return err
 			}
 
-			return resolver.IdentifyLicense(jarFile, dep, buf.String(), report)
+			return resolver.IdentifyLicense(jarFile, dep, buf.String(), version, report)
 		}
 	}
 
@@ -92,8 +93,9 @@ func (resolver *JarResolver) ResolveJar(state *State, jarFile string, report *Re
 			report.Resolve(&Result{
 				Dependency:      dep,
 				LicenseFilePath: jarFile,
-				LicenseContent:  r[1],
-				LicenseSpdxID:   r[1],
+				LicenseContent:  strings.TrimSpace(r[1]),
+				LicenseSpdxID:   strings.TrimSpace(r[1]),
+				Version:         version,
 			})
 			return nil
 		}
@@ -120,7 +122,7 @@ func (resolver *JarResolver) ReadFileFromZip(archiveFile *zip.File) (*bytes.Buff
 	return buf, nil
 }
 
-func (resolver *JarResolver) IdentifyLicense(path, dep, content string, report *Report) error {
+func (resolver *JarResolver) IdentifyLicense(path, dep, content, version string, report *Report) error {
 	identifier, err := license.Identify(path, content)
 	if err != nil {
 		return err
@@ -131,6 +133,7 @@ func (resolver *JarResolver) IdentifyLicense(path, dep, content string, report *
 		LicenseFilePath: path,
 		LicenseContent:  content,
 		LicenseSpdxID:   identifier,
+		Version:         version,
 	})
 	return nil
 }

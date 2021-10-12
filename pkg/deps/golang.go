@@ -59,7 +59,7 @@ func (resolver *GoModResolver) Resolve(goModFile string, report *Report) error {
 		return err
 	}
 
-	output, err := exec.Command("go", "list", "-m", "-json", "all").Output()
+	output, err := exec.Command("go", "mod", "download", "-json").Output()
 	if err != nil {
 		return err
 	}
@@ -91,6 +91,7 @@ func (resolver *GoModResolver) ResolvePackages(modules []*packages.Module, repor
 			report.Skip(&Result{
 				Dependency:    module.Path,
 				LicenseSpdxID: Unknown,
+				Version:       module.Version,
 			})
 		}
 	}
@@ -126,6 +127,7 @@ func (resolver *GoModResolver) ResolvePackageLicense(module *packages.Module, re
 				LicenseFilePath: licenseFilePath,
 				LicenseContent:  string(content),
 				LicenseSpdxID:   identifier,
+				Version:         module.Version,
 			})
 			return nil
 		}

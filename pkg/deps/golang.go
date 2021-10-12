@@ -28,7 +28,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"strings"
 
 	"github.com/apache/skywalking-eyes/internal/logger"
 	"github.com/apache/skywalking-eyes/pkg/license"
@@ -92,7 +91,7 @@ func (resolver *GoModResolver) ResolvePackages(modules []*packages.Module, repor
 			report.Skip(&Result{
 				Dependency:    module.Path,
 				LicenseSpdxID: Unknown,
-				Version:       resolver.resolveVersion(module),
+				Version:       module.Version,
 			})
 		}
 	}
@@ -128,7 +127,7 @@ func (resolver *GoModResolver) ResolvePackageLicense(module *packages.Module, re
 				LicenseFilePath: licenseFilePath,
 				LicenseContent:  string(content),
 				LicenseSpdxID:   identifier,
-				Version:         resolver.resolveVersion(module),
+				Version:         module.Version,
 			})
 			return nil
 		}
@@ -142,12 +141,4 @@ func (resolver *GoModResolver) ResolvePackageLicense(module *packages.Module, re
 
 func (resolver *GoModResolver) shouldStopAt(dir, moduleDir string) bool {
 	return dir == moduleDir || dir == build.Default.GOPATH
-}
-
-func (resolver *GoModResolver) resolveVersion(module *packages.Module) string {
-	version := module.Version
-	if strings.Contains(version, "-") {
-		version = version[0:strings.Index(version, "-")]
-	}
-	return version
 }

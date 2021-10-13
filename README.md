@@ -85,8 +85,13 @@ go install github.com/apache/skywalking-eyes/cmd/license-eye@latest
 #### Check License Header
 
 ```bash
-bin/darwin/license-eye -c test/testdata/.licenserc_for_test_check.yaml header check
+license-eye -c test/testdata/.licenserc_for_test_check.yaml header check
+```
 
+<details>
+<summary>Header Check Result</summary>
+
+```
 INFO Loading configuration from file: test/testdata/.licenserc_for_test_check.yaml
 INFO Totally checked 30 files, valid: 12, invalid: 12, ignored: 6, fixed: 0
 ERROR the following files don't have a valid license header:
@@ -105,14 +110,23 @@ test/testdata/test-spdx.yaml
 exit status 1
 ```
 
+</details>
+
 #### Fix License Header
 
 ```bash
 bin/darwin/license-eye -c test/testdata/.licenserc_for_test_fix.yaml header fix
+```
 
+<details>
+<summary>Header Fix Result</summary>
+
+```
 INFO Loading configuration from file: test/testdata/.licenserc_for_test_fix.yaml
 INFO Totally checked 20 files, valid: 10, invalid: 10, ignored: 0, fixed: 10
 ```
+
+</details>
 
 #### Resolve Dependencies' licenses
 
@@ -122,7 +136,13 @@ You can also use the `--output` or `-o` to save the dependencies' `LICENSE` file
 you can put them in distribution package if needed.
 
 ```bash
-bin/darwin/license-eye -c test/testdata/.licenserc_for_test_check.yaml dep resolve -o ./dependencies/licenses
+license-eye -c test/testdata/.licenserc_for_test_check.yaml dep resolve -o ./dependencies/licenses
+```
+
+<details>
+<summary>Dependency Resolve Result</summary>
+
+```
 INFO GITHUB_TOKEN is not set, license-eye won't comment on the pull request
 INFO Loading configuration from file: test/testdata/.licenserc_for_test_check.yaml
 WARNING Failed to resolve the license of <github.com/gogo/protobuf>: cannot identify license content 
@@ -312,13 +332,21 @@ github.com/russross/blackfriday/v2
 gopkg.in/check.v1
 ```
 
+</details>
+
 #### Check Dependencies' licenses
 
 This command can be used to perform automatic license compatibility check, when there is incompatible licenses found,
 the command will exit with status code 1 and fail the command.
 
 ```bash
-bin/darwin/license-eye -c test/testdata/.licenserc_for_test_check.yaml dep check
+license-eye -c test/testdata/.licenserc_for_test_check.yaml dep check
+```
+
+<details>
+<summary>Dependency Check Result</summary>
+
+```
 INFO GITHUB_TOKEN is not set, license-eye won't comment on the pull request
 INFO Loading configuration from file: .licenserc.yaml
 WARNING Failed to resolve the license of <github.com/gogo/protobuf>: cannot identify license content
@@ -338,6 +366,8 @@ License: Unknown Dependency: github.com/russross/blackfriday/v2
 License: Unknown Dependency: gopkg.in/check.v1
 exit status 1
 ```
+
+</details>
 
 ## Configurations
 

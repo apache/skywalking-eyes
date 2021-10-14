@@ -87,23 +87,28 @@ clean:
 verify: clean license lint test verify-docs
 
 release-src: clean
-	-tar -zcvf $(RELEASE_SRC).tgz \
+	-mkdir $(RELEASE_SRC)
+	-tar -zcvf $(RELEASE_SRC)/$(RELEASE_SRC).tgz \
+	--exclude $(RELEASE_SRC).tgz \
 	--exclude bin \
 	--exclude .git \
 	--exclude .idea \
 	--exclude .DS_Store \
 	--exclude .github \
-	--exclude $(RELEASE_SRC).tgz \
+	--exclude $(RELEASE_SRC) \
 	--exclude query-protocol/schema.graphqls \
+	--exclude *.jar \
 	.
+	mv $(RELEASE_SRC)/$(RELEASE_SRC).tgz $(RELEASE_SRC).tgz
+	-rm -rf "$(RELEASE_SRC)"
 
 release-bin: build
 	-mkdir $(RELEASE_BIN)
 	-cp -R bin $(RELEASE_BIN)
 	-cp -R dist/* $(RELEASE_BIN)
 	-cp -R CHANGES.md $(RELEASE_BIN)
-	-cp -R README.adoc $(RELEASE_BIN)
-	-cp -R ../NOTICE $(RELEASE_BIN)
+	-cp -R README.md $(RELEASE_BIN)
+	-cp -R NOTICE $(RELEASE_BIN)
 	-tar -zcvf $(RELEASE_BIN).tgz $(RELEASE_BIN)
 	-rm -rf "$(RELEASE_BIN)"
 

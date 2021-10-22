@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 # 
-name: License Eye
+name: License Eyes
 description: A full-featured license tool to check and fix license headers and dependencies' licenses.
 branding:
   icon: book

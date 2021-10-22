@@ -17,13 +17,10 @@ To use License-Eye in GitHub Actions, add a step in your GitHub workflow.
 ```yaml
 - name: Check License Header
   uses: apache/skywalking-eyes@main      # always prefer to use a revision instead of `main`.
-  env:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # needed only when you want License-Eye to comment on the pull request.
   # with:
-      # Optional: set the log level. The default value is `info`.
-      # log: debug
-      # Optional: set the config file. The default value is `.licenserc.yaml`.
-      # config: .licenserc.yaml
+      # log: debug # optional: set the log level. The default value is `info`.
+      # config: .licenserc.yaml # optional: set the config file. The default value is `.licenserc.yaml`.
+      # token: # optional: the token that license eye uses when it needs to comment on the pull request. Set to empty ("") to disable commenting on pull request. The default value is ${{ github.token }}
 ```
 
 Add a `.licenserc.yaml` in the root of your project, for Apache Software Foundation projects, the following configuration should be enough.

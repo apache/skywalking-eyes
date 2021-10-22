@@ -17,7 +17,7 @@
 #
 
 HUB ?= docker.io/apache
-PROJECT = license-eye
+PROJECT ?= license-eye
 VERSION ?= latest
 OUT_DIR = bin
 ARCH := $(shell uname)

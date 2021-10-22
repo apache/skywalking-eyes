@@ -29,9 +29,17 @@ inputs:
     description: The configuration file, for example, ".licenserc.yaml"
     required: false
     default: .licenserc.yaml
+  token:
+    description: |
+      The token that license eye uses when it needs to comment on the pull request.
+      Set to empty ("") to disable commenting on pull request.
+    required: false
+    default: ${{ github.token }}
 runs:
   using: docker
   image: Dockerfile
+  env:
+    GITHUB_TOKEN: ${{ inputs.token }}
   args:
     - -v
     - ${{ inputs.log }}

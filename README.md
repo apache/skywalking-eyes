@@ -21,7 +21,7 @@ To use License-Eye in GitHub Actions, add a step in your GitHub workflow.
       # log: debug # optional: set the log level. The default value is `info`.
       # config: .licenserc.yaml # optional: set the config file. The default value is `.licenserc.yaml`.
       # token: # optional: the token that license eye uses when it needs to comment on the pull request. Set to empty ("") to disable commenting on pull request. The default value is ${{ github.token }}
-      # mode: # optional: Which mode License Eye should be run in. Choices are `check` or `fix`. The default value is `check`.
+      # mode: # optional: Which mode License-Eye should be run in. Choices are `check` or `fix`. The default value is `check`.
 ```
 
 Add a `.licenserc.yaml` in the root of your project, for Apache Software Foundation projects, the following configuration should be enough.
@@ -43,6 +43,33 @@ header:
 ```
 
 **NOTE**: The full configurations can be found in [the configuration section](#configurations).
+
+#### Using the Action in Fix Mode
+
+By default the action runs License-Eye in check mode, which will raise an error
+if any of the processed files are missing license headers. If `mode` is set to
+`fix`, the action will instead apply the license header to any processed file
+that is missing a license header. The fixed files can then be pushed back to the
+pull request using another GitHub action. For example:
+
+```yaml
+- name: Check License Header
+  uses: apache/skywalking-eyes@main
+    with:
+      mode: fix
+- name: Apply Changes
+  uses: EndBug/add-and-commit@v4
+    with:
+      author_name: License Bot
+      author_email: license_bot@github.com
+      message: 'Automatic application of license header'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+**Note**: The exit code of fix mode is always 0 and can not be used to block CI
+status. Consider running the action in check mode if you would like CI to fail
+when a file is missing a license header.
 
 ### Docker Image
 

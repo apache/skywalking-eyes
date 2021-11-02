@@ -21,6 +21,7 @@ To use License-Eye in GitHub Actions, add a step in your GitHub workflow.
       # log: debug # optional: set the log level. The default value is `info`.
       # config: .licenserc.yaml # optional: set the config file. The default value is `.licenserc.yaml`.
       # token: # optional: the token that license eye uses when it needs to comment on the pull request. Set to empty ("") to disable commenting on pull request. The default value is ${{ github.token }}
+      # mode: # optional: Which mode License Eye should be run in. Choices are `check` or `fix`. The default value is `check`.
 ```
 
 Add a `.licenserc.yaml` in the root of your project, for Apache Software Foundation projects, the following configuration should be enough.
@@ -142,13 +143,13 @@ license-eye -c test/testdata/.licenserc_for_test_check.yaml dep resolve -o ./dep
 ```
 INFO GITHUB_TOKEN is not set, license-eye won't comment on the pull request
 INFO Loading configuration from file: test/testdata/.licenserc_for_test_check.yaml
-WARNING Failed to resolve the license of <github.com/gogo/protobuf>: cannot identify license content 
-WARNING Failed to resolve the license of <github.com/kr/logfmt>: cannot find license file 
-WARNING Failed to resolve the license of <github.com/magiconair/properties>: cannot identify license content 
-WARNING Failed to resolve the license of <github.com/miekg/dns>: cannot identify license content 
-WARNING Failed to resolve the license of <github.com/pascaldekloe/goe>: cannot identify license content 
-WARNING Failed to resolve the license of <github.com/russross/blackfriday/v2>: cannot identify license content 
-WARNING Failed to resolve the license of <gopkg.in/check.v1>: cannot identify license content 
+WARNING Failed to resolve the license of <github.com/gogo/protobuf>: cannot identify license content
+WARNING Failed to resolve the license of <github.com/kr/logfmt>: cannot find license file
+WARNING Failed to resolve the license of <github.com/magiconair/properties>: cannot identify license content
+WARNING Failed to resolve the license of <github.com/miekg/dns>: cannot identify license content
+WARNING Failed to resolve the license of <github.com/pascaldekloe/goe>: cannot identify license content
+WARNING Failed to resolve the license of <github.com/russross/blackfriday/v2>: cannot identify license content
+WARNING Failed to resolve the license of <gopkg.in/check.v1>: cannot identify license content
 Dependency                                         |        License |                              Version
 -------------------------------------------------- | -------------- | ------------------------------------
 cloud.google.com/go                                |     Apache-2.0 |                              v0.46.3

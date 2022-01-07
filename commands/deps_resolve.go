@@ -52,7 +52,7 @@ var DepsResolveCommand = &cobra.Command{
 			return err
 		}
 		outDir = absPath
-		if err := os.MkdirAll(outDir, 0700); err != nil && !os.IsExist(err) {
+		if err := os.MkdirAll(outDir, 0o700); err != nil && !os.IsExist(err) {
 			return err
 		}
 		return nil

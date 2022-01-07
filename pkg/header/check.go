@@ -18,7 +18,6 @@
 package header
 
 import (
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -120,7 +119,7 @@ func CheckFile(file string, config *ConfigHeader, result *Result) error {
 
 	logger.Log.Debugln("Checking file:", file)
 
-	bs, err := ioutil.ReadFile(file)
+	bs, err := os.ReadFile(file)
 	if err != nil {
 		return err
 	}

@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"go/build"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -105,7 +104,7 @@ func (resolver *GoModResolver) ResolvePackageLicense(module *packages.Module, re
 
 	for {
 		logger.Log.Debugf("Directory of %+v is %+v", module.Path, dir)
-		files, err := ioutil.ReadDir(dir)
+		files, err := os.ReadDir(dir)
 		if err != nil {
 			return err
 		}
@@ -114,7 +113,7 @@ func (resolver *GoModResolver) ResolvePackageLicense(module *packages.Module, re
 				continue
 			}
 			licenseFilePath := filepath.Join(dir, info.Name())
-			content, err := ioutil.ReadFile(licenseFilePath)
+			content, err := os.ReadFile(licenseFilePath)
 			if err != nil {
 				return err
 			}

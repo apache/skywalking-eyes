@@ -20,7 +20,6 @@ package header
 
 import (
 	"fmt"
-	"io/ioutil"
 	"math"
 	"os"
 	"regexp"
@@ -53,7 +52,7 @@ func InsertComment(file string, style *comments.CommentStyle, config *ConfigHead
 		return err
 	}
 
-	content, err := ioutil.ReadFile(file)
+	content, err := os.ReadFile(file)
 	if err != nil {
 		return err
 	}
@@ -65,7 +64,7 @@ func InsertComment(file string, style *comments.CommentStyle, config *ConfigHead
 
 	content = rewriteContent(style, content, licenseHeader)
 
-	if err := ioutil.WriteFile(file, content, stat.Mode()); err != nil {
+	if err := os.WriteFile(file, content, stat.Mode()); err != nil {
 		return err
 	}
 

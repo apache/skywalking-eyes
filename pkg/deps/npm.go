@@ -23,7 +23,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -261,7 +260,7 @@ func (resolver *NpmResolver) ResolveLicensesField(licenses []Lcs) (string, bool)
 
 // ResolveLcsFile tries to find the license file to identify the license
 func (resolver *NpmResolver) ResolveLcsFile(result *Result, pkgPath string) error {
-	depFiles, err := ioutil.ReadDir(pkgPath)
+	depFiles, err := os.ReadDir(pkgPath)
 	if err != nil {
 		return err
 	}
@@ -271,7 +270,7 @@ func (resolver *NpmResolver) ResolveLcsFile(result *Result, pkgPath string) erro
 		}
 		licenseFilePath := filepath.Join(pkgPath, info.Name())
 		result.LicenseFilePath = licenseFilePath
-		content, err := ioutil.ReadFile(licenseFilePath)
+		content, err := os.ReadFile(licenseFilePath)
 		if err != nil {
 			return err
 		}
@@ -291,7 +290,7 @@ func (resolver *NpmResolver) ResolveLcsFile(result *Result, pkgPath string) erro
 
 // ParsePkgFile parses the content of the package file
 func (resolver *NpmResolver) ParsePkgFile(pkgFile string) (*Package, error) {
-	content, err := ioutil.ReadFile(pkgFile)
+	content, err := os.ReadFile(pkgFile)
 	if err != nil {
 		return nil, err
 	}

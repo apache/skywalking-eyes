@@ -43,7 +43,7 @@ all: clean lint license test build
 
 .PHONY: lint
 lint:
-	$(GO_LINT) version || curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GO_PATH)/bin
+	$(GO_LINT) version || curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GO_PATH)/bin v1.43.0
 	$(GO_LINT) run -v ./...
 
 .PHONY: fix-lint

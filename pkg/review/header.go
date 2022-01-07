@@ -23,7 +23,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"strconv"
@@ -291,7 +290,7 @@ func GetSha() (string, error) {
 	if filepath == "" {
 		return "", fmt.Errorf("failed to get event path")
 	}
-	content, err := ioutil.ReadFile(filepath)
+	content, err := os.ReadFile(filepath)
 	if err != nil {
 		return "", err
 	}

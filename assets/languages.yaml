@@ -2055,6 +2055,7 @@ HCL:
   codemirror_mime_type: text/x-ruby
   tm_scope: source.terraform
   language_id: 144
+  comment_style_id: Hashtag
 HLSL:
   type: programming
   extensions:

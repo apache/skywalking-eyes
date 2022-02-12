@@ -45,7 +45,7 @@ func (config *Config) Parse(file string) (err error) {
 	}
 
 	if os.IsNotExist(err) {
-		logger.Log.Infof("No config file is given, using the default config")
+		logger.Log.Infof("Config file %s does not exist, using the default config", file)
 
 		if bytes, err = assets.Asset("default-config.yaml"); err != nil {
 			return err

@@ -255,6 +255,11 @@ var (
 			regexp.MustCompile(`(?im)^\s*.+ is distributed under the Simplified BSD License\:?$`),
 			"",
 		},
+		// Please consider promoting this project if you find it useful.
+		{
+			regexp.MustCompile(`(?im)^\s*Please consider promoting this project if you find it useful\.?$`),
+			"",
+		},
 
 		// This should be the last one processor
 		{

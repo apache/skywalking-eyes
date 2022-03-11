@@ -101,7 +101,7 @@ func GenerateLicenseHeader(style *comments.CommentStyle, config *ConfigHeader) (
 	}
 
 	content := config.GetLicenseContent()
-	// trailing leading and trailing newlines
+	// Trim leading and trailing newlines
 	content = strings.TrimSpace(content)
 	lines := strings.Split(content, "\n")
 	for i, line := range lines {

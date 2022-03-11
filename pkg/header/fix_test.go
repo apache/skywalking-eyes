@@ -1,11 +1,10 @@
-//
-// Licensed to Apache Software Foundation (ASF) under one or more contributor
-// license agreements. See the NOTICE file distributed with
-// this work for additional information regarding copyright
-// ownership. Apache Software Foundation (ASF) licenses this file to you under
-// the Apache License, Version 2.0 (the "License"); you may
-// not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -15,14 +14,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
+
 package header
 
 import (
-	"reflect"
+	"fmt"
 	"testing"
 
 	"github.com/apache/skywalking-eyes/pkg/comments"
+	"github.com/stretchr/testify/require"
 )
 
 var config = &ConfigHeader{
@@ -45,26 +45,24 @@ func TestFix(t *testing.T) {
  *   http://www.apache.org/licenses/LICENSE-2.0
  * Apache License 2.0
  */
+
 `,
 		},
 		{
-			filename: "Test.py",
+			filename: "test.py",
 			comments: `# Apache License 2.0
 #   http://www.apache.org/licenses/LICENSE-2.0
 # Apache License 2.0
+
 `,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.filename, func(t *testing.T) {
 			style := comments.FileCommentStyle(test.filename)
-			if c, err := GenerateLicenseHeader(style, config); err != nil || c != test.comments {
-				t.Log("Actual:", c)
-				t.Log("Expected:", test.comments)
-				t.Logf("Middle:'%v'\n", style.Middle)
-				t.Log(err)
-				t.Fail()
-			}
+			h, err := GenerateLicenseHeader(style, config)
+			require.NoError(t, err, fmt.Sprintf("style: %+v", style))
+			require.Equal(t, test.comments, h, fmt.Sprintf("style: %+v", style))
 		})
 	}
 }
@@ -86,6 +84,7 @@ func TestRewriteContent(t *testing.T) {
 			expectedContent: `(* Apache License 2.0
 (*   http://www.apache.org/licenses/LICENSE-2.0
 (* Apache License 2.0
+
 print_string "hello worlds!\n";;
 `},
 		{
@@ -100,6 +99,7 @@ if __name__ == '__main__':
 # Apache License 2.0
 #   http://www.apache.org/licenses/LICENSE-2.0
 # Apache License 2.0
+
 if __name__ == '__main__':
     print('Hello World')
 `},
@@ -117,6 +117,7 @@ if __name__ == '__main__':
 # Apache License 2.0
 #   http://www.apache.org/licenses/LICENSE-2.0
 # Apache License 2.0
+
 if __name__ == '__main__':
     print('Hello World')
 `},
@@ -132,6 +133,7 @@ if __name__ == '__main__':
 # Apache License 2.0
 #   http://www.apache.org/licenses/LICENSE-2.0
 # Apache License 2.0
+
 if __name__ == '__main__':
     print('Hello World')
 `},
@@ -145,6 +147,7 @@ if __name__ == '__main__':
 			expectedContent: `# Apache License 2.0
 #   http://www.apache.org/licenses/LICENSE-2.0
 # Apache License 2.0
+
 if __name__ == '__main__':
     print('Hello World')
 `},
@@ -166,8 +169,7 @@ Apache License 2.0
 			expectedContent: `# Apache License 2.0
 #   http://www.apache.org/licenses/LICENSE-2.0
 # Apache License 2.0
-#
-#
+
 if __name__ == '__main__':
     print('Hello World')
 `},
@@ -187,6 +189,7 @@ if __name__ == '__main__':
   ~   http://www.apache.org/licenses/LICENSE-2.0
   ~ Apache License 2.0
 -->
+
 <project>
   <modelVersion>4.0.0</modelVersion>
 </project>
@@ -213,6 +216,7 @@ if __name__ == '__main__':
   ~   http://www.apache.org/licenses/LICENSE-2.0
   ~ Apache License 2.0
 -->
+
 <project>
   <modelVersion>4.0.0</modelVersion>
 </project>
@@ -225,6 +229,7 @@ if __name__ == '__main__':
 			expectedContent: `-- Apache License 2.0
 --   http://www.apache.org/licenses/LICENSE-2.0
 -- Apache License 2.0
+
 select * from user;`},
 		{
 			name:          "Haskell",
@@ -236,6 +241,7 @@ select * from user;`},
    http://www.apache.org/licenses/LICENSE-2.0
  Apache License 2.0
 -}
+
 import Foundation.Hashing.Hashable`},
 		{
 			name:  "Vim",
@@ -246,6 +252,7 @@ import Foundation.Hashing.Hashable`},
 			expectedContent: `" Apache License 2.0
 "   http://www.apache.org/licenses/LICENSE-2.0
 " Apache License 2.0
+
 echo 'Hello' | echo 'world!'
 `},
 		{
@@ -259,6 +266,7 @@ echo 'Hello' | echo 'world!'
  *   http://www.apache.org/licenses/LICENSE-2.0
  * Apache License 2.0
  */
+
 ?>`,
 		}, {
 			name:  "Php-2",
@@ -273,6 +281,7 @@ echo "Test";
  *   http://www.apache.org/licenses/LICENSE-2.0
  * Apache License 2.0
  */
+
 echo "Test";
 `,
 		}, {
@@ -288,6 +297,7 @@ echo "Test";
  *   http://www.apache.org/licenses/LICENSE-2.0
  * Apache License 2.0
  */
+
 echo "Test";
 `,
 		}, {
@@ -302,6 +312,7 @@ echo "Test";
  *   http://www.apache.org/licenses/LICENSE-2.0
  * Apache License 2.0
  */
+
 `,
 		}, {
 			name:  "Php-5",
@@ -319,6 +330,7 @@ namespace test\test2;
  *   http://www.apache.org/licenses/LICENSE-2.0
  * Apache License 2.0
  */
+
 /**
  * This is a php docblock
  */
@@ -340,6 +352,7 @@ namespace test\test2;
  *   http://www.apache.org/licenses/LICENSE-2.0
  * Apache License 2.0
  */
+
 /**
  * This is a php docblock
  */
@@ -350,11 +363,7 @@ namespace test\test2;
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			content := rewriteContent(test.style, []byte(test.content), test.licenseHeader)
-			if !reflect.DeepEqual(content, []byte(test.expectedContent)) {
-				t.Log("Actual\n" + string(content))
-				t.Log("Expected\n" + test.expectedContent)
-				t.Fail()
-			}
+			require.Equal(t, test.expectedContent, string(content), fmt.Sprintf("style: %+v", test.style))
 		})
 	}
 }

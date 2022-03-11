@@ -1,11 +1,10 @@
-//
-// Licensed to Apache Software Foundation (ASF) under one or more contributor
-// license agreements. See the NOTICE file distributed with
-// this work for additional information regarding copyright
-// ownership. Apache Software Foundation (ASF) licenses this file to you under
-// the Apache License, Version 2.0 (the "License"); you may
-// not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -15,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
+
 package header
 
 import (
@@ -101,7 +100,10 @@ func GenerateLicenseHeader(style *comments.CommentStyle, config *ConfigHeader) (
 		return "", err
 	}
 
-	lines := strings.Split(config.GetLicenseContent(), "\n")
+	content := config.GetLicenseContent()
+	// Trim leading and trailing newlines
+	content = strings.TrimSpace(content)
+	lines := strings.Split(content, "\n")
 	for i, line := range lines {
 		if line != "" {
 			lines[i] = fmt.Sprintf("%v %v", style.Middle, line)
@@ -118,5 +120,5 @@ func GenerateLicenseHeader(style *comments.CommentStyle, config *ConfigHeader) (
 		lines = append(lines, style.End)
 	}
 
-	return strings.Join(lines, "\n") + "\n", nil
+	return strings.Join(lines, "\n") + "\n\n", nil
 }

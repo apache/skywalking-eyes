@@ -101,7 +101,10 @@ func GenerateLicenseHeader(style *comments.CommentStyle, config *ConfigHeader) (
 		return "", err
 	}
 
-	lines := strings.Split(config.GetLicenseContent(), "\n")
+	content := config.GetLicenseContent()
+	// trailing leading and trailing newlines
+	content = strings.TrimSpace(content)
+	lines := strings.Split(content, "\n")
 	for i, line := range lines {
 		if line != "" {
 			lines[i] = fmt.Sprintf("%v %v", style.Middle, line)
@@ -118,5 +121,5 @@ func GenerateLicenseHeader(style *comments.CommentStyle, config *ConfigHeader) (
 		lines = append(lines, style.End)
 	}
 
-	return strings.Join(lines, "\n") + "\n", nil
+	return strings.Join(lines, "\n") + "\n\n", nil
 }

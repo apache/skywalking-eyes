@@ -20,7 +20,6 @@ package deps_test
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -65,26 +64,6 @@ func dumpPomFile(fileName, content string) error {
 	return nil
 }
 
-func tmpDir() (string, error) {
-	dir, err := ioutil.TempDir("", "")
-	if err != nil {
-		return "", err
-	}
-	return dir, nil
-}
-
-func destroyTmpDir(t *testing.T, dir string) {
-	if dir == "" {
-		t.Errorf("the temporary directory does not exist")
-		return
-	}
-
-	err := os.RemoveAll(dir)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
 func TestResolveMaven(t *testing.T) {
 	if _, err := exec.Command("mvn", "--version").Output(); err != nil {
 		logger.Log.Warnf("Failed to find mvn, the test `TestResolveMaven` was skipped")
@@ -93,14 +72,7 @@ func TestResolveMaven(t *testing.T) {
 
 	resolver := new(deps.MavenPomResolver)
 
-	path, err := tmpDir()
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	defer destroyTmpDir(t, path)
-
-	pomFile := filepath.Join(path, "pom.xml")
+	pomFile := filepath.Join(t.TempDir(), "pom.xml")
 
 	for _, test := range []struct {
 		pomContent string

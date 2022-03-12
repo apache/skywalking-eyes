@@ -86,14 +86,7 @@ func TestResolveJar(t *testing.T) {
 
 	resolver := new(deps.JarResolver)
 
-	path, err := tmpDir()
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	defer destroyTmpDir(t, path)
-
-	pomFile := filepath.Join(path, "pom.xml")
+	pomFile := filepath.Join(t.TempDir(), "pom.xml")
 
 	for _, test := range []struct {
 		pomContent string

@@ -19,7 +19,6 @@ package deps_test
 
 import (
 	"io/ioutil"
-	"os"
 	"testing"
 
 	"github.com/apache/skywalking-eyes/pkg/deps"
@@ -84,11 +83,7 @@ var TestData = []struct {
 }
 
 func TestResolvePkgFile(t *testing.T) {
-	dir, err := ioutil.TempDir(os.TempDir(), "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 	resolver := new(deps.NpmResolver)
 	for _, data := range TestData {
 		result := &deps.Result{}

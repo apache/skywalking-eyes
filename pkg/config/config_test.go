@@ -23,6 +23,17 @@ func TestParseConfig(t *testing.T) {
 	config := &Config{
 
 	}
-	config.Parse(".licenserc_test.yaml")
-	t.Logf("Config header license = %v", config.Header.License)
+	configFile := ".licenserc_test.yaml"
+	config.Parse(configFile)
+	if len(config.Header.GetLicenseContent()) == 0 {
+		t.Fail()
+	}
+	t.Logf("Parse config dependency files size = %v", len(config.Deps.Files))
+	if len(config.Deps.Files) == 0 {
+		t.Fail()
+	}
+	t.Logf("Parse config languages size = %v", len(config.Languages))
+	if len(config.Languages) == 0 {
+		t.Fail()
+	}
 }

@@ -66,7 +66,7 @@ func TestCommentStyle(t *testing.T) {
 
 func TestFileCommentStyleById(t *testing.T) {
 	styleId := "SlashAsterisk"
-	style := FileCommentStyleById(styleId)
+	style := FileCommentStyleByID(styleId)
 	if len(style.ID) == 0 {
 		t.Logf("Comment style not exist, ID = %v", styleId)
 		t.Fail()

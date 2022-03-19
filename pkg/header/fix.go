@@ -48,9 +48,9 @@ func Fix(file string, config *ConfigHeader, languages map[string]comments.Langua
 func getCommentStyle(filename string, languages map[string]comments.Language) *comments.CommentStyle {
 	result := comments.FileCommentStyle(filename)
 	configCommentStyles := configCommentStyle(languages)
-	for extension, styleId := range configCommentStyles {
+	for extension, styleID := range configCommentStyles {
 		if strings.HasSuffix(filename, extension) {
-			result = comments.FileCommentStyleById(styleId)
+			result = comments.FileCommentStyleByID(styleID)
 		}
 	}
 	return result

@@ -114,3 +114,8 @@ func FileCommentStyle(filename string) *CommentStyle {
 	}
 	return nil
 }
+
+func FileCommentStyleById(styleId string) *CommentStyle {
+	result := comments[styleId]
+	return &result
+}

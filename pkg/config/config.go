@@ -18,6 +18,7 @@
 package config
 
 import (
+	"github.com/apache/skywalking-eyes/pkg/comments"
 	"os"
 
 	"github.com/apache/skywalking-eyes/assets"
@@ -29,8 +30,9 @@ import (
 )
 
 type Config struct {
-	Header header.ConfigHeader `yaml:"header"`
-	Deps   deps.ConfigDeps     `yaml:"dependency"`
+	Header    header.ConfigHeader          `yaml:"header"`
+	Deps      deps.ConfigDeps              `yaml:"dependency"`
+	Languages map[string]comments.Language `yaml:"language"`
 }
 
 // Parse reads and parses the header check configurations in config file.

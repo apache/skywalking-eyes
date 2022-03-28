@@ -19,6 +19,7 @@ package header
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/apache/skywalking-eyes/pkg/comments"
@@ -73,6 +74,7 @@ func TestRewriteContent(t *testing.T) {
 		style           *comments.CommentStyle
 		content         string
 		licenseHeader   string
+		licensePattern  string
 		expectedContent string
 	}{
 		{
@@ -362,7 +364,11 @@ namespace test\test2;
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			content := rewriteContent(test.style, []byte(test.content), test.licenseHeader, nil)
+			var r *regexp.Regexp
+			if len(test.licensePattern) > 0 {
+				r = regexp.MustCompile(test.licensePattern)
+			}
+			content := rewriteContent(test.style, []byte(test.content), test.licenseHeader, r)
 			require.Equal(t, test.expectedContent, string(content), fmt.Sprintf("style: %+v", test.style))
 		})
 	}

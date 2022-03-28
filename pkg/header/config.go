@@ -26,6 +26,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/apache/skywalking-eyes/pkg/comments"
+
 	"github.com/apache/skywalking-eyes/assets"
 	"github.com/apache/skywalking-eyes/internal/logger"
 	"github.com/apache/skywalking-eyes/pkg/license"
@@ -66,6 +68,39 @@ type ConfigHeader struct {
 // "normalized" means the linebreaks and Punctuations are all trimmed.
 func (config *ConfigHeader) NormalizedLicense() string {
 	return license.Normalize(config.GetLicenseContent())
+}
+
+func (config *ConfigHeader) LicensePattern(style *comments.CommentStyle) *regexp.Regexp {
+	pattern := config.License.Pattern
+
+	if pattern == "" || strings.TrimSpace(pattern) == "" {
+		return nil
+	}
+
+	// Trim leading and trailing newlines
+	pattern = strings.TrimSpace(pattern)
+	lines := strings.Split(pattern, "\n")
+	for i, line := range lines {
+		if line != "" {
+			lines[i] = fmt.Sprintf("%v %v", style.Middle, line)
+		} else {
+			lines[i] = style.Middle
+		}
+	}
+
+	lines = append(lines, "(("+style.Middle+"\n)*|\n*)")
+
+	if style.Start != style.Middle {
+		lines = append([]string{style.Start}, lines...)
+	}
+
+	if style.End != style.Middle {
+		lines = append(lines, style.End)
+	}
+
+	pattern = strings.Join(lines, "\n")
+
+	return regexp.MustCompile("(?s)" + pattern)
 }
 
 func (config *ConfigHeader) NormalizedPattern() *regexp.Regexp {

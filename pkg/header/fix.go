@@ -61,7 +61,7 @@ func InsertComment(file string, style *comments.CommentStyle, config *ConfigHead
 		return err
 	}
 
-	content = rewriteContent(style, content, licenseHeader)
+	content = rewriteContent(style, content, licenseHeader, config.LicensePattern(style))
 
 	if err := os.WriteFile(file, content, stat.Mode()); err != nil {
 		return err
@@ -72,7 +72,10 @@ func InsertComment(file string, style *comments.CommentStyle, config *ConfigHead
 	return nil
 }
 
-func rewriteContent(style *comments.CommentStyle, content []byte, licenseHeader string) []byte {
+func rewriteContent(style *comments.CommentStyle, content []byte, licenseHeader string, licensePattern *regexp.Regexp) []byte {
+	// Remove previous license header version to allow update it
+	content = licensePattern.ReplaceAll(content, []byte(""))
+
 	if style.After == "" {
 		return append([]byte(licenseHeader), content...)
 	}

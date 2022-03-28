@@ -362,7 +362,7 @@ namespace test\test2;
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			content := rewriteContent(test.style, []byte(test.content), test.licenseHeader)
+			content := rewriteContent(test.style, []byte(test.content), test.licenseHeader, nil)
 			require.Equal(t, test.expectedContent, string(content), fmt.Sprintf("style: %+v", test.style))
 		})
 	}

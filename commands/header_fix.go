@@ -53,7 +53,7 @@ var FixCommand = &cobra.Command{
 		logger.Log.Infoln(result.String())
 
 		if len(errors) > 0 {
-			return fmt.Errorf(strings.Join(errors, "\n"))
+			return fmt.Errorf("%s", strings.Join(errors, "\n"))
 		}
 
 		return nil

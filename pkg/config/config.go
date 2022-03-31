@@ -18,11 +18,11 @@
 package config
 
 import (
-	"github.com/apache/skywalking-eyes/pkg/comments"
 	"os"
 
 	"github.com/apache/skywalking-eyes/assets"
 	"github.com/apache/skywalking-eyes/internal/logger"
+	"github.com/apache/skywalking-eyes/pkg/comments"
 	"github.com/apache/skywalking-eyes/pkg/deps"
 	"github.com/apache/skywalking-eyes/pkg/header"
 

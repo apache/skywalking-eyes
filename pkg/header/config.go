@@ -54,7 +54,6 @@ type LicenseConfig struct {
 
 type ConfigHeader struct {
 	License     LicenseConfig `yaml:"license"`
-	Pattern     string        `yaml:"pattern"`
 	Paths       []string      `yaml:"paths"`
 	PathsIgnore []string      `yaml:"paths-ignore"`
 	Comment     CommentOption `yaml:"comment"`

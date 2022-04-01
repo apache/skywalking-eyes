@@ -104,7 +104,7 @@ func (config *ConfigHeader) LicensePattern(style *comments.CommentStyle) *regexp
 }
 
 func (config *ConfigHeader) NormalizedPattern() *regexp.Regexp {
-	pattern := config.Pattern
+	pattern := config.License.Pattern
 
 	if pattern == "" || strings.TrimSpace(pattern) == "" {
 		return nil

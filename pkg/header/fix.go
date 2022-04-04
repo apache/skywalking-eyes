@@ -29,53 +29,20 @@ import (
 )
 
 // Fix adds the configured license header to the given file.
-func Fix(file string, config *ConfigHeader, languages map[string]comments.Language, result *Result) error {
+func Fix(file string, config *ConfigHeader, result *Result) error {
 	var r Result
 	if err := CheckFile(file, config, &r); err != nil || !r.HasFailure() {
 		logger.Log.Warnln("Try to fix a valid file, do nothing:", file)
 		return err
 	}
 
-	style := getCommentStyle(file, languages)
+	style := comments.FileCommentStyle(file)
 
 	if style == nil {
 		return fmt.Errorf("unsupported file: %v", file)
 	}
 
 	return InsertComment(file, style, config, result)
-}
-
-func getCommentStyle(filename string, languages map[string]comments.Language) *comments.CommentStyle {
-	result := comments.FileCommentStyle(filename)
-	configCommentStyles := configCommentStyle(languages)
-	for extension, styleID := range configCommentStyles {
-		if strings.HasSuffix(filename, extension) {
-			result = comments.FileCommentStyleByID(styleID)
-		}
-	}
-	return result
-}
-
-func configCommentStyle(languages map[string]comments.Language) map[string]string {
-	result := make(map[string]string)
-	if len(languages) == 0 {
-		return result
-	}
-	for _, lang := range languages {
-		for _, extension := range lang.Extensions {
-			if lang.CommentStyleID == "" {
-				continue
-			}
-			result[extension] = lang.CommentStyleID
-		}
-		for _, filename := range lang.Filenames {
-			if lang.CommentStyleID == "" {
-				continue
-			}
-			result[filename] = lang.CommentStyleID
-		}
-	}
-	return result
 }
 
 func InsertComment(file string, style *comments.CommentStyle, config *ConfigHeader, result *Result) error {

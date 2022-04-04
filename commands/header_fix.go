@@ -45,7 +45,7 @@ var FixCommand = &cobra.Command{
 		}
 
 		for _, file := range files {
-			if err := header.Fix(file, &Config.Header, Config.Languages, &result); err != nil {
+			if err := header.Fix(file, &Config.Header, &result); err != nil {
 				errors = append(errors, err.Error())
 			}
 		}

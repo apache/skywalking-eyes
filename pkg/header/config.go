@@ -28,6 +28,7 @@ import (
 
 	"github.com/apache/skywalking-eyes/assets"
 	"github.com/apache/skywalking-eyes/internal/logger"
+	"github.com/apache/skywalking-eyes/pkg/comments"
 	"github.com/apache/skywalking-eyes/pkg/license"
 
 	"github.com/bmatcuk/doublestar/v2"
@@ -59,7 +60,8 @@ type ConfigHeader struct {
 
 	// LicenseLocationThreshold specifies the index threshold where the license header can be located,
 	// after all, a "header" cannot be TOO far from the file start.
-	LicenseLocationThreshold int `yaml:"license-location-threshold"`
+	LicenseLocationThreshold int                          `yaml:"license-location-threshold"`
+	Languages                map[string]comments.Language `yaml:"language"`
 }
 
 // NormalizedLicense returns the normalized string of the license content,
@@ -103,6 +105,8 @@ func (config *ConfigHeader) Finalize() error {
 	if len(config.Paths) == 0 {
 		config.Paths = []string{"**"}
 	}
+
+	comments.OverrideLanguageCommentStyle(config.Languages)
 
 	config.PathsIgnore = append(config.PathsIgnore, ".git", "**/*.txt")
 

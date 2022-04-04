@@ -59,20 +59,7 @@ func init() {
 
 	initCommentStyles()
 
-	for _, lang := range languages {
-		for _, extension := range lang.Extensions {
-			if lang.CommentStyleID == "" {
-				continue
-			}
-			commentStyles[extension] = comments[lang.CommentStyleID]
-		}
-		for _, filename := range lang.Filenames {
-			if lang.CommentStyleID == "" {
-				continue
-			}
-			commentStyles[filename] = comments[lang.CommentStyleID]
-		}
-	}
+	initLanguageCommentStyles(languages)
 }
 
 func initLanguages() {
@@ -106,6 +93,26 @@ func initCommentStyles() {
 	}
 }
 
+func initLanguageCommentStyles(languages map[string]Language)  {
+	if len(languages) == 0 {
+		return
+	}
+	for _, lang := range languages {
+		for _, extension := range lang.Extensions {
+			if lang.CommentStyleID == "" {
+				continue
+			}
+			commentStyles[extension] = comments[lang.CommentStyleID]
+		}
+		for _, filename := range lang.Filenames {
+			if lang.CommentStyleID == "" {
+				continue
+			}
+			commentStyles[filename] = comments[lang.CommentStyleID]
+		}
+	}
+}
+
 func FileCommentStyle(filename string) *CommentStyle {
 	for extension, style := range commentStyles {
 		if strings.HasSuffix(filename, extension) {
@@ -115,7 +122,6 @@ func FileCommentStyle(filename string) *CommentStyle {
 	return nil
 }
 
-func FileCommentStyleByID(styleID string) *CommentStyle {
-	result := comments[styleID]
-	return &result
+func OverrideLanguageCommentStyle(languages map[string]Language) {
+	initLanguageCommentStyles(languages)
 }

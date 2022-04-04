@@ -80,21 +80,12 @@ header: # `header` section is configurations for source codes license header.
   # after all, a "header" cannot be TOO far from the file start.
   license-location-threshold: 80
 
+  language:
+    Go:
+      extensions:
+        - ".go"
+      comment_style_id: DoubleSlash
+
 dependency:
   files:
     - go.mod
-
-language:
-  Go:
-    type: programming
-    color: "#00ADD8"
-    aliases:
-      - golang
-    extensions:
-      - ".go"
-    tm_scope: source.go
-    ace_mode: golang
-    codemirror_mode: go
-    codemirror_mime_type: text/x-go
-    language_id: 132
-    comment_style_id: SlashAsterisk

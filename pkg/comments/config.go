@@ -93,7 +93,7 @@ func initCommentStyles() {
 	}
 }
 
-func initLanguageCommentStyles(languages map[string]Language)  {
+func initLanguageCommentStyles(languages map[string]Language) {
 	if len(languages) == 0 {
 		return
 	}

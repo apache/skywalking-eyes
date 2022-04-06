@@ -84,7 +84,26 @@ header: # `header` section is configurations for source codes license header.
     Go:
       extensions:
         - ".go"
-      comment_style_id: DoubleSlash
+      comment_style_id: SlashAsterisk
+    YAML:
+      extensions:
+        - ".yml"
+        - ".mir"
+        - ".reek"
+        - ".rviz"
+        - ".sublime-syntax"
+        - ".syntax"
+        - ".yaml"
+        - ".yaml-tmlanguage"
+        - ".yaml.sed"
+        - ".yml.mysql"
+      filenames:
+        - ".clang-format"
+        - ".clang-tidy"
+        - ".gemrc"
+        - glide.lock
+        - yarn.lock
+      comment_style_id: Hashtag
 
 dependency:
   files:

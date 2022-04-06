@@ -66,9 +66,7 @@ func init() {
 		return
 	}
 	if !IsGHA() {
-		panic(fmt.Errorf(fmt.Sprintf(
-			`this must be run on GitHub Actions or you have to set the environment variables %v manually.`, requiredEnvVars,
-		)))
+		panic(fmt.Errorf("this must be run on GitHub Actions or you have to set the environment variables %v manually", requiredEnvVars))
 	}
 
 	s, err := GetSha()

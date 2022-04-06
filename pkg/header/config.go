@@ -53,7 +53,6 @@ type LicenseConfig struct {
 
 type ConfigHeader struct {
 	License     LicenseConfig `yaml:"license"`
-	Pattern     string        `yaml:"pattern"`
 	Paths       []string      `yaml:"paths"`
 	PathsIgnore []string      `yaml:"paths-ignore"`
 	Comment     CommentOption `yaml:"comment"`
@@ -70,8 +69,41 @@ func (config *ConfigHeader) NormalizedLicense() string {
 	return license.Normalize(config.GetLicenseContent())
 }
 
+func (config *ConfigHeader) LicensePattern(style *comments.CommentStyle) *regexp.Regexp {
+	pattern := config.License.Pattern
+
+	if pattern == "" || strings.TrimSpace(pattern) == "" {
+		return nil
+	}
+
+	// Trim leading and trailing newlines
+	pattern = strings.TrimSpace(pattern)
+	lines := strings.Split(pattern, "\n")
+	for i, line := range lines {
+		if line != "" {
+			lines[i] = fmt.Sprintf("%v %v", style.Middle, line)
+		} else {
+			lines[i] = style.Middle
+		}
+	}
+
+	lines = append(lines, "(("+style.Middle+"\n)*|\n*)")
+
+	if style.Start != style.Middle {
+		lines = append([]string{style.Start}, lines...)
+	}
+
+	if style.End != style.Middle {
+		lines = append(lines, style.End)
+	}
+
+	pattern = strings.Join(lines, "\n")
+
+	return regexp.MustCompile("(?s)" + pattern)
+}
+
 func (config *ConfigHeader) NormalizedPattern() *regexp.Regexp {
-	pattern := config.Pattern
+	pattern := config.License.Pattern
 
 	if pattern == "" || strings.TrimSpace(pattern) == "" {
 		return nil

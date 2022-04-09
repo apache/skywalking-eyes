@@ -454,8 +454,19 @@ header: # <1>
 
   comment: on-failure # <8>
 
-dependency: # <9>
-  files: # <10>
+  license-location-threshold: 80 # <9>
+
+  language: # <10>
+    Go: # <11>
+      extensions: #<12>
+        - ".go"
+      filenames: #<13>
+        - "config.go"
+        - "config_test.go"
+      comment_style_id: DoubleSlash # <14>
+
+dependency: # <15>
+  files: # <16>
     - go.mod
 ```
 
@@ -467,8 +478,14 @@ dependency: # <9>
 6. The `paths` are the path list that will be checked (and fixed) by license-eye, default is `['**']`. Formats like `**/*`.md and `**/bin/**` are supported.
 7. The `paths-ignore` are the path list that will be ignored by license-eye. By default, `.git` and the content in `.gitignore` will be inflated into the `paths-ignore` list.
 8. On what condition License-Eye will comment the check results on the pull request, `on-failure`, `always` or `never`. Options other than `never` require the environment variable `GITHUB_TOKEN` to be set.
-9. `dependency` section is configurations for resolving dependencies' licenses.
-10. `files` are the files that declare the dependencies of a project, typically, `go.mod` in Go project, `pom.xml` in maven project, and `package.json` in NodeJS project. If it's a relative path, it's relative to the `.licenserc.yaml`.
+9. The `license-location-threshold` specifies the index threshold where the license header can be located.
+10. The `language` is an optional configuration. You can set the language license header comment style, if it doesn't exist, it will use the default configuration at the `languages.yaml`.
+11. Specify the programming language identifier. You can set different configurations for multiple languages.
+12. The `extensions` are the files with these extensions which the configuration will take effect.
+13. The `filenames` are the specified files which the configuration will take effect.
+14. The `comment_style_id` set the license header comment style, it's the `id` at the `styles.yaml`.
+15. The `dependency` section is configurations for resolving dependencies' licenses.
+16. The `files` are the files that declare the dependencies of a project, typically, `go.mod` in Go project, `pom.xml` in maven project, and `package.json` in NodeJS project. If it's a relative path, it's relative to the `.licenserc.yaml`.
 
 **NOTE**: When the `SPDX-ID` is Apache-2.0 and the owner is Apache Software foundation, the content would be [a dedicated license](https://www.apache.org/legal/src-headers.html#headers) specified by the ASF, otherwise, the license would be [the standard one](https://www.apache.org/foundation/license-faq.html#Apply-My-Software).
 

@@ -479,7 +479,7 @@ dependency: # <15>
 7. The `paths-ignore` are the path list that will be ignored by license-eye. By default, `.git` and the content in `.gitignore` will be inflated into the `paths-ignore` list.
 8. On what condition License-Eye will comment the check results on the pull request, `on-failure`, `always` or `never`. Options other than `never` require the environment variable `GITHUB_TOKEN` to be set.
 9. The `license-location-threshold` specifies the index threshold where the license header can be located.
-10. The `language` is an optional configuration. You can set the language license header comment style, if it doesn't exist, it will use the default configuration at the `languages.yaml`.
+10. The `language` is an optional configuration. You can set the language license header comment style. If it doesn't exist, it will use the default configuration at the `languages.yaml`. An [example](test/testdata/.licenserc_language_config_test.yaml) is to use block comment style for Go codes.
 11. Specify the programming language identifier. You can set different configurations for multiple languages.
 12. The `extensions` are the files with these extensions which the configuration will take effect.
 13. The `filenames` are the specified files which the configuration will take effect.

@@ -58,10 +58,12 @@ test: clean
 	$(GO_TEST) ./... -coverprofile=coverage.txt -covermode=atomic
 	@>&2 echo "Great, all tests passed."
 
+windows: PROJECT_SUFFIX=.exe
+
 .PHONY: $(PLATFORMS)
 $(PLATFORMS):
 	mkdir -p $(OUT_DIR)
-	GOOS=$(os) GOARCH=$(ARCH) $(GO_BUILD) $(GO_BUILD_FLAGS) -ldflags "$(GO_BUILD_LDFLAGS)" -o $(OUT_DIR)/$(os)/$(PROJECT) cmd/$(PROJECT)/main.go
+	GOOS=$(os) GOARCH=$(ARCH) $(GO_BUILD) $(GO_BUILD_FLAGS) -ldflags "$(GO_BUILD_LDFLAGS)" -o $(OUT_DIR)/$(os)/$(PROJECT)$(PROJECT_SUFFIX) cmd/$(PROJECT)/main.go
 
 .PHONY: build
 build: windows linux darwin

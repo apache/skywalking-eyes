@@ -16,6 +16,7 @@
 # under the License.
 
 .idea/
+.vscode/
 /bin/
 assets/assets.gen.go
 .DS_Store

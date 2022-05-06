@@ -19,7 +19,7 @@ package deps
 
 import (
 	"bytes"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"regexp"
 	"text/template"
@@ -57,7 +57,7 @@ func ParseTemplate(path string) (*template.Template, error) {
 	if err != nil {
 		return nil, err
 	}
-	tpl, err := ioutil.ReadFile(absPath)
+	tpl, err := os.ReadFile(absPath)
 	if err != nil {
 		return nil, err
 	}

@@ -63,7 +63,7 @@ func (resolver *NpmResolver) CanResolve(file string) bool {
 }
 
 // Resolve resolves licenses of all dependencies declared in the package.json file.
-func (resolver *NpmResolver) Resolve(pkgFile string, report *Report) error {
+func (resolver *NpmResolver) Resolve(pkgFile string, licenses []*ConfigDepLicense, report *Report) error {
 	workDir := filepath.Dir(pkgFile)
 	if err := os.Chdir(workDir); err != nil {
 		return err
@@ -88,12 +88,27 @@ func (resolver *NpmResolver) Resolve(pkgFile string, report *Report) error {
 		if result := resolver.ResolvePackageLicense(pkg.Name, pkg.Path); result.LicenseSpdxID != "" {
 			report.Resolve(result)
 		} else {
+			if resolver.tryToResolve(pkg, licenses, result) {
+				report.Resolve(result)
+				continue
+			}
 			result.LicenseSpdxID = Unknown
 			report.Skip(result)
 			logger.Log.Warnln("Failed to resolve the license of dependency:", pkg.Name, result.ResolveErrors)
 		}
 	}
 	return nil
+}
+
+// TryToResolve trying to resolve the license by declaration
+func (resolver *NpmResolver) tryToResolve(p *Package, licenses []*ConfigDepLicense, r *Result) bool {
+	for _, l := range licenses {
+		if l.Name == p.Name && l.Version == p.Version {
+			r.LicenseSpdxID = l.License
+			return true
+		}
+	}
+	return false
 }
 
 // NeedSkipInstallPkgs queries whether to skip the procedure of installing or updating packages

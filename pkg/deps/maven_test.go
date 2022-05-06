@@ -113,7 +113,7 @@ func TestResolveMaven(t *testing.T) {
 
 		if resolver.CanResolve(pomFile) {
 			report := deps.Report{}
-			if err := resolver.Resolve(pomFile, &report); err != nil {
+			if err := resolver.Resolve(pomFile, nil, &report); err != nil {
 				t.Error(err)
 				return
 			}

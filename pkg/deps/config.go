@@ -23,7 +23,14 @@ import (
 )
 
 type ConfigDeps struct {
-	Files []string `yaml:"files"`
+	Files   []string            `yaml:"files"`
+	License []*ConfigDepLicense `yaml:"licenses"`
+}
+
+type ConfigDepLicense struct {
+	Name    string `yaml:"name"`
+	Version string `yaml:"version"`
+	License string `yaml:"license"`
 }
 
 func (config *ConfigDeps) Finalize(configFile string) error {

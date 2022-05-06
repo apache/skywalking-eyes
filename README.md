@@ -157,11 +157,15 @@ INFO Totally checked 20 files, valid: 10, invalid: 10, ignored: 0, fixed: 10
 
 This command serves as assistance for human beings to audit the dependencies license, it's exit code is always 0.
 
-You can also use the `--output` or `-o` to save the dependencies' `LICENSE` files to a specified directory so that
-you can put them in distribution package if needed.
+We also support two flag:
+
+|Flag name|Short name|Description|
+|---------|----------|-----------|
+|--output|-o|Save the dependencies' `LICENSE` files to a specified directory so that you can put them in distribution package if needed.|
+|--summary|-s|Based on the template, aggregate all dependency information and generate a `LICENSE` file.|
 
 ```bash
-license-eye -c test/testdata/.licenserc_for_test_check.yaml dep resolve -o ./dependencies/licenses
+license-eye -c test/testdata/.licenserc_for_test_check.yaml dep resolve -o ./dependencies/licenses -s LICENSE.tpl
 ```
 
 <details>
@@ -468,6 +472,10 @@ header: # <1>
 dependency: # <15>
   files: # <16>
     - go.mod
+  license: # <17>
+    - name: dependency-name # <18>
+      version: dependency-version # <19>
+      license: Apache-2.0 # <20>
 ```
 
 1. The `header` section is configurations for source codes license header.
@@ -486,6 +494,10 @@ dependency: # <15>
 14. The `comment_style_id` set the license header comment style, it's the `id` at the `styles.yaml`.
 15. The `dependency` section is configurations for resolving dependencies' licenses.
 16. The `files` are the files that declare the dependencies of a project, typically, `go.mod` in Go project, `pom.xml` in maven project, and `package.json` in NodeJS project. If it's a relative path, it's relative to the `.licenserc.yaml`.
+17. Declare the license which cannot be identified as a dependency.
+18. The `name` of the dependency, The name is different for different projects, `PackagePath` in Go project, `GroupID:ArtifactID` in maven project, `PackageName` in NodeJS project.
+19. The `version` of the dependency, It's locked, prevent version update and change the License.
+20. The [SPDX ID](https://spdx.org/licenses/) of the dependency license.
 
 **NOTE**: When the `SPDX-ID` is Apache-2.0 and the owner is Apache Software foundation, the content would be [a dedicated license](https://www.apache.org/legal/src-headers.html#headers) specified by the ASF, otherwise, the license would be [the standard one](https://www.apache.org/foundation/license-faq.html#Apply-My-Software).
 

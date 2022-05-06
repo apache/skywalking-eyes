@@ -102,3 +102,25 @@ func Identify(pkgPath, content string) (string, error) {
 		return "", fmt.Errorf("cannot identify license content")
 	}
 }
+
+// GetLicenseContent from license id
+func GetLicenseContent(spdxID string) (string, error) {
+	for _, dir := range templatesDirs {
+		files, err := assets.AssetDir(dir)
+		if err != nil {
+			continue
+		}
+		for _, f := range files {
+			if spdxID != strings.TrimSuffix(f.Name(), filepath.Ext(f.Name())) {
+				continue
+			}
+
+			res, err := assets.Asset(filepath.Join(dir, f.Name()))
+			if err != nil {
+				return "", err
+			}
+			return string(res), nil
+		}
+	}
+	return "", fmt.Errorf("could not found license: %s", spdxID)
+}

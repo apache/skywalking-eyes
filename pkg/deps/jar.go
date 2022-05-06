@@ -123,19 +123,22 @@ func (resolver *JarResolver) ReadFileFromZip(archiveFile *zip.File) (*bytes.Buff
 }
 
 func (resolver *JarResolver) IdentifyLicense(path, dep, content, version string, declareLicense *ConfigDepLicense, report *Report) error {
-	identifier, err := license.Identify(path, content)
-	if err != nil {
-		if declareLicense == nil {
+	var licenseID string
+	if declareLicense != nil {
+		licenseID = declareLicense.License
+	} else {
+		identifier, err := license.Identify(path, content)
+		if err != nil {
 			return err
 		}
-		identifier = declareLicense.License
+		licenseID = identifier
 	}
 
 	report.Resolve(&Result{
 		Dependency:      dep,
 		LicenseFilePath: path,
 		LicenseContent:  content,
-		LicenseSpdxID:   identifier,
+		LicenseSpdxID:   licenseID,
 		Version:         version,
 	})
 	return nil

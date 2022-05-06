@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"text/template"
 
@@ -38,8 +39,10 @@ func init() {
 	DepsResolveCommand.PersistentFlags().StringVarP(&outDir, "output", "o", "",
 		"the directory to output the resolved dependencies' licenses, if not set the dependencies' licenses won't be saved")
 	DepsResolveCommand.PersistentFlags().StringVarP(&summaryTplPath, "summary", "s", "",
-		"the template file to write the summary the dependencies' licenses, if not set the licenses just print as the table")
+		"the template file to write the summary the dependencies' licenses into \"LICENSE\" file into directory which same with template file.")
 }
+
+var fileNamePattern = regexp.MustCompile(`[^a-zA-Z0-9\\.\-]`)
 
 var DepsResolveCommand = &cobra.Command{
 	Use:     "resolve",
@@ -57,9 +60,11 @@ var DepsResolveCommand = &cobra.Command{
 			}
 		}
 		if summaryTplPath != "" {
-			if outDir == "" {
-				return fmt.Errorf("please provide the output directory to write the license summary file")
+			absPath, err := filepath.Abs(summaryTplPath)
+			if err != nil {
+				return err
 			}
+			summaryTplPath = absPath
 			tpl, err := deps.ParseTemplate(summaryTplPath)
 			if err != nil {
 				return err
@@ -82,7 +87,9 @@ var DepsResolveCommand = &cobra.Command{
 		}
 
 		if summaryTpl != nil {
-			writeSummary(&report)
+			if err := writeSummary(&report); err != nil {
+				logger.Log.Warnf("write summary file error: %v", err)
+			}
 		}
 
 		fmt.Println(report.String())
@@ -103,7 +110,8 @@ var DepsResolveCommand = &cobra.Command{
 }
 
 func writeLicense(result *deps.Result) {
-	filename := filepath.Join(outDir, deps.GenerateDependencyLicenseFilename(result))
+	filename := string(fileNamePattern.ReplaceAll([]byte(result.Dependency), []byte("-")))
+	filename = filepath.Join(outDir, "license-"+filename+".txt")
 	file, err := os.Create(filename)
 	if err != nil {
 		logger.Log.Errorf("failed to create license file %v: %v", filename, err)
@@ -117,20 +125,16 @@ func writeLicense(result *deps.Result) {
 	}
 }
 
-func writeSummary(rep *deps.Report) {
-	file, err := os.Create(filepath.Join(outDir, "LICENSE"))
+func writeSummary(rep *deps.Report) error {
+	file, err := os.Create(filepath.Join(filepath.Dir(summaryTplPath), "LICENSE"))
 	if err != nil {
-		logger.Log.Errorf("failed to create summary license file %s: %v", "LICENSE", err)
-		return
+		return err
 	}
 	defer file.Close()
 	summary, err := deps.GenerateSummary(summaryTpl, &Config.Header, rep)
 	if err != nil {
-		logger.Log.Errorf("failed to generate summary content: %v", err)
-		return
+		return err
 	}
 	_, err = file.WriteString(summary)
-	if err != nil {
-		logger.Log.Errorf("failed to write summary file, %v", err)
-	}
+	return err
 }

@@ -20,15 +20,11 @@ package deps
 import (
 	"bytes"
 	"os"
-	"path/filepath"
-	"regexp"
 	"text/template"
 
 	"github.com/apache/skywalking-eyes/pkg/header"
 	"github.com/apache/skywalking-eyes/pkg/license"
 )
-
-var fileNamePattern = regexp.MustCompile(`[^a-zA-Z0-9\\.\-]`)
 
 type SummaryRenderContext struct {
 	LicenseContent string                       // Current project license content
@@ -43,21 +39,11 @@ type SummaryRenderLicenseGroup struct {
 type SummaryRenderLicense struct {
 	Name      string // Dependency name
 	Version   string // Dependency version
-	Location  string // The filename of generated license file
 	LicenseID string // License ID
 }
 
-func GenerateDependencyLicenseFilename(result *Result) string {
-	filename := string(fileNamePattern.ReplaceAll([]byte(result.Dependency), []byte("-")))
-	return "license-" + filename + ".txt"
-}
-
 func ParseTemplate(path string) (*template.Template, error) {
-	absPath, err := filepath.Abs(path)
-	if err != nil {
-		return nil, err
-	}
-	tpl, err := os.ReadFile(absPath)
+	tpl, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -67,21 +53,21 @@ func ParseTemplate(path string) (*template.Template, error) {
 // GenerateSummary generate the summary content by template, license config and dependency report
 func GenerateSummary(tpl *template.Template, head *header.ConfigHeader, rep *Report) (string, error) {
 	var r bytes.Buffer
-	context, err := generateSummaryRenderContext(head, rep)
-	if err != nil {
-		return "", err
-	}
+	context := generateSummaryRenderContext(head, rep)
 	if err := tpl.Execute(&r, context); err != nil {
 		return "", err
 	}
 	return r.String(), nil
 }
 
-func generateSummaryRenderContext(head *header.ConfigHeader, rep *Report) (*SummaryRenderContext, error) {
+func generateSummaryRenderContext(head *header.ConfigHeader, rep *Report) *SummaryRenderContext {
 	// the license id of the project
-	licenseContent, err := license.GetLicenseContent(head.License.SpdxID)
-	if err != nil {
-		return nil, err
+	var headerContent string
+	if head.License.SpdxID != "" {
+		headerContent, _ = license.GetLicenseContent(head.License.SpdxID)
+	}
+	if headerContent == "" {
+		headerContent = head.GetLicenseContent()
 	}
 
 	groups := make(map[string]*SummaryRenderLicenseGroup)
@@ -98,7 +84,6 @@ func generateSummaryRenderContext(head *header.ConfigHeader, rep *Report) (*Summ
 		group.Deps = append(group.Deps, &SummaryRenderLicense{
 			Name:      r.Dependency,
 			Version:   r.Version,
-			Location:  GenerateDependencyLicenseFilename(r),
 			LicenseID: r.LicenseSpdxID,
 		})
 	}
@@ -108,7 +93,7 @@ func generateSummaryRenderContext(head *header.ConfigHeader, rep *Report) (*Summ
 		groupArray = append(groupArray, g)
 	}
 	return &SummaryRenderContext{
-		LicenseContent: licenseContent,
+		LicenseContent: headerContent,
 		Groups:         groupArray,
-	}, nil
+	}
 }

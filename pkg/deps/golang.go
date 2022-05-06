@@ -123,18 +123,22 @@ func (resolver *GoModResolver) ResolvePackageLicense(module *packages.Module, de
 			if err != nil {
 				return err
 			}
-			identifier, err := license.Identify(module.Path, string(content))
-			if err != nil {
-				if declareLicense == nil {
+			var licenseID string
+			if declareLicense != nil {
+				licenseID = declareLicense.License
+			} else {
+				identifier, err := license.Identify(module.Path, string(content))
+				if err != nil {
 					return err
 				}
-				identifier = declareLicense.License
+				licenseID = identifier
 			}
+
 			report.Resolve(&Result{
 				Dependency:      module.Path,
 				LicenseFilePath: licenseFilePath,
 				LicenseContent:  string(content),
-				LicenseSpdxID:   identifier,
+				LicenseSpdxID:   licenseID,
 				Version:         module.Version,
 			})
 			return nil

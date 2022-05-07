@@ -95,7 +95,7 @@ func TestResolvePkgFile(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		err = resolver.ResolvePkgFile(result, f.Name())
+		err = resolver.ResolvePkgFile(result, f.Name(), nil)
 		if result.LicenseSpdxID != data.result && (err != nil) == data.hasErr {
 			t.Fail()
 		}

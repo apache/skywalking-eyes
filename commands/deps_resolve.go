@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"text/template"
 
 	"github.com/spf13/cobra"
 
@@ -31,10 +32,15 @@ import (
 )
 
 var outDir string
+var summaryTplPath string
+var summaryTpl *template.Template
 
 func init() {
 	DepsResolveCommand.PersistentFlags().StringVarP(&outDir, "output", "o", "",
 		"the directory to output the resolved dependencies' licenses, if not set the dependencies' licenses won't be saved")
+	DepsResolveCommand.PersistentFlags().StringVarP(&summaryTplPath, "summary", "s", "",
+		"the template file to write the summary of dependencies' licenses, a new file named \"LICENSE\" will be "+
+			"created in the same directory as the template file, to save the final summary.")
 }
 
 var fileNamePattern = regexp.MustCompile(`[^a-zA-Z0-9\\.\-]`)
@@ -44,16 +50,27 @@ var DepsResolveCommand = &cobra.Command{
 	Aliases: []string{"r"},
 	Long:    "resolves all dependencies of a module and their transitive dependencies",
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		if outDir == "" {
-			return nil
+		if outDir != "" {
+			absPath, err := filepath.Abs(outDir)
+			if err != nil {
+				return err
+			}
+			outDir = absPath
+			if err := os.MkdirAll(outDir, 0o700); err != nil && !os.IsExist(err) {
+				return err
+			}
 		}
-		absPath, err := filepath.Abs(outDir)
-		if err != nil {
-			return err
-		}
-		outDir = absPath
-		if err := os.MkdirAll(outDir, 0o700); err != nil && !os.IsExist(err) {
-			return err
+		if summaryTplPath != "" {
+			absPath, err := filepath.Abs(summaryTplPath)
+			if err != nil {
+				return err
+			}
+			summaryTplPath = absPath
+			tpl, err := deps.ParseTemplate(summaryTplPath)
+			if err != nil {
+				return err
+			}
+			summaryTpl = tpl
 		}
 		return nil
 	},
@@ -62,6 +79,12 @@ var DepsResolveCommand = &cobra.Command{
 
 		if err := deps.Resolve(&Config.Deps, &report); err != nil {
 			return err
+		}
+
+		if summaryTpl != nil {
+			if err := writeSummary(&report); err != nil {
+				return err
+			}
 		}
 
 		if outDir != "" {
@@ -101,4 +124,18 @@ func writeLicense(result *deps.Result) {
 		logger.Log.Errorf("failed to write license file, %v: %v", filename, err)
 		return
 	}
+}
+
+func writeSummary(rep *deps.Report) error {
+	file, err := os.Create(filepath.Join(filepath.Dir(summaryTplPath), "LICENSE"))
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	summary, err := deps.GenerateSummary(summaryTpl, &Config.Header, rep)
+	if err != nil {
+		return err
+	}
+	_, err = file.WriteString(summary)
+	return err
 }

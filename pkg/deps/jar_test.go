@@ -132,7 +132,7 @@ func TestResolveJar(t *testing.T) {
 		report := deps.Report{}
 		for _, jar := range jars {
 			if resolver.CanResolve(jar) {
-				if err := resolver.Resolve(jar, &report); err != nil {
+				if err := resolver.Resolve(jar, nil, &report); err != nil {
 					t.Error(err)
 					return
 				}

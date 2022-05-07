@@ -29,8 +29,10 @@ import (
 	"github.com/apache/skywalking-eyes/internal/logger"
 )
 
+var licenseTemplatesDir = "lcs-templates"
+
 var templatesDirs = []string{
-	"lcs-templates",
+	licenseTemplatesDir,
 	// Some projects simply use the header text as their LICENSE content...
 	"header-templates",
 }
@@ -101,4 +103,13 @@ func Identify(pkgPath, content string) (string, error) {
 	default:
 		return "", fmt.Errorf("cannot identify license content")
 	}
+}
+
+// GetLicenseContent from license id
+func GetLicenseContent(spdxID string) (string, error) {
+	res, err := assets.Asset(filepath.Join(licenseTemplatesDir, spdxID+".txt"))
+	if err != nil {
+		return "", err
+	}
+	return string(res), nil
 }

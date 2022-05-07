@@ -45,7 +45,7 @@ func (resolver *GoModResolver) CanResolve(file string) bool {
 }
 
 // Resolve resolves licenses of all dependencies declared in the go.mod file.
-func (resolver *GoModResolver) Resolve(goModFile string, report *Report) error {
+func (resolver *GoModResolver) Resolve(goModFile string, licenses []*ConfigDepLicense, report *Report) error {
 	if err := os.Chdir(filepath.Dir(goModFile)); err != nil {
 		return err
 	}
@@ -78,13 +78,19 @@ func (resolver *GoModResolver) Resolve(goModFile string, report *Report) error {
 
 	logger.Log.Debugln("Module size:", len(modules))
 
-	return resolver.ResolvePackages(modules, report)
+	return resolver.ResolvePackages(modules, licenses, report)
 }
 
 // ResolvePackages resolves the licenses of the given packages.
-func (resolver *GoModResolver) ResolvePackages(modules []*packages.Module, report *Report) error {
+func (resolver *GoModResolver) ResolvePackages(modules []*packages.Module, licenses []*ConfigDepLicense, report *Report) error {
 	for _, module := range modules {
-		err := resolver.ResolvePackageLicense(module, report)
+		var decalreLicense *ConfigDepLicense
+		for _, l := range licenses {
+			if l.Name == module.Path && l.Version == module.Version {
+				decalreLicense = l
+			}
+		}
+		err := resolver.ResolvePackageLicense(module, decalreLicense, report)
 		if err != nil {
 			logger.Log.Warnf("Failed to resolve the license of <%s>: %v\n", module.Path, err)
 			report.Skip(&Result{
@@ -99,7 +105,7 @@ func (resolver *GoModResolver) ResolvePackages(modules []*packages.Module, repor
 
 var possibleLicenseFileName = regexp.MustCompile(`(?i)^LICENSE|LICENCE(\.txt)?|COPYING(\.txt)?$`)
 
-func (resolver *GoModResolver) ResolvePackageLicense(module *packages.Module, report *Report) error {
+func (resolver *GoModResolver) ResolvePackageLicense(module *packages.Module, declareLicense *ConfigDepLicense, report *Report) error {
 	dir := module.Dir
 
 	for {
@@ -117,15 +123,22 @@ func (resolver *GoModResolver) ResolvePackageLicense(module *packages.Module, re
 			if err != nil {
 				return err
 			}
-			identifier, err := license.Identify(module.Path, string(content))
-			if err != nil {
-				return err
+			var licenseID string
+			if declareLicense != nil {
+				licenseID = declareLicense.License
+			} else {
+				identifier, err := license.Identify(module.Path, string(content))
+				if err != nil {
+					return err
+				}
+				licenseID = identifier
 			}
+
 			report.Resolve(&Result{
 				Dependency:      module.Path,
 				LicenseFilePath: licenseFilePath,
 				LicenseContent:  string(content),
-				LicenseSpdxID:   identifier,
+				LicenseSpdxID:   licenseID,
 				Version:         module.Version,
 			})
 			return nil

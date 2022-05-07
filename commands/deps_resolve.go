@@ -39,7 +39,7 @@ func init() {
 	DepsResolveCommand.PersistentFlags().StringVarP(&outDir, "output", "o", "",
 		"the directory to output the resolved dependencies' licenses, if not set the dependencies' licenses won't be saved")
 	DepsResolveCommand.PersistentFlags().StringVarP(&summaryTplPath, "summary", "s", "",
-		"the template file to write the summary the dependencies' licenses into \"LICENSE\" file into directory which same with template file.")
+		"the template file to write the summary of dependencies' licenses, a new file named \"LICENSE\" will be created in the same directory as the template file, to save the final summary.")
 }
 
 var fileNamePattern = regexp.MustCompile(`[^a-zA-Z0-9\\.\-]`)
@@ -80,15 +80,15 @@ var DepsResolveCommand = &cobra.Command{
 			return err
 		}
 
-		if outDir != "" {
-			for _, result := range report.Resolved {
-				writeLicense(result)
+		if summaryTpl != nil {
+			if err := writeSummary(&report); err != nil {
+				return err
 			}
 		}
 
-		if summaryTpl != nil {
-			if err := writeSummary(&report); err != nil {
-				logger.Log.Warnf("write summary file error: %v", err)
+		if outDir != "" {
+			for _, result := range report.Resolved {
+				writeLicense(result)
 			}
 		}
 

@@ -39,7 +39,8 @@ func init() {
 	DepsResolveCommand.PersistentFlags().StringVarP(&outDir, "output", "o", "",
 		"the directory to output the resolved dependencies' licenses, if not set the dependencies' licenses won't be saved")
 	DepsResolveCommand.PersistentFlags().StringVarP(&summaryTplPath, "summary", "s", "",
-		"the template file to write the summary of dependencies' licenses, a new file named \"LICENSE\" will be created in the same directory as the template file, to save the final summary.")
+		"the template file to write the summary of dependencies' licenses, a new file named \"LICENSE\" will be "+
+			"created in the same directory as the template file, to save the final summary.")
 }
 
 var fileNamePattern = regexp.MustCompile(`[^a-zA-Z0-9\\.\-]`)

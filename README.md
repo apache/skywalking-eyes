@@ -369,10 +369,10 @@ The summary is a template to generate the summary of dependencies' licenses base
 
 |Name|Type|Example|Description|
 |----|----|-------|-----------|
-|LicenseContent|string|`{{.LicenseContent}}`|The project license content, it's relate to the `header.license.spdx-id` config. |
-|Groups|list structure|`{{ range .Groups }}`|The dependency group, all license is aggregate by the same license [SPDX ID](https://spdx.org/licenses/). |
-|Groups.Name|string|`{{.Name}}`|The [SPDX ID](https://spdx.org/licenses/) of dependency. |
-|Groups.Deps|list structure|`{{ range .Deps }}`|All dependencies, it including all of same [SPDX ID](https://spdx.org/licenses/) dependencies under `Groups.Name`. |
+|LicenseContent|string|`{{.LicenseContent}}`|The project license content, it's the license of `header.license.spdx-id` (if set), otherwise it's the `header.license.content`. |
+|Groups|list structure|`{{ range .Groups }}`|The dependency groups, all licenses are grouped by the same license [SPDX ID](https://spdx.org/licenses/). |
+|Groups.LicenseID|string|`{{.LicenseID}}`|The [SPDX ID](https://spdx.org/licenses/) of dependency. |
+|Groups.Deps|list structure|`{{ range .Deps }}`|All dependencies with the same [SPDX ID](https://spdx.org/licenses/). |
 |Groups.Deps.Name|string|`{{.Name}}`|The name of the dependency. |
 |Groups.Deps.Version|string|`{{.Version}}`|The version of the dependency. |
 |Groups.Deps.LicenseID|string|`{{.LicenseID}}`|The [SPDX ID](https://spdx.org/licenses/) of the dependency license. |
@@ -385,7 +385,7 @@ Summary template content:
 {{.LicenseContent }}
 {{ range .Groups }}
 ========================================================================
-{{.Name}} licenses
+{{.LicenseID}} licenses
 ========================================================================
 {{range .Deps}}
     {{.Name}} {{.Version}} {{.LicenseID}}

@@ -32,8 +32,8 @@ type SummaryRenderContext struct {
 }
 
 type SummaryRenderLicenseGroup struct {
-	Name string                  // Aggregate all same license ID dependencies
-	Deps []*SummaryRenderLicense // Same license ID dependencies
+	LicenseID string                  // Aggregate all same license ID dependencies
+	Deps      []*SummaryRenderLicense // Same license ID dependencies
 }
 
 type SummaryRenderLicense struct {
@@ -53,18 +53,25 @@ func ParseTemplate(path string) (*template.Template, error) {
 // GenerateSummary generate the summary content by template, license config and dependency report
 func GenerateSummary(tpl *template.Template, head *header.ConfigHeader, rep *Report) (string, error) {
 	var r bytes.Buffer
-	context := generateSummaryRenderContext(head, rep)
+	context, err := generateSummaryRenderContext(head, rep)
+	if err != nil {
+		return "", err
+	}
 	if err := tpl.Execute(&r, context); err != nil {
 		return "", err
 	}
 	return r.String(), nil
 }
 
-func generateSummaryRenderContext(head *header.ConfigHeader, rep *Report) *SummaryRenderContext {
+func generateSummaryRenderContext(head *header.ConfigHeader, rep *Report) (*SummaryRenderContext, error) {
 	// the license id of the project
 	var headerContent string
 	if head.License.SpdxID != "" {
-		headerContent, _ = license.GetLicenseContent(head.License.SpdxID)
+		c, err := license.GetLicenseContent(head.License.SpdxID)
+		if err != nil {
+			return nil, err
+		}
+		headerContent = c
 	}
 	if headerContent == "" {
 		headerContent = head.GetLicenseContent()
@@ -75,8 +82,8 @@ func generateSummaryRenderContext(head *header.ConfigHeader, rep *Report) *Summa
 		group := groups[r.LicenseSpdxID]
 		if group == nil {
 			group = &SummaryRenderLicenseGroup{
-				Name: r.LicenseSpdxID,
-				Deps: make([]*SummaryRenderLicense, 0),
+				LicenseID: r.LicenseSpdxID,
+				Deps:      make([]*SummaryRenderLicense, 0),
 			}
 			groups[r.LicenseSpdxID] = group
 		}
@@ -95,5 +102,5 @@ func generateSummaryRenderContext(head *header.ConfigHeader, rep *Report) *Summa
 	return &SummaryRenderContext{
 		LicenseContent: headerContent,
 		Groups:         groupArray,
-	}
+	}, nil
 }

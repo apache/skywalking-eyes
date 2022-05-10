@@ -18,6 +18,9 @@
 package commands
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/apache/skywalking-eyes/internal/logger"
 	"github.com/apache/skywalking-eyes/pkg/header"
 	"github.com/apache/skywalking-eyes/pkg/review"
@@ -43,6 +46,8 @@ var CheckCommand = &cobra.Command{
 
 		logger.Log.Infoln(result.String())
 
+		writeSummaryQuietly(&result)
+
 		if result.HasFailure() {
 			if err := review.Header(&result, &Config); err != nil {
 				logger.Log.Warnln("Failed to create review comments", err)
@@ -52,4 +57,20 @@ var CheckCommand = &cobra.Command{
 
 		return nil
 	},
+}
+
+func writeSummaryQuietly(result *header.Result) {
+	if summaryFileName := os.Getenv("GITHUB_STEP_SUMMARY"); summaryFileName != "" {
+		if summaryFile, err := os.OpenFile(summaryFileName, os.O_WRONLY|os.O_APPEND, 0o644); err == nil {
+			defer summaryFile.Close()
+			_, _ = summaryFile.WriteString("# License Eye Summary\n")
+			_, _ = summaryFile.WriteString(result.String())
+			if result.HasFailure() {
+				_, _ = summaryFile.WriteString(", the following files are lack of license headers:\n")
+				for _, failure := range result.Failure {
+					_, _ = summaryFile.WriteString(fmt.Sprintf("- %s\n", failure))
+				}
+			}
+		}
+	}
 }

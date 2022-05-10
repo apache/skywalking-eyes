@@ -85,7 +85,7 @@ clean:
 	-rm -rf "$(RELEASE_SRC)"*
 
 .PHONY: verify
-verify: clean license lint test verify-docs
+verify: clean license lint test 
 
 release-src: clean
 	-mkdir $(RELEASE_SRC)

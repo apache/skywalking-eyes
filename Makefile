@@ -76,6 +76,10 @@ docker:
 docker-push:
 	docker push $(HUB)/$(PROJECT):$(VERSION)
 
+.PHONY: docker-release
+docker-release: docker docker-push
+	docker tag $(HUB)/$(PROJECT):$(VERSION) $(HUB)/$(PROJECT):latest && docker push $(HUB)/$(PROJECT):latest
+
 .PHONY: clean
 clean:
 	-rm -rf bin

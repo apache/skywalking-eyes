@@ -36,11 +36,11 @@ make release
 ## Upload to Apache svn
 
 ```bash
-svn co https://dist.apache.org/repos/dist/dev/skywalking/eyes release/skywalking/eyes
-mkdir -p release/skywalking/eyes/"$VERSION"
-cp skywalking-eyes/skywalking*.tgz release/skywalking/eyes/"$VERSION"
-cp skywalking-eyes/skywalking*.tgz.asc release/skywalking/eyes/"$VERSION"
-cp skywalking-eyes/skywalking*.tgz.sha512 release/skywalking/eyes/"$VERSION"
+svn co https://dist.apache.org/repos/dist/dev/skywalking/
+mkdir -p skywalking/eyes/"$VERSION"
+cp skywalking-eyes/skywalking*.tgz skywalking/eyes/"$VERSION" 
+cp skywalking-eyes/skywalking*.tgz.asc skywalking/eyes/"$VERSION"
+cp skywalking-eyes/skywalking-license-eye*.tgz.sha512 skywalking/eyes/"$VERSION"
 
 cd release/skywalking && svn add eyes/$VERSION && svn commit eyes -m "Draft Apache SkyWalking-Eyes release $VERSION"
 ```
@@ -54,12 +54,13 @@ Subject: [VOTE] Release Apache SkyWalking Eyes version $VERSION
 
 Content:
 
-Hi the SkyWalking Community:
+Hi the SkyWalking Community,
+
 This is a call for vote to release Apache SkyWalking Eyes version $VERSION.
 
 Release notes:
 
- * https://github.com/apache/skywalking-eyes/blob/v$VERSION/CHANGELOG.md
+ * https://github.com/apache/skywalking-eyes/blob/v$VERSION/CHANGES.md
 
 Release Candidate:
 
@@ -81,7 +82,7 @@ Keys to verify the Release Candidate :
 
 Guide to build the release from source :
 
- * https://github.com/apache/skywalking-eyes/blob/master/README.md#compile-from-source
+ * https://github.com/apache/skywalking-eyes/blob/v$VERSION/docs/How-to-release.md#build-and-sign-the-source-code-package
 
 Voting will start now and will remain open for at least 72 hours, all PMC members are required to give their votes.
 
@@ -91,7 +92,7 @@ Voting will start now and will remain open for at least 72 hours, all PMC member
 
 Thanks.
 
-[1] https://github.com/apache/skywalking/blob/master/docs/en/guides/How-to-release.md#vote-check
+[1] https://github.com/apache/skywalking-eyes/blob/main/docs/How-to-release.md#vote-check
 ```
 
 ## Vote Check
@@ -140,19 +141,28 @@ Vote result should follow these:
     ```shell
     svn mv https://dist.apache.org/repos/dist/dev/skywalking/eyes/"$VERSION" https://dist.apache.org/repos/dist/release/skywalking/eyes/"$VERSION"
     ```
+   
+2. Push Docker images.
+
+    ```shell
+    export VERSION=<the version to release> 
+    export PROJECT=skywalking-eyes
+    docker login
+    make docker-release
+    ```
     
-1. Refer to the previous [PR](https://github.com/apache/skywalking-website/pull/132), update news and links on the website. There are several files need to modify.
+3. Refer to the previous [PR](https://github.com/apache/skywalking-website/pull/132), update news and links on the website. There are several files need to modify.
 
-1. Update [Github release page](https://github.com/apache/skywalking-eyes/releases), follow the previous convention.
+4. Update [Github release page](https://github.com/apache/skywalking-eyes/releases), follow the previous convention.
 
-1. Send ANNOUNCE email to `dev@skywalking.apache.org` and `announce@apache.org`, the sender should use his/her Apache email account. 
+5. Send ANNOUNCE email to `dev@skywalking.apache.org` and `announce@apache.org`, the sender should use his/her Apache email account. 
 
     ```
     Subject: [ANNOUNCEMENT] Apache SkyWalking Eyes $VERSION Released
 
     Content:
 
-    Hi the SkyWalking Community
+    Hi the SkyWalking Community,
 
     On behalf of the SkyWalking Team, I’m glad to announce that SkyWalking Eyes $VERSION is now released.
 
@@ -160,11 +170,11 @@ Vote result should follow these:
 
     SkyWalking: APM (application performance monitor) tool for distributed systems, especially designed for microservices, cloud native and container-based (Docker, Kubernetes, Mesos) architectures.
 
-    Download Links: http://skywalking.apache.org/downloads/
+    Download Links: https://skywalking.apache.org/downloads/
 
-    Release Notes : https://github.com/apache/skywalking-eyes/blob/v$VERSION/CHANGELOG.md
+    Release Notes : https://github.com/apache/skywalking-eyes/blob/v$VERSION/CHANGES.md
 
-    Website: http://skywalking.apache.org/
+    Website: https://skywalking.apache.org/
 
     SkyWalking Eyes Resources:
     - Issue: https://github.com/apache/skywalking/issues
@@ -172,6 +182,6 @@ Vote result should follow these:
     - Documents: https://github.com/apache/skywalking-eyes/blob/v$VERSION/README.md
     
     The Apache SkyWalking Team
-```
+   ```
     
     

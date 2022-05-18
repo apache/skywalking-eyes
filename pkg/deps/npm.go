@@ -291,7 +291,7 @@ func (resolver *NpmResolver) ResolveLcsFile(result *Result, pkgPath string, lice
 				return nil
 			}
 		}
-		identifier, err := license.Identify(result.Dependency, string(content))
+		identifier, err := license.Identify(string(content))
 		if err != nil {
 			return err
 		}

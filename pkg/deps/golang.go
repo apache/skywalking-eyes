@@ -129,7 +129,7 @@ func (resolver *GoModResolver) ResolvePackageLicense(module *packages.Module, re
 			if err != nil {
 				return err
 			}
-			identifier, err := license.Identify(module.Path, string(content))
+			identifier, err := license.Identify(string(content))
 			if err != nil {
 				return err
 			}

@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/bmatcuk/doublestar/v2 v2.0.4
 	github.com/google/go-github/v33 v33.0.0
+	github.com/google/licensecheck v0.3.1
 	github.com/sirupsen/logrus v1.7.0
 	github.com/spf13/cobra v1.1.1
 	github.com/stretchr/testify v1.7.0

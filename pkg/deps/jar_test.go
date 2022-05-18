@@ -96,11 +96,11 @@ func TestResolveJar(t *testing.T) {
 	<project xmlns="http://maven.apache.org/POM/4.0.0"
 		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 		<modelVersion>4.0.0</modelVersion>
-	
+
 		<groupId>apache</groupId>
 		<artifactId>skywalking-eyes</artifactId>
 		<version>1.0</version>
-	
+
 		<dependencies>
 			<!-- https://mvnrepository.com/artifact/junit/junit -->
 			<dependency>
@@ -132,7 +132,7 @@ func TestResolveJar(t *testing.T) {
 		report := deps.Report{}
 		for _, jar := range jars {
 			if resolver.CanResolve(jar) {
-				if err := resolver.Resolve(jar, nil, &report); err != nil {
+				if err := resolver.Resolve(jar, &report); err != nil {
 					t.Error(err)
 					return
 				}

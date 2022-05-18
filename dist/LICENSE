@@ -275,6 +275,7 @@ MIT licenses
 
     github.com/BurntSushi/toml v0.3.1 MIT
     github.com/bmatcuk/doublestar/v2 v2.0.4 MIT
+    github.com/chzyer/logex v1.1.10 MIT
     github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e MIT
     github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1 MIT
     github.com/client9/misspell v0.3.4 MIT

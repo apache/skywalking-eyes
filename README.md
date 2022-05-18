@@ -764,7 +764,7 @@ header: # <1>
 dependency: # <15>
   files: # <16>
     - go.mod
-  license: # <17>
+  licenses: # <17>
     - name: dependency-name # <18>
       version: dependency-version # <19>
       license: Apache-2.0 # <20>

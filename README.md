@@ -768,6 +768,7 @@ dependency: # <15>
     - name: dependency-name # <18>
       version: dependency-version # <19>
       license: Apache-2.0 # <20>
+  threshold: 75 # <21>
 ```
 
 1. The `header` section is configurations for source codes license header.
@@ -790,6 +791,7 @@ dependency: # <15>
 18. The `name` of the dependency, The name is different for different projects, `PackagePath` in Go project, `GroupID:ArtifactID` in maven project, `PackageName` in NodeJS project.
 19. The `version` of the dependency, it's locked, preventing license changed between different versions.
 20. The [SPDX ID](https://spdx.org/licenses/) of the dependency license.
+21. The minimum percentage of the file that must contain license text for identifying a license, default is `75`.
 
 **NOTE**: When the `SPDX-ID` is Apache-2.0 and the owner is Apache Software foundation, the content would be [a dedicated license](https://www.apache.org/legal/src-headers.html#headers) specified by the ASF, otherwise, the license would be [the standard one](https://www.apache.org/foundation/license-faq.html#Apply-My-Software).
 

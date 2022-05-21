@@ -89,3 +89,7 @@ header: # `header` section is configurations for source codes license header.
 dependency:
   files:
     - go.mod
+  licenses:
+    - name: github.com/chzyer/logex
+      version: v1.1.10
+      license: MIT

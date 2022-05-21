@@ -123,7 +123,7 @@ func (resolver *JarResolver) ReadFileFromZip(archiveFile *zip.File) (*bytes.Buff
 }
 
 func (resolver *JarResolver) IdentifyLicense(path, dep, content, version string, report *Report) error {
-	identifier, err := license.Identify(path, content)
+	identifier, err := license.Identify(content)
 	if err != nil {
 		return err
 	}

@@ -19,93 +19,62 @@ package license
 
 import (
 	"fmt"
-	"io/fs"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"sync"
+
+	"github.com/google/licensecheck"
 
 	"github.com/apache/skywalking-eyes/assets"
 	"github.com/apache/skywalking-eyes/internal/logger"
 )
 
-var licenseTemplatesDir = "lcs-templates"
+const (
+	// coverageThreshold is the minimum percentage of the file that must contain license text.
+	// Reference: https://github.com/golang/pkgsite/blob/d43359e3a135fc391960db4f5800eb081d658412/internal/licenses/licenses.go#L48
+	coverageThreshold = 75
 
-var templatesDirs = []string{
-	licenseTemplatesDir,
-	// Some projects simply use the header text as their LICENSE content...
-	"header-templates",
-}
+	licenseTemplatesDir = "lcs-templates"
+)
 
-var dualLicensePatterns = []*regexp.Regexp{
-	regexp.MustCompile(`(?i)This project is covered by two different licenses: (?P<license>[^.]+)`),
-}
+var (
+	_scanner    *licensecheck.Scanner
+	scannerOnce sync.Once
+)
 
-var normalizedTemplates = sync.Map{}
-
-func init() {
-	wg := sync.WaitGroup{}
-	for _, dir := range templatesDirs {
-		files, err := assets.AssetDir(dir)
+// scanner returns a licensecheck.Scanner instance with its build-in licenses.
+// It will be initialized once.
+func scanner() *licensecheck.Scanner {
+	scannerOnce.Do(func() {
+		var err error
+		_scanner, err = licensecheck.NewScanner(licensecheck.BuiltinLicenses())
 		if err != nil {
-			logger.Log.Fatalln("Failed to read license template directory:", dir, err)
+			logger.Log.Fatalf("licensecheck.NewScanner: %v", err)
 		}
-		wg.Add(len(files))
-		for _, template := range files {
-			go loadTemplate(&wg, dir, template)
-		}
-	}
-	wg.Wait()
-}
-
-func loadTemplate(wg *sync.WaitGroup, dir string, template fs.DirEntry) {
-	defer wg.Done()
-
-	name := template.Name()
-	t, err := assets.Asset(filepath.Join(dir, name))
-	if err != nil {
-		logger.Log.Fatalln("Failed to read license template:", dir, err)
-	}
-	normalizedTemplates.Store(dir+"/"+name, Normalize(string(t)))
-}
-
-// Identify identifies the Spdx ID of the given license content
-func Identify(pkgPath, content string) (string, error) {
-	for _, pattern := range dualLicensePatterns {
-		matches := pattern.FindStringSubmatch(content)
-		for i, name := range pattern.SubexpNames() {
-			if name == "license" && len(matches) >= i {
-				return matches[i], nil
-			}
-		}
-	}
-
-	content = Normalize(content)
-	logger.Log.Debugf("Normalized content for %+v:\n%+v\n", pkgPath, content)
-
-	result := make(chan string, 1)
-	normalizedTemplates.Range(func(key, value interface{}) bool {
-		name := key.(string)
-		license := value.(string)
-
-		// Should not use `Contains` as a root LICENSE file may include other licenses the project uses,
-		// `Contains` would identify the last one license as the project's license.
-		if strings.HasPrefix(content, license) {
-			name = filepath.Base(name)
-			result <- strings.TrimSuffix(name, filepath.Ext(name))
-			return false
-		}
-		return true
 	})
-	select {
-	case license := <-result:
-		return license, nil
-	default:
-		return "", fmt.Errorf("cannot identify license content")
-	}
+	return _scanner
 }
 
-// GetLicenseContent from license id
+// Identify identifies the Spdx ID of the given license content.
+// If it's a dual-license, it will return `<Licenses 1> and <Licenses 2>`.
+func Identify(content string) (string, error) {
+	coverage := scanner().Scan([]byte(content))
+	if coverage.Percent < coverageThreshold {
+		return "", fmt.Errorf("cannot identify the license, coverage: %.1f%%", coverage.Percent)
+	}
+
+	var sb strings.Builder
+	sb.WriteString(coverage.Match[0].ID)
+
+	for i := 1; i < len(coverage.Match); i++ {
+		sb.WriteString(" and ")
+		sb.WriteString(coverage.Match[i].ID)
+	}
+
+	return sb.String(), nil
+}
+
+// GetLicenseContent returns the content of the license file with the given Spdx ID.
 func GetLicenseContent(spdxID string) (string, error) {
 	res, err := assets.Asset(filepath.Join(licenseTemplatesDir, spdxID+".txt"))
 	if err != nil {

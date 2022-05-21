@@ -23,7 +23,7 @@ import (
 
 type Resolver interface {
 	CanResolve(string) bool
-	Resolve(string, []*ConfigDepLicense, *Report) error
+	Resolve(string, *ConfigDeps, *Report) error
 }
 
 var Resolvers = []Resolver{
@@ -39,7 +39,7 @@ resolveFile:
 			if !resolver.CanResolve(file) {
 				continue
 			}
-			if err := resolver.Resolve(file, config.License, report); err != nil {
+			if err := resolver.Resolve(file, config, report); err != nil {
 				return err
 			}
 			continue resolveFile

@@ -63,7 +63,7 @@ func (resolver *NpmResolver) CanResolve(file string) bool {
 }
 
 // Resolve resolves licenses of all dependencies declared in the package.json file.
-func (resolver *NpmResolver) Resolve(pkgFile string, licenses []*ConfigDepLicense, report *Report) error {
+func (resolver *NpmResolver) Resolve(pkgFile string, config *ConfigDeps, report *Report) error {
 	workDir := filepath.Dir(pkgFile)
 	if err := os.Chdir(workDir); err != nil {
 		return err
@@ -85,7 +85,7 @@ func (resolver *NpmResolver) Resolve(pkgFile string, licenses []*ConfigDepLicens
 	// Walk through each package's root directory to resolve licenses
 	// Resolve from a package's package.json file or its license file
 	for _, pkg := range pkgs {
-		if result := resolver.ResolvePackageLicense(pkg.Name, pkg.Path, licenses); result.LicenseSpdxID != "" {
+		if result := resolver.ResolvePackageLicense(pkg.Name, pkg.Path, config); result.LicenseSpdxID != "" {
 			report.Resolve(result)
 		} else {
 			result.LicenseSpdxID = Unknown
@@ -185,17 +185,17 @@ func (resolver *NpmResolver) GetInstalledPkgs(pkgDir string) []*Package {
 // First, try to find and parse the package's package.json file to check the license file
 // If the previous step fails, then try to identify the package's LICENSE file
 // It's a necessary procedure to check the LICENSE file, because the resolver needs to record the license content
-func (resolver *NpmResolver) ResolvePackageLicense(pkgName, pkgPath string, licenses []*ConfigDepLicense) *Result {
+func (resolver *NpmResolver) ResolvePackageLicense(pkgName, pkgPath string, config *ConfigDeps) *Result {
 	result := &Result{
 		Dependency: pkgName,
 	}
 	// resolve from the package.json file
-	if err := resolver.ResolvePkgFile(result, pkgPath, licenses); err != nil {
+	if err := resolver.ResolvePkgFile(result, pkgPath, config.Licenses); err != nil {
 		result.ResolveErrors = append(result.ResolveErrors, err)
 	}
 
 	// resolve from the LICENSE file
-	if err := resolver.ResolveLcsFile(result, pkgPath, licenses); err != nil {
+	if err := resolver.ResolveLcsFile(result, pkgPath, config); err != nil {
 		result.ResolveErrors = append(result.ResolveErrors, err)
 	}
 
@@ -266,7 +266,7 @@ func (resolver *NpmResolver) ResolveLicensesField(licenses []Lcs) (string, bool)
 }
 
 // ResolveLcsFile tries to find the license file to identify the license
-func (resolver *NpmResolver) ResolveLcsFile(result *Result, pkgPath string, licenses []*ConfigDepLicense) error {
+func (resolver *NpmResolver) ResolveLcsFile(result *Result, pkgPath string, config *ConfigDeps) error {
 	depFiles, err := os.ReadDir(pkgPath)
 	if err != nil {
 		return err
@@ -285,13 +285,13 @@ func (resolver *NpmResolver) ResolveLcsFile(result *Result, pkgPath string, lice
 		if result.LicenseSpdxID != "" {
 			return nil
 		}
-		for _, l := range licenses {
+		for _, l := range config.Licenses {
 			if l.Name == info.Name() && l.Version == result.Version {
 				result.LicenseSpdxID = l.License
 				return nil
 			}
 		}
-		identifier, err := license.Identify(string(content))
+		identifier, err := license.Identify(string(content), config.Threshold)
 		if err != nil {
 			return err
 		}

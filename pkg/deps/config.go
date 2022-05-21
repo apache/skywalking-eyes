@@ -22,9 +22,15 @@ import (
 	"path/filepath"
 )
 
+// DefaultCoverageThreshold is the minimum percentage of the file
+// that must contain license text for identifying a license.
+// Reference: https://github.com/golang/pkgsite/blob/d43359e3a135fc391960db4f5800eb081d658412/internal/licenses/licenses.go#L48
+const DefaultCoverageThreshold = 75
+
 type ConfigDeps struct {
-	Files   []string            `yaml:"files"`
-	License []*ConfigDepLicense `yaml:"licenses"`
+	Threshold int                 `yaml:"threshold"`
+	Files     []string            `yaml:"files"`
+	Licenses  []*ConfigDepLicense `yaml:"licenses"`
 }
 
 type ConfigDepLicense struct {
@@ -44,6 +50,10 @@ func (config *ConfigDeps) Finalize(configFile string) error {
 
 	for i, file := range config.Files {
 		config.Files[i] = filepath.Join(filepath.Dir(configFileAbsPath), file)
+	}
+
+	if config.Threshold <= 0 {
+		config.Threshold = DefaultCoverageThreshold
 	}
 
 	return nil

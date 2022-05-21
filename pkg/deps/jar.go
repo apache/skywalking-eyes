@@ -37,9 +37,9 @@ func (resolver *JarResolver) CanResolve(jarFile string) bool {
 	return filepath.Ext(jarFile) == ".jar"
 }
 
-func (resolver *JarResolver) Resolve(jarFile string, report *Report) error {
+func (resolver *JarResolver) Resolve(jarFile string, config *ConfigDeps, report *Report) error {
 	state := NotFound
-	if err := resolver.ResolveJar(&state, jarFile, Unknown, report); err != nil {
+	if err := resolver.ResolveJar(config, &state, jarFile, Unknown, report); err != nil {
 		dep := filepath.Base(jarFile)
 		logger.Log.Warnf("Failed to resolve the license of <%s>: %v\n", dep, state.String())
 		report.Skip(&Result{
@@ -51,7 +51,7 @@ func (resolver *JarResolver) Resolve(jarFile string, report *Report) error {
 	return nil
 }
 
-func (resolver *JarResolver) ResolveJar(state *State, jarFile, version string, report *Report) error {
+func (resolver *JarResolver) ResolveJar(config *ConfigDeps, state *State, jarFile, version string, report *Report) error {
 	dep := filepath.Base(jarFile)
 
 	compressedJar, err := zip.OpenReader(jarFile)
@@ -76,7 +76,7 @@ func (resolver *JarResolver) ResolveJar(state *State, jarFile, version string, r
 				return err
 			}
 
-			return resolver.IdentifyLicense(jarFile, dep, buf.String(), version, report)
+			return resolver.IdentifyLicense(config, jarFile, dep, buf.String(), version, report)
 		}
 	}
 
@@ -122,8 +122,8 @@ func (resolver *JarResolver) ReadFileFromZip(archiveFile *zip.File) (*bytes.Buff
 	return buf, nil
 }
 
-func (resolver *JarResolver) IdentifyLicense(path, dep, content, version string, report *Report) error {
-	identifier, err := license.Identify(content)
+func (resolver *JarResolver) IdentifyLicense(config *ConfigDeps, path, dep, content, version string, report *Report) error {
+	identifier, err := license.Identify(content, config.Threshold)
 	if err != nil {
 		return err
 	}

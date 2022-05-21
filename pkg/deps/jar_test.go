@@ -79,6 +79,10 @@ func copyJars(t *testing.T, pomFile, content string) ([]string, error) {
 }
 
 func TestResolveJar(t *testing.T) {
+	config := &deps.ConfigDeps{
+		Threshold: deps.DefaultCoverageThreshold,
+	}
+
 	if _, err := exec.Command("mvn", "--version").Output(); err != nil {
 		logger.Log.Warnf("Failed to find mvn, the test `TestResolveJar` was skipped")
 		return
@@ -132,7 +136,7 @@ func TestResolveJar(t *testing.T) {
 		report := deps.Report{}
 		for _, jar := range jars {
 			if resolver.CanResolve(jar) {
-				if err := resolver.Resolve(jar, &report); err != nil {
+				if err := resolver.Resolve(jar, config, &report); err != nil {
 					t.Error(err)
 					return
 				}

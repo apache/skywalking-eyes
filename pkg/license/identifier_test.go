@@ -21,7 +21,9 @@ import (
 	"testing"
 )
 
-func TestIdentify(t *testing.T) {
+const defaultThreshold = 75
+
+func TestIdentifyWithDefaultThreshold(t *testing.T) {
 	tests := []struct {
 		name    string
 		content string
@@ -324,7 +326,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Identify(tt.content)
+			got, err := Identify(tt.content, defaultThreshold)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Identify() error = %v, wantErr %v", err, tt.wantErr)
 				return

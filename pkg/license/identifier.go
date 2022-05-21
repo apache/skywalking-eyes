@@ -29,13 +29,7 @@ import (
 	"github.com/apache/skywalking-eyes/internal/logger"
 )
 
-const (
-	// coverageThreshold is the minimum percentage of the file that must contain license text.
-	// Reference: https://github.com/golang/pkgsite/blob/d43359e3a135fc391960db4f5800eb081d658412/internal/licenses/licenses.go#L48
-	coverageThreshold = 75
-
-	licenseTemplatesDir = "lcs-templates"
-)
+const licenseTemplatesDir = "lcs-templates"
 
 var (
 	_scanner    *licensecheck.Scanner
@@ -57,9 +51,9 @@ func scanner() *licensecheck.Scanner {
 
 // Identify identifies the Spdx ID of the given license content.
 // If it's a dual-license, it will return `<Licenses 1> and <Licenses 2>`.
-func Identify(content string) (string, error) {
+func Identify(content string, threshold int) (string, error) {
 	coverage := scanner().Scan([]byte(content))
-	if coverage.Percent < coverageThreshold {
+	if coverage.Percent < float64(threshold) {
 		return "", fmt.Errorf("cannot identify the license, coverage: %.1f%%", coverage.Percent)
 	}
 

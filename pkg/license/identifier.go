@@ -20,7 +20,7 @@ package license
 import (
 	"fmt"
 	"path/filepath"
-	"regexp"
+	"strings"
 	"sync"
 
 	"github.com/google/licensecheck"
@@ -40,10 +40,6 @@ const (
 var (
 	_scanner    *licensecheck.Scanner
 	scannerOnce sync.Once
-
-	dualLicensePatterns = []*regexp.Regexp{
-		regexp.MustCompile(`(?i)This project is covered by two different licenses: (?P<license>[^.]+)`),
-	}
 )
 
 // scanner returns a licensecheck.Scanner instance with its build-in licenses.
@@ -60,22 +56,22 @@ func scanner() *licensecheck.Scanner {
 }
 
 // Identify identifies the Spdx ID of the given license content.
+// If it's a dual-license, it will return `<Licenses 1> and <Licenses 2>`.
 func Identify(content string) (string, error) {
-	for _, pattern := range dualLicensePatterns {
-		matches := pattern.FindStringSubmatch(content)
-		for i, name := range pattern.SubexpNames() {
-			if name == "license" && len(matches) >= i {
-				return matches[i], nil
-			}
-		}
-	}
-
 	coverage := scanner().Scan([]byte(content))
 	if coverage.Percent < coverageThreshold {
 		return "", fmt.Errorf("cannot identify the license, coverage: %.1f%%", coverage.Percent)
 	}
 
-	return coverage.Match[0].ID, nil
+	var sb strings.Builder
+	sb.WriteString(coverage.Match[0].ID)
+
+	for i := 1; i < len(coverage.Match); i++ {
+		sb.WriteString(" and ")
+		sb.WriteString(coverage.Match[i].ID)
+	}
+
+	return sb.String(), nil
 }
 
 // GetLicenseContent returns the content of the license file with the given Spdx ID.

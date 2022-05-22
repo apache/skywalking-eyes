@@ -323,6 +323,36 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 `,
 			want: "BSD-3-Clause",
 		},
+		{
+			name:    "URL http://www.apache.org/licenses/LICENSE-2.0",
+			content: "http://www.apache.org/licenses/LICENSE-2.0",
+			want:    "Apache-2.0",
+		},
+		{
+			name:    "URL https://opensource.org/licenses/Apache-2.0",
+			content: "https://opensource.org/licenses/Apache-2.0",
+			want:    "Apache-2.0",
+		},
+		{
+			name:    "URL http://www.apache.org/licenses/LICENSE-2.0.txt",
+			content: "http://www.apache.org/licenses/LICENSE-2.0.txt",
+			want:    "Apache-2.0",
+		},
+		{
+			name:    "URL https://www.bouncycastle.org/licence.html",
+			content: "https://www.bouncycastle.org/licence.html",
+			want:    "MIT",
+		},
+		{
+			name:    "URL https://www.bouncycastle.org/licence.html",
+			content: "http://www.gnu.org/software/classpath/license.html, http://opensource.org/licenses/MIT",
+			want:    "GPL-2.0-with-classpath-exception and MIT",
+		},
+		{
+			name:    "URL",
+			content: "http://www.mozilla.org/MPL/MPL-1.1.html, http://www.gnu.org/licenses/lgpl-2.1.html",
+			want:    "MPL-1.1 and LGPL-2.1",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

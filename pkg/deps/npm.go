@@ -212,9 +212,11 @@ func (resolver *NpmResolver) ResolvePkgFile(result *Result, pkgPath string, lice
 
 	result.Version = packageInfo.Version
 	for _, l := range licenses {
-		if l.Name == packageInfo.Name && l.Version == packageInfo.Version {
-			result.LicenseSpdxID = l.License
-			return nil
+		for _, version := range strings.Split(l.Version, ",") {
+			if l.Name == packageInfo.Name && version == packageInfo.Version {
+				result.LicenseSpdxID = l.License
+				return nil
+			}
 		}
 	}
 
@@ -286,9 +288,11 @@ func (resolver *NpmResolver) ResolveLcsFile(result *Result, pkgPath string, conf
 			return nil
 		}
 		for _, l := range config.Licenses {
-			if l.Name == info.Name() && l.Version == result.Version {
-				result.LicenseSpdxID = l.License
-				return nil
+			for _, version := range strings.Split(l.Version, ",") {
+				if l.Name == info.Name() && version == result.Version {
+					result.LicenseSpdxID = l.License
+					return nil
+				}
 			}
 		}
 		identifier, err := license.Identify(string(content), config.Threshold)

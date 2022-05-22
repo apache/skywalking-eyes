@@ -32,6 +32,7 @@ import (
 	"golang.org/x/net/html/charset"
 
 	"github.com/apache/skywalking-eyes/internal/logger"
+	"github.com/apache/skywalking-eyes/pkg/license"
 )
 
 type MavenPomResolver struct {
@@ -131,7 +132,7 @@ func (resolver *MavenPomResolver) LoadDependencies() ([]*Dependency, error) {
 	cmd.Stdout = bufio.NewWriter(buf)
 	cmd.Stderr = os.Stderr
 
-	logger.Log.Debugf("Run command: 「%v」, please wait", cmd.String())
+	logger.Log.Debugf("Running command: [%v], please wait", cmd.String())
 	err := cmd.Run()
 	if err != nil {
 		return nil, err
@@ -146,13 +147,15 @@ func (resolver *MavenPomResolver) ResolveDependencies(deps []*Dependency, config
 	for _, dep := range deps {
 		func() {
 			for _, l := range config.Licenses {
-				if l.Name == fmt.Sprintf("%s:%s", dep.GroupID, dep.ArtifactID) && l.Version == dep.Version {
-					report.Resolve(&Result{
-						Dependency:    dep.Jar(),
-						LicenseSpdxID: l.License,
-						Version:       dep.Version,
-					})
-					return
+				for _, version := range strings.Split(l.Version, ",") {
+					if l.Name == fmt.Sprintf("%s:%s", strings.Join(dep.GroupID, "."), dep.ArtifactID) && version == dep.Version {
+						report.Resolve(&Result{
+							Dependency:    dep.Jar(),
+							LicenseSpdxID: l.License,
+							Version:       dep.Version,
+						})
+						return
+					}
 				}
 			}
 			state := NotFound
@@ -187,12 +190,14 @@ func (resolver *MavenPomResolver) ResolveLicenseFromPom(config *ConfigDeps, stat
 	pom, err := resolver.ReadLicensesFromPom(pomFile)
 	if err != nil {
 		return err
-	} else if pom != nil && len(pom.Licenses) != 0 {
+	}
+
+	if pom != nil && len(pom.Licenses) != 0 {
 		report.Resolve(&Result{
 			Dependency:      dep.Jar(),
 			LicenseFilePath: pomFile,
 			LicenseContent:  pom.Raw(),
-			LicenseSpdxID:   pom.AllLicenses(),
+			LicenseSpdxID:   pom.AllLicenses(config),
 			Version:         dep.Version,
 		})
 
@@ -266,7 +271,7 @@ loop:
 }
 
 var (
-	reMaybeLicense                = regexp.MustCompile(`(?i)licen[sc]e|copyright|copying`)
+	reMaybeLicense                = regexp.MustCompile(`(?i)licen[sc]e|copyright|copying$`)
 	reHaveManifestFile            = regexp.MustCompile(`(?i)^(\S*/)?manifest\.MF$`)
 	reSearchLicenseInManifestFile = regexp.MustCompile(`(?im)^.*?licen[cs]e.*?(http.+)`)
 )
@@ -310,18 +315,18 @@ func LoadDependenciesTree(data []byte) []*Dependency {
 	stack := []Elem{}
 	unique := make(map[string]struct{})
 
-	reFind := regexp.MustCompile(`(?im)^.*? ([| ]*)(\+-|\\-) (\b.+):(\b.+):(\b.+):(\b.+):(\b.+)$`)
+	reFind := regexp.MustCompile(`(?im)^.*? ([| ]*)(\+-|\\-) (?P<gid>\b.+?):(?P<aid>\b.+?):(?P<packaging>\b.+)(:\b.+)?:(?P<version>\b.+):(?P<scope>\b.+?)$`) //nolint:lll // can't break down regex
 	rawDeps := reFind.FindAllSubmatch(data, -1)
 
 	deps := make([]*Dependency, 0, len(rawDeps))
 	for _, rawDep := range rawDeps {
-		gid := strings.Split(string(rawDep[3]), ".")
+		gid := strings.Split(string(rawDep[reFind.SubexpIndex("gid")]), ".")
 		dep := &Dependency{
 			GroupID:    gid,
-			ArtifactID: string(rawDep[4]),
-			Packaging:  string(rawDep[5]),
-			Version:    string(rawDep[6]),
-			Scope:      string(rawDep[7]),
+			ArtifactID: string(rawDep[reFind.SubexpIndex("aid")]),
+			Packaging:  string(rawDep[reFind.SubexpIndex("packaging")]),
+			Version:    string(rawDep[reFind.SubexpIndex("version")]),
+			Scope:      string(rawDep[reFind.SubexpIndex("scope")]),
 		}
 
 		if _, have := unique[dep.Path()]; have {
@@ -391,7 +396,7 @@ func (s *State) String() string {
 		m = append(m, "failed to resolve license content from manifest file found in jar")
 	}
 
-	return strings.Join(m, "｜")
+	return strings.Join(m, " | ")
 }
 
 type Dependency struct {
@@ -457,12 +462,12 @@ type PomFile struct {
 }
 
 // AllLicenses return all licenses found in pom.xml file
-func (pom *PomFile) AllLicenses() string {
+func (pom *PomFile) AllLicenses(config *ConfigDeps) string {
 	licenses := []string{}
 	for _, l := range pom.Licenses {
-		licenses = append(licenses, l.Item())
+		licenses = append(licenses, l.Item(config))
 	}
-	return strings.Join(licenses, ", ")
+	return strings.Join(licenses, " and ")
 }
 
 // Raw return raw data
@@ -481,14 +486,23 @@ type XMLLicense struct {
 	Comments     string `xml:"comments,omitempty"`
 }
 
-func (l *XMLLicense) Item() string {
-	return GetLicenseFromURL(l.URL)
+func (l *XMLLicense) Item(config *ConfigDeps) string {
+	if l.URL != "" {
+		return GetLicenseFromURL(l.URL, config)
+	}
+	if l.Name != "" {
+		return l.Name
+	}
+	return l.URL
 }
 
 func (l *XMLLicense) Raw() string {
 	return fmt.Sprintf(`License: {Name: %s, URL: %s, Distribution: %s, Comments: %s, }`, l.Name, l.URL, l.Distribution, l.Comments)
 }
 
-func GetLicenseFromURL(url string) string {
+func GetLicenseFromURL(url string, config *ConfigDeps) string {
+	if l, err := license.Identify(url, config.Threshold); err == nil {
+		return l
+	}
 	return url
 }

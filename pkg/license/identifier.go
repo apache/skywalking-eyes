@@ -24,6 +24,7 @@ import (
 	"sync"
 
 	"github.com/google/licensecheck"
+	"gopkg.in/yaml.v3"
 
 	"github.com/apache/skywalking-eyes/assets"
 	"github.com/apache/skywalking-eyes/internal/logger"
@@ -40,8 +41,24 @@ var (
 // It will be initialized once.
 func scanner() *licensecheck.Scanner {
 	scannerOnce.Do(func() {
+		licenses := licensecheck.BuiltinLicenses()
+		if bs, err := assets.Asset("urls.yaml"); err == nil {
+			licenseURLs := make(map[string][]string)
+			if err := yaml.Unmarshal(bs, &licenseURLs); err == nil {
+				logger.Log.Debug("license URLs:", licenseURLs)
+				for id, urls := range licenseURLs {
+					for _, url := range urls {
+						licenses = append(licenses, licensecheck.License{
+							ID:   id,
+							URL:  strings.ToLower(url),
+							Type: licensecheck.Unknown,
+						})
+					}
+				}
+			}
+		}
 		var err error
-		_scanner, err = licensecheck.NewScanner(licensecheck.BuiltinLicenses())
+		_scanner, err = licensecheck.NewScanner(licenses)
 		if err != nil {
 			logger.Log.Fatalf("licensecheck.NewScanner: %v", err)
 		}
@@ -57,10 +74,17 @@ func Identify(content string, threshold int) (string, error) {
 		return "", fmt.Errorf("cannot identify the license, coverage: %.1f%%", coverage.Percent)
 	}
 
+	seen := make(map[string]bool)
+
 	var sb strings.Builder
 	sb.WriteString(coverage.Match[0].ID)
+	seen[coverage.Match[0].ID] = true
 
 	for i := 1; i < len(coverage.Match); i++ {
+		if seen[coverage.Match[i].ID] {
+			continue
+		}
+		seen[coverage.Match[i].ID] = true
 		sb.WriteString(" and ")
 		sb.WriteString(coverage.Match[i].ID)
 	}

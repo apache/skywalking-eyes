@@ -30,6 +30,7 @@ var Resolvers = []Resolver{
 	new(GoModResolver),
 	new(NpmResolver),
 	new(MavenPomResolver),
+	new(JarResolver),
 }
 
 func Resolve(config *ConfigDeps, report *Report) error {

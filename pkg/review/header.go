@@ -26,6 +26,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/google/go-github/v33/github"
 	"golang.org/x/oauth2"
@@ -54,9 +55,11 @@ var (
 		"GITHUB_EVENT_NAME",
 		"GITHUB_EVENT_PATH",
 	}
+
+	ghOnce sync.Once
 )
 
-func init() {
+func Init() {
 	if os.Getenv("GITHUB_TOKEN") == "" {
 		logger.Log.Infoln("GITHUB_TOKEN is not set, license-eye won't comment on the pull request")
 		return
@@ -107,6 +110,8 @@ func init() {
 
 // Header reviews the license header, including suggestions on the pull request and an overview of the checks.
 func Header(result *header2.Result, config *config2.Config) error {
+	ghOnce.Do(Init)
+
 	if !result.HasFailure() || !IsPR() || gh == nil || config.Header.Comment == header2.Never {
 		return nil
 	}

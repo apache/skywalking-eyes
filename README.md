@@ -80,8 +80,8 @@ docker run -it --rm -v $(pwd):/github/workspace apache/skywalking-eyes header fi
 
 ### Docker Image from the latest codes
 
-For users and developers who want to help to test the latest codes on main branch, we publish Docker image to GitHub
-Container Registry for every commit in main branch, tagged with the commit sha, if it's the latest commit in main
+For users and developers who want to help to test the latest codes on main branch, we publish a Docker image to the GitHub
+Container Registry for every commit in main branch, tagged with the commit sha. If it's the latest commit in main
 branch, it's also tagged with `latest`.
 
 **Note**: these Docker images are not official Apache releases. For official releases, please refer to
@@ -101,7 +101,7 @@ cd skywalking-eyes
 make build
 ```
 
-If you have Go SDK installed, you can also use `go install` command to install the latest code.
+If you have the Go SDK installed, you can also use the `go install` command to install the latest code.
 
 ```bash
 go install github.com/apache/skywalking-eyes/cmd/license-eye@latest
@@ -155,9 +155,9 @@ INFO Totally checked 20 files, valid: 10, invalid: 10, ignored: 0, fixed: 10
 
 #### Resolve Dependencies' licenses
 
-This command serves as assistance for human beings to audit the dependencies license, it's exit code is always 0.
+This command assists human audits of the dependencies licenses. It's exit code is always 0.
 
-We also support two flags:
+It supports two flags:
 
 |Flag name|Short name|Description|
 |---------|----------|-----------|

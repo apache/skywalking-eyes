@@ -20,6 +20,7 @@ package deps
 import (
 	"bytes"
 	"os"
+	"sort"
 	"text/template"
 
 	"github.com/apache/skywalking-eyes/pkg/header"
@@ -98,7 +99,13 @@ func generateSummaryRenderContext(head *header.ConfigHeader, rep *Report) (*Summ
 	groupArray := make([]*SummaryRenderLicenseGroup, 0)
 	for _, g := range groups {
 		groupArray = append(groupArray, g)
+		sort.SliceStable(g.Deps, func(i, j int) bool {
+			return g.Deps[i].Name < g.Deps[j].Name
+		})
 	}
+	sort.SliceStable(groupArray, func(i, j int) bool {
+		return groupArray[i].LicenseID < groupArray[j].LicenseID
+	})
 	return &SummaryRenderContext{
 		LicenseContent: headerContent,
 		Groups:         groupArray,

@@ -3,6 +3,7 @@ module github.com/apache/skywalking-eyes
 go 1.16
 
 require (
+	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/bmatcuk/doublestar/v2 v2.0.4
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-github/v33 v33.0.0

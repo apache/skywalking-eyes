@@ -46,9 +46,12 @@ func (resolver *JarResolver) Resolve(jarFiles string, config *ConfigDeps, report
 	}
 	for _, jarFile := range fs {
 		state := NotFound
-		if err := resolver.ResolveJar(config, &state, jarFile, Unknown, report); err != nil {
+		result, err := resolver.ResolveJar(config, &state, jarFile, Unknown)
+		if result != nil {
+			report.Resolve(result)
+		} else {
 			dep := filepath.Base(jarFile)
-			logger.Log.Warnf("Failed to resolve the license of <%s>: %v\n", dep, state.String())
+			logger.Log.Warnf("Failed to resolve the license of <%s>: %v. %+v\n", dep, state.String(), err)
 			report.Skip(&Result{
 				Dependency:    dep,
 				LicenseSpdxID: Unknown,
@@ -58,14 +61,14 @@ func (resolver *JarResolver) Resolve(jarFiles string, config *ConfigDeps, report
 	return nil
 }
 
-func (resolver *JarResolver) ResolveJar(config *ConfigDeps, state *State, jarFile, version string, report *Report) error {
+func (resolver *JarResolver) ResolveJar(config *ConfigDeps, state *State, jarFile, version string) (*Result, error) {
 	dep := filepath.Base(jarFile)
 
 	logger.Log.Debugf("Resolving the license of <%s> from jar\n", dep)
 
 	compressedJar, err := zip.OpenReader(jarFile)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer compressedJar.Close()
 
@@ -79,10 +82,10 @@ func (resolver *JarResolver) ResolveJar(config *ConfigDeps, state *State, jarFil
 			*state |= FoundLicenseInJarLicenseFile
 			buf, err := resolver.ReadFileFromZip(compressedFile)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
-			return resolver.IdentifyLicense(config, jarFile, dep, buf.String(), version, report)
+			return resolver.IdentifyLicense(config, jarFile, dep, buf.String(), version)
 		case reHaveManifestFile.MatchString(archiveFile):
 			manifestFile = compressedFile
 		}
@@ -91,7 +94,7 @@ func (resolver *JarResolver) ResolveJar(config *ConfigDeps, state *State, jarFil
 	if manifestFile != nil {
 		buf, err := resolver.ReadFileFromZip(manifestFile)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		norm := regexp.MustCompile(`(?im)[\r\n]+ +`)
 		content := norm.ReplaceAllString(buf.String(), "")
@@ -102,18 +105,17 @@ func (resolver *JarResolver) ResolveJar(config *ConfigDeps, state *State, jarFil
 			if l, err := license.Identify(lcs, config.Threshold); err == nil {
 				lcs = l
 			}
-			report.Resolve(&Result{
+			return &Result{
 				Dependency:      dep,
 				LicenseFilePath: jarFile,
 				LicenseContent:  strings.TrimSpace(r[1]),
 				LicenseSpdxID:   lcs,
 				Version:         version,
-			})
-			return nil
+			}, nil
 		}
 	}
 
-	return fmt.Errorf("cannot find license content")
+	return nil, fmt.Errorf("cannot find license content")
 }
 
 func (resolver *JarResolver) ReadFileFromZip(archiveFile *zip.File) (*bytes.Buffer, error) {
@@ -134,23 +136,22 @@ func (resolver *JarResolver) ReadFileFromZip(archiveFile *zip.File) (*bytes.Buff
 	return buf, nil
 }
 
-func (resolver *JarResolver) IdentifyLicense(config *ConfigDeps, path, dep, content, version string, report *Report) error {
+func (resolver *JarResolver) IdentifyLicense(config *ConfigDeps, path, dep, content, version string) (*Result, error) {
 	contents := strings.Split(content, "[, \\s]+")
 	identifiers := make([]string, 0, len(contents))
 	for _, c := range contents {
 		identifier, err := license.Identify(c, config.Threshold)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		identifiers = append(identifiers, identifier)
 	}
 
-	report.Resolve(&Result{
+	return &Result{
 		Dependency:      dep,
 		LicenseFilePath: path,
 		LicenseContent:  content,
 		LicenseSpdxID:   strings.Join(identifiers, " and "),
 		Version:         version,
-	})
-	return nil
+	}, nil
 }

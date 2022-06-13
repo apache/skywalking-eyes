@@ -25,6 +25,8 @@ import (
 
 	"github.com/apache/skywalking-eyes/pkg/header"
 	"github.com/apache/skywalking-eyes/pkg/license"
+
+	"github.com/Masterminds/sprig/v3"
 )
 
 type SummaryRenderContext struct {
@@ -48,7 +50,7 @@ func ParseTemplate(path string) (*template.Template, error) {
 	if err != nil {
 		return nil, err
 	}
-	return template.New("summary").Parse(string(tpl))
+	return template.New("summary").Funcs(sprig.TxtFuncMap()).Parse(string(tpl))
 }
 
 // GenerateSummary generate the summary content by template, license config and dependency report

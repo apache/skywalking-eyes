@@ -27,7 +27,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"strings"
 
 	"github.com/apache/skywalking-eyes/internal/logger"
 	"github.com/apache/skywalking-eyes/pkg/license"
@@ -86,17 +85,16 @@ func (resolver *GoModResolver) Resolve(goModFile string, config *ConfigDeps, rep
 func (resolver *GoModResolver) ResolvePackages(modules []*packages.Module, config *ConfigDeps, report *Report) error {
 	for _, module := range modules {
 		func() {
-			for _, l := range config.Licenses {
-				for _, version := range strings.Split(l.Version, ",") {
-					if l.Name == module.Path && version == module.Version {
-						report.Resolve(&Result{
-							Dependency:    module.Path,
-							LicenseSpdxID: l.License,
-							Version:       module.Version,
-						})
-						return
-					}
-				}
+			if config.IsExcluded(module.Path, module.Version) {
+				return
+			}
+			if l, ok := config.GetUserConfiguredLicense(module.Path, module.Version); ok {
+				report.Resolve(&Result{
+					Dependency:    module.Path,
+					LicenseSpdxID: l,
+					Version:       module.Version,
+				})
+				return
 			}
 			err := resolver.ResolvePackageLicense(config, module, report)
 			if err != nil {

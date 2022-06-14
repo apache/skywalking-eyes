@@ -20,6 +20,7 @@ package deps
 import (
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // DefaultCoverageThreshold is the minimum percentage of the file
@@ -31,12 +32,18 @@ type ConfigDeps struct {
 	Threshold int                 `yaml:"threshold"`
 	Files     []string            `yaml:"files"`
 	Licenses  []*ConfigDepLicense `yaml:"licenses"`
+	Excludes  []Exclude           `yaml:"excludes"`
 }
 
 type ConfigDepLicense struct {
 	Name    string `yaml:"name"`
 	Version string `yaml:"version"`
 	License string `yaml:"license"`
+}
+
+type Exclude struct {
+	Name    string `yaml:"name"`
+	Version string `yaml:"version"`
 }
 
 func (config *ConfigDeps) Finalize(configFile string) error {
@@ -57,4 +64,38 @@ func (config *ConfigDeps) Finalize(configFile string) error {
 	}
 
 	return nil
+}
+
+func (config *ConfigDeps) GetUserConfiguredLicense(name, version string) (string, bool) {
+	for _, license := range config.Licenses {
+		if matched, _ := filepath.Match(license.Name, name); !matched && license.Name != name {
+			continue
+		}
+		if license.Version == "" {
+			return license.License, true
+		}
+		for _, v := range strings.Split(license.Version, ",") {
+			if v == version {
+				return license.License, true
+			}
+		}
+	}
+	return "", false
+}
+
+func (config *ConfigDeps) IsExcluded(name, version string) bool {
+	for _, license := range config.Excludes {
+		if matched, _ := filepath.Match(license.Name, name); !matched && license.Name != name {
+			continue
+		}
+		if license.Version == "" {
+			return true
+		}
+		for _, v := range strings.Split(license.Version, ",") {
+			if v == version {
+				return true
+			}
+		}
+	}
+	return false
 }

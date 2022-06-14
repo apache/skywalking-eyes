@@ -769,6 +769,9 @@ dependency: # <15>
       version: dependency-version # <19>
       license: Apache-2.0 # <20>
   threshold: 75 # <21>
+  excludes: # <22>
+    - name: dependency-name # the same format as <18>
+      version: dependency-version # the same format as <19>
 ```
 
 1. The `header` section is configurations for source codes license header.
@@ -788,10 +791,11 @@ dependency: # <15>
 15. The `dependency` section is configurations for resolving dependencies' licenses.
 16. The `files` are the files that declare the dependencies of a project, typically, `go.mod` in Go project, `pom.xml` in maven project, and `package.json` in NodeJS project. If it's a relative path, it's relative to the `.licenserc.yaml`.
 17. Declare the licenses which cannot be identified by this tool.
-18. The `name` of the dependency, The name is different for different projects, `PackagePath` in Go project, `GroupID:ArtifactID` in maven project, `PackageName` in NodeJS project.
-19. The `version` of the dependency, it's locked, preventing license changed between different versions.
+18. The `name` of the dependency, The name is different for different projects, `PackagePath` in Go project, `GroupID:ArtifactID` in maven project, `PackageName` in NodeJS project. You can use file pattern as described in [the doc](https://pkg.go.dev/path/filepath#Match).
+19. The `version` of the dependency, comma seperated string (such as `1.0,2.0,3.0`), if this is empty, it means all versions of the dependency.
 20. The [SPDX ID](https://spdx.org/licenses/) of the dependency license.
 21. The minimum percentage of the file that must contain license text for identifying a license, default is `75`.
+22. The dependencies that should be excluded when analyzing the licenses, this is useful when you declare the dependencies in `pom.xml` with `compile` scope but don't distribute them in package. (Note that non-`compile` scope dependencies are automatically excluded so you don't need to put them here).
 
 **NOTE**: When the `SPDX-ID` is Apache-2.0 and the owner is Apache Software foundation, the content would be [a dedicated license](https://www.apache.org/legal/src-headers.html#headers) specified by the ASF, otherwise, the license would be [the standard one](https://www.apache.org/foundation/license-faq.html#Apply-My-Software).
 

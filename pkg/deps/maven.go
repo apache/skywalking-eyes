@@ -58,14 +58,14 @@ func (resolver *MavenPomResolver) Resolve(mavenPomFile string, config *ConfigDep
 		return err
 	}
 
-	deps, err := resolver.LoadDependencies()
+	deps, err := resolver.LoadDependencies(config)
 	if err != nil {
 		// attempt to download dependencies
 		if err = resolver.DownloadDeps(); err != nil {
 			return fmt.Errorf("dependencies download error")
 		}
 		// load again
-		deps, err = resolver.LoadDependencies()
+		deps, err = resolver.LoadDependencies(config)
 		if err != nil {
 			return err
 		}
@@ -125,7 +125,7 @@ func (resolver *MavenPomResolver) DownloadDeps() error {
 	return install.Run()
 }
 
-func (resolver *MavenPomResolver) LoadDependencies() ([]*Dependency, error) {
+func (resolver *MavenPomResolver) LoadDependencies(config *ConfigDeps) ([]*Dependency, error) {
 	buf := bytes.NewBuffer(nil)
 
 	cmd := exec.Command(resolver.maven, "dependency:tree") // #nosec G204
@@ -138,7 +138,7 @@ func (resolver *MavenPomResolver) LoadDependencies() ([]*Dependency, error) {
 		return nil, err
 	}
 
-	deps := LoadDependencies(buf.Bytes())
+	deps := LoadDependencies(buf.Bytes(), config)
 	return deps, nil
 }
 
@@ -146,24 +146,20 @@ func (resolver *MavenPomResolver) LoadDependencies() ([]*Dependency, error) {
 func (resolver *MavenPomResolver) ResolveDependencies(deps []*Dependency, config *ConfigDeps, report *Report) error {
 	for _, dep := range deps {
 		func() {
-			for _, l := range config.Licenses {
-				for _, version := range strings.Split(l.Version, ",") {
-					if l.Name == fmt.Sprintf("%s:%s", strings.Join(dep.GroupID, "."), dep.ArtifactID) && version == dep.Version {
-						report.Resolve(&Result{
-							Dependency:    dep.String(),
-							LicenseSpdxID: l.License,
-							Version:       dep.Version,
-						})
-						return
-					}
-				}
+			if l, ok := config.GetUserConfiguredLicense(dep.Name(), dep.Version); ok {
+				report.Resolve(&Result{
+					Dependency:    dep.Name(),
+					LicenseSpdxID: l,
+					Version:       dep.Version,
+				})
+				return
 			}
 			state := NotFound
 			err := resolver.ResolveLicense(config, &state, dep, report)
 			if err != nil {
-				logger.Log.Warnf("Failed to resolve the license of <%s>: %v\n", dep.String(), state.String())
+				logger.Log.Warnf("Failed to resolve the license of <%s>: %v\n", dep.Name(), state.String())
 				report.Skip(&Result{
-					Dependency:    dep.String(),
+					Dependency:    dep.Name(),
 					LicenseSpdxID: Unknown,
 					Version:       dep.Version,
 				})
@@ -177,7 +173,7 @@ func (resolver *MavenPomResolver) ResolveDependencies(deps []*Dependency, config
 func (resolver *MavenPomResolver) ResolveLicense(config *ConfigDeps, state *State, dep *Dependency, report *Report) error {
 	result1, err1 := resolver.ResolveJar(config, state, filepath.Join(resolver.repo, dep.Path(), dep.Jar()), dep.Version)
 	if result1 != nil {
-		result1.Dependency = dep.String()
+		result1.Dependency = dep.Name()
 		report.Resolve(result1)
 		return nil
 	}
@@ -188,7 +184,7 @@ func (resolver *MavenPomResolver) ResolveLicense(config *ConfigDeps, state *Stat
 		return nil
 	}
 
-	return fmt.Errorf("failed to resolve license for <%s> from jar or pom: %+v, %+v", dep.String(), err1, err2)
+	return fmt.Errorf("failed to resolve license for <%s> from jar or pom: %+v, %+v", dep.Name(), err1, err2)
 }
 
 // ResolveLicenseFromPom search for license in the pom file, which may appear in the header comments or in license element of xml
@@ -202,7 +198,7 @@ func (resolver *MavenPomResolver) ResolveLicenseFromPom(config *ConfigDeps, stat
 
 	if pom != nil && len(pom.Licenses) != 0 {
 		return &Result{
-			Dependency:      dep.String(),
+			Dependency:      dep.Name(),
 			LicenseFilePath: pomFile,
 			LicenseContent:  pom.Raw(),
 			LicenseSpdxID:   pom.AllLicenses(config),
@@ -215,7 +211,7 @@ func (resolver *MavenPomResolver) ResolveLicenseFromPom(config *ConfigDeps, stat
 		return nil, err
 	} else if headerComments != "" {
 		*state |= FoundLicenseInPomHeader
-		return resolver.IdentifyLicense(config, pomFile, dep.String(), headerComments, dep.Version)
+		return resolver.IdentifyLicense(config, pomFile, dep.Name(), headerComments, dep.Version)
 	}
 
 	return nil, fmt.Errorf("not found in pom file")
@@ -287,7 +283,7 @@ func SeemLicense(content string) bool {
 	return reMaybeLicense.MatchString(content)
 }
 
-func LoadDependencies(data []byte) []*Dependency {
+func LoadDependencies(data []byte, config *ConfigDeps) []*Dependency {
 	depsTree := LoadDependenciesTree(data)
 
 	cnt := 0
@@ -299,6 +295,9 @@ func LoadDependencies(data []byte) []*Dependency {
 
 	queue := []*Dependency{}
 	for _, depTree := range depsTree {
+		if config.IsExcluded(depTree.Name(), depTree.Version) {
+			continue
+		}
 		queue = append(queue, depTree)
 		for len(queue) > 0 {
 			dep := queue[0]
@@ -326,9 +325,8 @@ func LoadDependenciesTree(data []byte) []*Dependency {
 
 	deps := make([]*Dependency, 0, len(rawDeps))
 	for _, rawDep := range rawDeps {
-		gid := strings.Split(string(rawDep[reFind.SubexpIndex("gid")]), ".")
 		dep := &Dependency{
-			GroupID:    gid,
+			GroupID:    string(rawDep[reFind.SubexpIndex("gid")]),
 			ArtifactID: string(rawDep[reFind.SubexpIndex("aid")]),
 			Packaging:  string(rawDep[reFind.SubexpIndex("packaging")]),
 			Version:    string(rawDep[reFind.SubexpIndex("version")]),
@@ -406,9 +404,8 @@ func (s *State) String() string {
 }
 
 type Dependency struct {
-	GroupID                               []string
-	ArtifactID, Version, Packaging, Scope string
-	TransitiveDeps                        []*Dependency
+	GroupID, ArtifactID, Version, Packaging, Scope string
+	TransitiveDeps                                 []*Dependency
 }
 
 func (dep *Dependency) Clone() *Dependency {
@@ -430,7 +427,7 @@ func (dep *Dependency) Count() int {
 }
 
 func (dep *Dependency) Path() string {
-	return fmt.Sprintf("%v/%v/%v", strings.Join(dep.GroupID, "/"), dep.ArtifactID, dep.Version)
+	return fmt.Sprintf("%v/%v/%v", strings.ReplaceAll(dep.GroupID, ".", "/"), dep.ArtifactID, dep.Version)
 }
 
 func (dep *Dependency) Pom() string {
@@ -441,24 +438,8 @@ func (dep *Dependency) Jar() string {
 	return fmt.Sprintf("%v-%v.jar", dep.ArtifactID, dep.Version)
 }
 
-func (dep *Dependency) String() string {
-	buf := bytes.NewBuffer(nil)
-	w := bufio.NewWriter(buf)
-
-	_, err := w.WriteString(fmt.Sprintf("%v:%v", strings.Join(dep.GroupID, "."), dep.ArtifactID))
-	if err != nil {
-		logger.Log.Error(err)
-	}
-
-	for _, tDep := range dep.TransitiveDeps {
-		_, err = w.WriteString(fmt.Sprintf("\n\t%v", tDep))
-		if err != nil {
-			logger.Log.Error(err)
-		}
-	}
-
-	_ = w.Flush()
-	return buf.String()
+func (dep *Dependency) Name() string {
+	return fmt.Sprintf("%v:%v", dep.GroupID, dep.ArtifactID)
 }
 
 // PomFile is used to extract license from the pom.xml file

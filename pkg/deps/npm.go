@@ -190,7 +190,7 @@ func (resolver *NpmResolver) ResolvePackageLicense(pkgName, pkgPath string, conf
 		Dependency: pkgName,
 	}
 	// resolve from the package.json file
-	if err := resolver.ResolvePkgFile(result, pkgPath, config.Licenses); err != nil {
+	if err := resolver.ResolvePkgFile(result, pkgPath, config); err != nil {
 		result.ResolveErrors = append(result.ResolveErrors, err)
 	}
 
@@ -203,7 +203,7 @@ func (resolver *NpmResolver) ResolvePackageLicense(pkgName, pkgPath string, conf
 }
 
 // ResolvePkgFile tries to find and parse the package.json file to capture the license field
-func (resolver *NpmResolver) ResolvePkgFile(result *Result, pkgPath string, licenses []*ConfigDepLicense) error {
+func (resolver *NpmResolver) ResolvePkgFile(result *Result, pkgPath string, config *ConfigDeps) error {
 	expectedPkgFile := filepath.Join(pkgPath, PkgFileName)
 	packageInfo, err := resolver.ParsePkgFile(expectedPkgFile)
 	if err != nil {
@@ -211,13 +211,9 @@ func (resolver *NpmResolver) ResolvePkgFile(result *Result, pkgPath string, lice
 	}
 
 	result.Version = packageInfo.Version
-	for _, l := range licenses {
-		for _, version := range strings.Split(l.Version, ",") {
-			if l.Name == packageInfo.Name && version == packageInfo.Version {
-				result.LicenseSpdxID = l.License
-				return nil
-			}
-		}
+	if l, ok := config.GetUserConfiguredLicense(packageInfo.Name, packageInfo.Version); ok {
+		result.LicenseSpdxID = l
+		return nil
 	}
 
 	if lcs, ok := resolver.ResolveLicenseField(packageInfo.License); ok {
@@ -287,13 +283,9 @@ func (resolver *NpmResolver) ResolveLcsFile(result *Result, pkgPath string, conf
 		if result.LicenseSpdxID != "" {
 			return nil
 		}
-		for _, l := range config.Licenses {
-			for _, version := range strings.Split(l.Version, ",") {
-				if l.Name == info.Name() && version == result.Version {
-					result.LicenseSpdxID = l.License
-					return nil
-				}
-			}
+		if l, ok := config.GetUserConfiguredLicense(info.Name(), result.Version); ok {
+			result.LicenseSpdxID = l
+			return nil
 		}
 		identifier, err := license.Identify(string(content), config.Threshold)
 		if err != nil {

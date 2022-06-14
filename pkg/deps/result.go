@@ -20,6 +20,7 @@ package deps
 import (
 	"fmt"
 	"math"
+	"sort"
 	"strings"
 )
 
@@ -56,6 +57,13 @@ func (report *Report) Skip(result *Result) {
 }
 
 func (report *Report) String() string {
+	sort.SliceStable(report.Resolved, func(i, j int) bool {
+		return report.Resolved[i].Dependency < report.Resolved[j].Dependency
+	})
+	sort.SliceStable(report.Skipped, func(i, j int) bool {
+		return report.Skipped[i].Dependency < report.Skipped[j].Dependency
+	})
+
 	dWidth, lWidth, vWidth := .0, .0, .0
 	for _, r := range report.Skipped {
 		dWidth = math.Max(float64(len(r.Dependency)), dWidth)

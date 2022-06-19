@@ -26,8 +26,9 @@ import (
 )
 
 func TestConfigHeaderSpdxASF(t *testing.T) {
-	c := config2.Config{}
-	if err := c.Parse("./testdata/test-spdx-asf.yaml"); err != nil {
+	var c config2.Config
+	var err error
+	if c, err = config2.NewConfigFromFile("./testdata/test-spdx-asf.yaml"); err != nil {
 		t.Error("unexpected error", err)
 	}
 
@@ -48,14 +49,15 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 `
-	if actual := c.Header.GetLicenseContent(); actual != expected {
+	if actual := c.Headers()[0].GetLicenseContent(); actual != expected {
 		t.Errorf("Actual: \n%v\nExpected: \n%v", actual, expected)
 	}
 }
 
 func TestConfigHeaderSpdxPlain(t *testing.T) {
-	c := config2.Config{}
-	if err := c.Parse("./testdata/test-spdx.yaml"); err != nil {
+	var c config2.Config
+	var err error
+	if c, err = config2.NewConfigFromFile("./testdata/test-spdx.yaml"); err != nil {
 		t.Error("unexpected error", err)
 	}
 
@@ -73,7 +75,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 `
-	if actual := c.Header.GetLicenseContent(); actual != expected {
+	if actual := c.Headers()[0].GetLicenseContent(); actual != expected {
 		t.Errorf("Actual: \n%v\nExpected: \n%v", actual, expected)
+	}
+}
+
+func TestConfigMultipleHeaders(t *testing.T) {
+	var c config2.Config
+	var err error
+	if c, err = config2.NewConfigFromFile("./testdata/test-multiple.yaml"); err != nil {
+		t.Error("unexpected error", err)
+	}
+	if len(c.Headers()) != 2 {
+		t.Errorf("Expected 2 header sections in the config. Actual %d", len(c.Headers()))
 	}
 }

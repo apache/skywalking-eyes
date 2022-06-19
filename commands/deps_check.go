@@ -18,8 +18,11 @@
 package commands
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
+	"github.com/apache/skywalking-eyes/internal/logger"
 	"github.com/apache/skywalking-eyes/pkg/deps"
 )
 
@@ -28,6 +31,19 @@ var DepsCheckCommand = &cobra.Command{
 	Aliases: []string{"c"},
 	Long:    "resolves and check license compatibility in all dependencies of a module and their transitive dependencies",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return deps.Check(Config.Header.License.SpdxID, &Config.Deps)
+		var errors []error
+		configDeps := Config.Dependencies()
+		for _, header := range Config.Headers() {
+			if err := deps.Check(header.License.SpdxID, configDeps); err != nil {
+				errors = append(errors, err)
+			}
+		}
+		if len(errors) > 0 {
+			for _, err := range errors {
+				logger.Log.Error(err)
+			}
+			return fmt.Errorf("one or more errors occurred checking license compatibility")
+		}
+		return nil
 	},
 }

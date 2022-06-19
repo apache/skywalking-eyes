@@ -33,7 +33,6 @@ import (
 
 	"github.com/apache/skywalking-eyes/internal/logger"
 	comments2 "github.com/apache/skywalking-eyes/pkg/comments"
-	config2 "github.com/apache/skywalking-eyes/pkg/config"
 	header2 "github.com/apache/skywalking-eyes/pkg/header"
 )
 
@@ -109,10 +108,10 @@ func Init() {
 }
 
 // Header reviews the license header, including suggestions on the pull request and an overview of the checks.
-func Header(result *header2.Result, config *config2.Config) error {
+func Header(result *header2.Result, config *header2.ConfigHeader) error {
 	ghOnce.Do(Init)
 
-	if !result.HasFailure() || !IsPR() || gh == nil || config.Header.Comment == header2.Never {
+	if !result.HasFailure() || !IsPR() || gh == nil || config.Comment == header2.Never {
 		return nil
 	}
 
@@ -150,7 +149,7 @@ func Header(result *header2.Result, config *config2.Config) error {
 				logger.Log.Warnln("Failed to determine the comment style of file:", changedFile.GetFilename())
 				continue
 			}
-			header, err := header2.GenerateLicenseHeader(style, &config.Header)
+			header, err := header2.GenerateLicenseHeader(style, config)
 			if err != nil {
 				logger.Log.Warnln("Failed to generate comment header:", changedFile.GetFilename())
 				continue
@@ -173,7 +172,7 @@ func Header(result *header2.Result, config *config2.Config) error {
 	return tryReview(result, config, comments)
 }
 
-func tryReview(result *header2.Result, config *config2.Config, comments []*github.DraftReviewComment) error {
+func tryReview(result *header2.Result, config *header2.ConfigHeader, comments []*github.DraftReviewComment) error {
 	tryBestEffortToComment := func() error {
 		if err := doReview(result, comments); err != nil {
 			logger.Log.Warnln("Failed to create review comment, fallback to a plain comment:", err)
@@ -183,11 +182,11 @@ func tryReview(result *header2.Result, config *config2.Config, comments []*githu
 		return nil
 	}
 
-	if config.Header.Comment == header2.Always {
+	if config.Comment == header2.Always {
 		if err := tryBestEffortToComment(); err != nil {
 			return err
 		}
-	} else if config.Header.Comment == header2.OnFailure && len(comments) > 0 {
+	} else if config.Comment == header2.OnFailure && len(comments) > 0 {
 		if err := tryBestEffortToComment(); err != nil {
 			return err
 		}

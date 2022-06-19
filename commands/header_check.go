@@ -33,28 +33,34 @@ var CheckCommand = &cobra.Command{
 	Aliases: []string{"c"},
 	Long:    "check command walks the specified paths recursively and checks if the specified files have the license header in the config file.",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var result header.Result
+		hasErrors := false
+		for _, h := range Config.Headers() {
+			var result header.Result
 
-		if len(args) > 0 {
-			logger.Log.Debugln("Overriding paths with command line args.")
-			Config.Header.Paths = args
-		}
-
-		if err := header.Check(&Config.Header, &result); err != nil {
-			return err
-		}
-
-		logger.Log.Infoln(result.String())
-
-		writeSummaryQuietly(&result)
-
-		if result.HasFailure() {
-			if err := review.Header(&result, &Config); err != nil {
-				logger.Log.Warnln("Failed to create review comments", err)
+			if len(args) > 0 {
+				logger.Log.Debugln("Overriding paths with command line args.")
+				h.Paths = args
 			}
-			return result.Error()
-		}
 
+			if err := header.Check(h, &result); err != nil {
+				return err
+			}
+
+			logger.Log.Infoln(result.String())
+
+			writeSummaryQuietly(&result)
+
+			if result.HasFailure() {
+				if err := review.Header(&result, h); err != nil {
+					logger.Log.Warnln("Failed to create review comments", err)
+				}
+				hasErrors = true
+				logger.Log.Error(result.Error())
+			}
+		}
+		if hasErrors {
+			return fmt.Errorf("one or more files does not have a valid license header")
+		}
 		return nil
 	},
 }

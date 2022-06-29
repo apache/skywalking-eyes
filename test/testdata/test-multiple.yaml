@@ -1,0 +1,14 @@
+header:
+  - license:
+      spdx-id: Apache-2.0
+      copyright-owner: The Project Contributors
+
+    paths:
+      - 'test/testdata/multiple_license_test/pkg/a'
+
+  - license:
+      spdx-id: MPL-2.0
+      copyright-owner: The Project Contributors
+
+    paths:
+      - 'test/testdata/multiple_license_test/pkg/b'

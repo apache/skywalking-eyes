@@ -44,7 +44,8 @@ var root = &cobra.Command{
 		}
 		logger.Log.SetLevel(level)
 
-		return Config.Parse(configFile)
+		Config, err = config.NewConfigFromFile(configFile)
+		return err
 	},
 	Version: version,
 }

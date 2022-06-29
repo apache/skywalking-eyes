@@ -77,7 +77,8 @@ var DepsResolveCommand = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		report := deps.Report{}
 
-		if err := deps.Resolve(&Config.Deps, &report); err != nil {
+		configDeps := Config.Dependencies()
+		if err := deps.Resolve(configDeps, &report); err != nil {
 			return err
 		}
 
@@ -132,7 +133,12 @@ func writeSummary(rep *deps.Report) error {
 		return err
 	}
 	defer file.Close()
-	summary, err := deps.GenerateSummary(summaryTpl, &Config.Header, rep)
+
+	headers := Config.Headers()
+	if len(headers) > 1 {
+		return fmt.Errorf("unable to write summary as multiple licenses were provided in configuration")
+	}
+	summary, err := deps.GenerateSummary(summaryTpl, headers[0], rep)
 	if err != nil {
 		return err
 	}

@@ -143,6 +143,13 @@ func (resolver *NpmResolver) InstallPkgs() {
 // Note that although the flag `--long` can show more information line like a package's name,
 // its realization and printing format is not uniform in different npm-cli versions
 func (resolver *NpmResolver) ListPkgPaths() (io.Reader, error) {
+	pruneCmd := exec.Command("npm", "prune", "--production")
+	pruneCmd.Stderr = io.Discard
+	pruneCmd.Stdout = io.Discard
+	if err := pruneCmd.Run(); err != nil {
+		logger.Log.Debug("Failed to prune npm packages")
+	}
+
 	buffer := &bytes.Buffer{}
 	cmd := exec.Command("npm", "ls", "--all", "--production", "--parseable")
 	cmd.Stderr = os.Stderr

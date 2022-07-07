@@ -19,13 +19,13 @@ package deps
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 
 	"github.com/apache/skywalking-eyes/internal/logger"
+	"github.com/apache/skywalking-eyes/pkg/license"
 )
 
 type CargoMetadata struct {
@@ -114,10 +114,6 @@ var cargoPossibleLicenseFileName = regexp.MustCompile(`(?i)^LICENSE|LICENCE(\.tx
 // ResolvePackageLicense resolve the package license.
 // The CargoPackage.LicenseFile is generally used for non-standard licenses and is ignored now.
 func (resolver *CargoTomlResolver) ResolvePackageLicense(config *ConfigDeps, pkg *CargoPackage, report *Report) error {
-	if pkg.License == "" {
-		return fmt.Errorf("license is empty")
-	}
-
 	dir := filepath.Dir(pkg.ManifestPath)
 	logger.Log.Debugf("Directory of %+v is %+v", pkg.Name, dir)
 	files, err := os.ReadDir(dir)
@@ -127,6 +123,8 @@ func (resolver *CargoTomlResolver) ResolvePackageLicense(config *ConfigDeps, pkg
 
 	var licenseFilePath string
 	var licenseContent []byte
+
+	licenseID := pkg.License
 
 	for _, info := range files {
 		if !cargoPossibleLicenseFileName.MatchString(info.Name()) {
@@ -142,11 +140,17 @@ func (resolver *CargoTomlResolver) ResolvePackageLicense(config *ConfigDeps, pkg
 		break
 	}
 
+	if licenseID == "" { // If pkg.License is empty, identify the license ID from the license file content
+		if licenseID, err = license.Identify(string(licenseContent), config.Threshold); err != nil {
+			return err
+		}
+	}
+
 	report.Resolve(&Result{
 		Dependency:      pkg.Name,
 		LicenseFilePath: licenseFilePath,
 		LicenseContent:  string(licenseContent),
-		LicenseSpdxID:   pkg.License,
+		LicenseSpdxID:   licenseID,
 		Version:         pkg.Version,
 	})
 

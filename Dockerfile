@@ -32,7 +32,7 @@ COPY --from=build /license-eye/bin/linux/license-eye /bin/license-eye
 # Go
 COPY --from=build /usr/local/go/bin/go /usr/local/go/bin/go
 ENV PATH="/usr/local/go/bin:$PATH"
-RUN apk add --no-cache bash gcc musl-dev npm
+RUN apk add --no-cache bash gcc musl-dev npm cargo
 # Go
 
 WORKDIR /github/workspace/

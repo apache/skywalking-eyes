@@ -31,6 +31,7 @@ var Resolvers = []Resolver{
 	new(NpmResolver),
 	new(MavenPomResolver),
 	new(JarResolver),
+	new(CargoTomlResolver),
 }
 
 func Resolve(config *ConfigDeps, report *Report) error {

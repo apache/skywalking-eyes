@@ -22,6 +22,7 @@ To use License-Eye in GitHub Actions, add a step in your GitHub workflow.
       # config: .licenserc.yaml # optional: set the config file. The default value is `.licenserc.yaml`.
       # token: # optional: the token that license eye uses when it needs to comment on the pull request. Set to empty ("") to disable commenting on pull request. The default value is ${{ github.token }}
       # mode: # optional: Which mode License-Eye should be run in. Choices are `check` or `fix`. The default value is `check`.
+      # subcommand: # optional: Which subcommand License Eye should be run in. Choices are `header` or `dependency`. The default value is `header`.
 ```
 
 Add a `.licenserc.yaml` in the root of your project, for Apache Software Foundation projects, the following configuration should be enough.

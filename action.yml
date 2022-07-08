@@ -43,7 +43,7 @@ inputs:
     default: check
 runs:
   using: docker
-  image: ../Dockerfile
+  image: Dockerfile
   env:
     GITHUB_TOKEN: ${{ inputs.token }}
   args:

@@ -12,19 +12,9 @@ You can use License-Eye in GitHub Actions or in your local machine.
 
 ### GitHub Actions
 
-To use License-Eye in GitHub Actions, add a step in your GitHub workflow.
+First of all, add a `.licenserc.yaml` in the root of your project, for Apache Software Foundation projects, the following configuration should be enough.
 
-```yaml
-- name: Check License Header
-  uses: apache/skywalking-eyes@main      # always prefer to use a revision instead of `main`.
-  # with:
-      # log: debug # optional: set the log level. The default value is `info`.
-      # config: .licenserc.yaml # optional: set the config file. The default value is `.licenserc.yaml`.
-      # token: # optional: the token that license eye uses when it needs to comment on the pull request. Set to empty ("") to disable commenting on pull request. The default value is ${{ github.token }}
-      # mode: # optional: Which mode License-Eye should be run in. Choices are `check` or `fix`. The default value is `check`.
-```
-
-Add a `.licenserc.yaml` in the root of your project, for Apache Software Foundation projects, the following configuration should be enough.
+> **Note**: The full configurations can be found in [the configuration section](#configurations).
 
 ```yaml
 header:
@@ -40,11 +30,31 @@ header:
     - 'NOTICE'
 
   comment: on-failure
+
+# If you want to check dependencies' license compatibility, uncomment the following section
+# dependency:
+#   files:
+#     - pom.xml           # If this is a maven project.
+#     - Cargo.toml        # If this is a rust project.
+#     - package.json      # If this is a npm project.
+#     - go.mod            # If this is a Go project.
 ```
 
-**NOTE**: The full configurations can be found in [the configuration section](#configurations).
+#### Check License Headers
 
-#### Using the Action in Fix Mode
+To check license headers in GitHub Actions, add a step in your GitHub workflow.
+
+```yaml
+- name: Check License Header
+  uses: apache/skywalking-eyes/header@main      # always prefer to use a revision instead of `main`.
+  # with:
+      # log: debug # optional: set the log level. The default value is `info`.
+      # config: .licenserc.yaml # optional: set the config file. The default value is `.licenserc.yaml`.
+      # token: # optional: the token that license eye uses when it needs to comment on the pull request. Set to empty ("") to disable commenting on pull request. The default value is ${{ github.token }}
+      # mode: # optional: Which mode License-Eye should be run in. Choices are `check` or `fix`. The default value is `check`.
+```
+
+#### Fix License Headers
 
 By default the action runs License-Eye in check mode, which will raise an error
 if any of the processed files are missing license headers. If `mode` is set to
@@ -53,8 +63,8 @@ that is missing a license header. The fixed files can then be pushed back to the
 pull request using another GitHub action. For example:
 
 ```yaml
-- name: Check License Header
-  uses: apache/skywalking-eyes@main
+- name: Fix License Header
+  uses: apache/skywalking-eyes/header@main
   with:
     mode: fix
 - name: Apply Changes
@@ -67,9 +77,29 @@ pull request using another GitHub action. For example:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-**Note**: The exit code of fix mode is always 0 and can not be used to block CI
+> **Warning**: The exit code of fix mode is always 0 and can not be used to block CI
 status. Consider running the action in check mode if you would like CI to fail
 when a file is missing a license header.
+
+> **Note**: In 0.3.0 and earlier versions, GitHub Actions `apache/skywalking-eyes`
+> only works for header check/fix, since 0.4.0, we have a dedicate GitHub Actions
+> `apache/skywalking-eyes/header` for header check/fix and a GitHub Actions
+> `apache/skywalking-eyes/dependency` for dependency resolve/check.
+> Now `apache/skywalking-eyes` is equivalent to `apache/skywalking-eyes/header` in
+> order not to break existing usages of `apache/skywalking-eyes`.
+
+#### Check Dependencies' License
+
+To check dependencies license in GitHub Actions, add a step in your GitHub workflow.
+
+```yaml
+- name: Check Dependencies' License
+  uses: apache/skywalking-eyes/dependency@main      # always prefer to use a revision instead of `main`.
+  # with:
+      # log: debug # optional: set the log level. The default value is `info`.
+      # config: .licenserc.yaml # optional: set the config file. The default value is `.licenserc.yaml`.
+      # mode: # optional: Which mode License-Eye should be run in. Choices are `check` or `resolve`. The default value is `check`.
+```
 
 ### Docker Image
 

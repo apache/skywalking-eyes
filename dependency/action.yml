@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-name: License Eye Header
+name: License Eye Dependency
 description: A full-featured license tool to check and fix license headers and dependencies' licenses.
 branding:
   icon: book
@@ -29,27 +29,19 @@ inputs:
     description: The configuration file, for example, ".licenserc.yaml"
     required: false
     default: .licenserc.yaml
-  token:
-    description: |
-      The token that license eye uses when it needs to comment on the pull request.
-      Set to empty ("") to disable commenting on pull request.
-    required: false
-    default: ${{ github.token }}
   mode:
     description: |
-      Which mode License Eye should be run in. Choices are `check` or `fix`. The
+      Which mode License Eye should be run in. Choices are `check` or `resolve`. The
       default value is `check`.
     required: false
     default: check
 runs:
   using: docker
   image: ../Dockerfile
-  env:
-    GITHUB_TOKEN: ${{ inputs.token }}
   args:
     - -v
     - ${{ inputs.log }}
     - -c
     - ${{ inputs.config }}
-    - header
+    - dependency
     - ${{ inputs.mode }}

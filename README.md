@@ -727,7 +727,8 @@ header: # <1>
   license:
     spdx-id: Apache-2.0 # <2>
     copyright-owner: Apache Software Foundation # <3>
-    content: | # <4>
+    name: skywalking-eyes # <4>
+    content: | # <5>
       Licensed to Apache Software Foundation (ASF) under one or more contributor
       license agreements. See the NOTICE file distributed with
       this work for additional information regarding copyright
@@ -745,7 +746,7 @@ header: # <1>
       specific language governing permissions and limitations
       under the License.
 
-    pattern: | # <5>
+    pattern: | # <6>
       Licensed to the Apache Software Foundation under one or more contributor
       license agreements. See the NOTICE file distributed with
       this work for additional information regarding copyright
@@ -763,10 +764,10 @@ header: # <1>
       specific language governing permissions and limitations
       under the License.
 
-  paths: # <6>
+  paths: # <7>
     - '**'
 
-  paths-ignore: # <7>
+  paths-ignore: # <8>
     - 'dist'
     - 'licenses'
     - '**/*.md'
@@ -778,30 +779,30 @@ header: # <1>
     - '**/assets/languages.yaml'
     - '**/assets/assets.gen.go'
 
-  comment: on-failure # <8>
+  comment: on-failure # <9>
 
-  license-location-threshold: 80 # <9>
+  license-location-threshold: 80 # <10>
 
-  language: # <10>
-    Go: # <11>
-      extensions: #<12>
+  language: # <11>
+    Go: # <12>
+      extensions: #<13>
         - ".go"
-      filenames: #<13>
+      filenames: #<14>
         - "config.go"
         - "config_test.go"
-      comment_style_id: DoubleSlash # <14>
+      comment_style_id: DoubleSlash # <15>
 
-dependency: # <15>
-  files: # <16>
+dependency: # <16>
+  files: # <17>
     - go.mod
-  licenses: # <17>
-    - name: dependency-name # <18>
-      version: dependency-version # <19>
-      license: Apache-2.0 # <20>
-  threshold: 75 # <21>
-  excludes: # <22>
-    - name: dependency-name # the same format as <18>
-      version: dependency-version # the same format as <19>
+  licenses: # <18>
+    - name: dependency-name # <19>
+      version: dependency-version # <20>
+      license: Apache-2.0 # <21>
+  threshold: 75 # <22>
+  excludes: # <23>
+    - name: dependency-name # the same format as <19>
+      version: dependency-version # the same format as <20>
 ```
 
 1. The `header` section is configurations for source codes license header. If you have mutliple modules or packages in your project that have differing licenses, this section may contain a list of licenses:
@@ -816,25 +817,26 @@ header:
 ```
 2. The [SPDX ID](https://spdx.org/licenses/) of the license, it’s convenient when your license is standard SPDX license, so that you can simply specify this identifier without copying the whole license `content` or `pattern`. This will be used as the content when `fix` command needs to insert a license header.
 3. The copyright owner to replace the `[owner]` in the `SPDX-ID` license template.
-4. If you are not using the standard license text, you can paste your license text here, this will be used as the content when `fix` command needs to insert a license header, if both `license` and `SPDX-ID` are specified, `license` wins.
-5. The `pattern` is an optional regexp. You don’t need this if all the file headers are the same as `license` or the license of `SPDX-ID`, otherwise you need to compose a pattern that matches your existing license texts so that `license-eye` won't complain about the existing license headers. If you want to replace your existing license headers, you can compose a `pattern` that matches your existing license headers, and modify the `content` to what you want to have, then `license-eye header fix` would rewrite all the existing license headers to the wanted `content`.
-6. The `paths` are the path list that will be checked (and fixed) by license-eye, default is `['**']`. Formats like `**/*`.md and `**/bin/**` are supported.
-7. The `paths-ignore` are the path list that will be ignored by license-eye. By default, `.git` and the content in `.gitignore` will be inflated into the `paths-ignore` list.
-8. On what condition License-Eye will comment the check results on the pull request, `on-failure`, `always` or `never`. Options other than `never` require the environment variable `GITHUB_TOKEN` to be set.
-9. The `license-location-threshold` specifies the index threshold where the license header can be located.
-10. The `language` is an optional configuration. You can set the language license header comment style. If it doesn't exist, it will use the default configuration at the `languages.yaml`. An [example](test/testdata/.licenserc_language_config_test.yaml) is to use block comment style for Go codes.
-11. Specify the programming language identifier. You can set different configurations for multiple languages.
-12. The `extensions` are the files with these extensions which the configuration will take effect.
-13. The `filenames` are the specified files which the configuration will take effect.
-14. The `comment_style_id` set the license header comment style, it's the `id` at the `styles.yaml`.
-15. The `dependency` section is configurations for resolving dependencies' licenses.
-16. The `files` are the files that declare the dependencies of a project, typically, `go.mod` in Go project, `pom.xml` in maven project, and `package.json` in NodeJS project. If it's a relative path, it's relative to the `.licenserc.yaml`.
-17. Declare the licenses which cannot be identified by this tool.
-18. The `name` of the dependency, The name is different for different projects, `PackagePath` in Go project, `GroupID:ArtifactID` in maven project, `PackageName` in NodeJS project. You can use file pattern as described in [the doc](https://pkg.go.dev/path/filepath#Match).
-19. The `version` of the dependency, comma seperated string (such as `1.0,2.0,3.0`), if this is empty, it means all versions of the dependency.
-20. The [SPDX ID](https://spdx.org/licenses/) of the dependency license.
-21. The minimum percentage of the file that must contain license text for identifying a license, default is `75`.
-22. The dependencies that should be excluded when analyzing the licenses, this is useful when you declare the dependencies in `pom.xml` with `compile` scope but don't distribute them in package. (Note that non-`compile` scope dependencies are automatically excluded so you don't need to put them here).
+4. The copyright software name to replace the `[name]` in the `SPDX-ID` license template.
+5. If you are not using the standard license text, you can paste your license text here, this will be used as the content when `fix` command needs to insert a license header, if both `license` and `SPDX-ID` are specified, `license` wins.
+6. The `pattern` is an optional regexp. You don’t need this if all the file headers are the same as `license` or the license of `SPDX-ID`, otherwise you need to compose a pattern that matches your existing license texts so that `license-eye` won't complain about the existing license headers. If you want to replace your existing license headers, you can compose a `pattern` that matches your existing license headers, and modify the `content` to what you want to have, then `license-eye header fix` would rewrite all the existing license headers to the wanted `content`.
+7. The `paths` are the path list that will be checked (and fixed) by license-eye, default is `['**']`. Formats like `**/*`.md and `**/bin/**` are supported.
+8. The `paths-ignore` are the path list that will be ignored by license-eye. By default, `.git` and the content in `.gitignore` will be inflated into the `paths-ignore` list.
+9. On what condition License-Eye will comment the check results on the pull request, `on-failure`, `always` or `never`. Options other than `never` require the environment variable `GITHUB_TOKEN` to be set.
+10. The `license-location-threshold` specifies the index threshold where the license header can be located.
+11. The `language` is an optional configuration. You can set the language license header comment style. If it doesn't exist, it will use the default configuration at the `languages.yaml`. An [example](test/testdata/.licenserc_language_config_test.yaml) is to use block comment style for Go codes.
+12. Specify the programming language identifier. You can set different configurations for multiple languages.
+13. The `extensions` are the files with these extensions which the configuration will take effect.
+14. The `filenames` are the specified files which the configuration will take effect.
+15. The `comment_style_id` set the license header comment style, it's the `id` at the `styles.yaml`.
+16. The `dependency` section is configurations for resolving dependencies' licenses.
+17. The `files` are the files that declare the dependencies of a project, typically, `go.mod` in Go project, `pom.xml` in maven project, and `package.json` in NodeJS project. If it's a relative path, it's relative to the `.licenserc.yaml`.
+18. Declare the licenses which cannot be identified by this tool.
+19. The `name` of the dependency, The name is different for different projects, `PackagePath` in Go project, `GroupID:ArtifactID` in maven project, `PackageName` in NodeJS project. You can use file pattern as described in [the doc](https://pkg.go.dev/path/filepath#Match).
+20. The `version` of the dependency, comma seperated string (such as `1.0,2.0,3.0`), if this is empty, it means all versions of the dependency.
+21. The [SPDX ID](https://spdx.org/licenses/) of the dependency license.
+22. The minimum percentage of the file that must contain license text for identifying a license, default is `75`.
+23. The dependencies that should be excluded when analyzing the licenses, this is useful when you declare the dependencies in `pom.xml` with `compile` scope but don't distribute them in package. (Note that non-`compile` scope dependencies are automatically excluded so you don't need to put them here).
 
 **NOTE**: When the `SPDX-ID` is Apache-2.0 and the owner is Apache Software foundation, the content would be [a dedicated license](https://www.apache.org/legal/src-headers.html#headers) specified by the ASF, otherwise, the license would be [the standard one](https://www.apache.org/foundation/license-faq.html#Apply-My-Software).
 

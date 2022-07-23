@@ -30,7 +30,7 @@ func TestGetLicenseContent(t *testing.T) {
 			License: LicenseConfig{
 				SpdxID:         "Apache-2.0",
 				CopyrightOwner: "Foo",
-				Name:           "Bar",
+				SoftwareName:   "Bar",
 			},
 		}
 		expectContent := fmt.Sprintf(
@@ -59,7 +59,7 @@ limitations under the License.
 			License: LicenseConfig{
 				SpdxID:         "Apache-2.0",
 				CopyrightOwner: "Apache Software Foundation",
-				Name:           "Bar",
+				SoftwareName:   "Bar",
 			},
 		}
 		expectContent := `Licensed to the Apache Software Foundation (ASF) under one
@@ -90,7 +90,7 @@ under the License.
 			License: LicenseConfig{
 				SpdxID:         "MulanPSL-2.0",
 				CopyrightOwner: "Foo",
-				Name:           "Bar",
+				SoftwareName:   "Bar",
 			},
 		}
 		expectContent := fmt.Sprintf(

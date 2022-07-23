@@ -727,7 +727,7 @@ header: # <1>
   license:
     spdx-id: Apache-2.0 # <2>
     copyright-owner: Apache Software Foundation # <3>
-    name: skywalking-eyes # <4>
+    software-name: skywalking-eyes # <4>
     content: | # <5>
       Licensed to Apache Software Foundation (ASF) under one or more contributor
       license agreements. See the NOTICE file distributed with
@@ -817,7 +817,7 @@ header:
 ```
 2. The [SPDX ID](https://spdx.org/licenses/) of the license, it’s convenient when your license is standard SPDX license, so that you can simply specify this identifier without copying the whole license `content` or `pattern`. This will be used as the content when `fix` command needs to insert a license header.
 3. The copyright owner to replace the `[owner]` in the `SPDX-ID` license template.
-4. The copyright software name to replace the `[name]` in the `SPDX-ID` license template.
+4. The copyright software name to replace the `[software-name]` in the `SPDX-ID` license template.
 5. If you are not using the standard license text, you can paste your license text here, this will be used as the content when `fix` command needs to insert a license header, if both `license` and `SPDX-ID` are specified, `license` wins.
 6. The `pattern` is an optional regexp. You don’t need this if all the file headers are the same as `license` or the license of `SPDX-ID`, otherwise you need to compose a pattern that matches your existing license texts so that `license-eye` won't complain about the existing license headers. If you want to replace your existing license headers, you can compose a `pattern` that matches your existing license headers, and modify the `content` to what you want to have, then `license-eye header fix` would rewrite all the existing license headers to the wanted `content`.
 7. The `paths` are the path list that will be checked (and fixed) by license-eye, default is `['**']`. Formats like `**/*`.md and `**/bin/**` are supported.

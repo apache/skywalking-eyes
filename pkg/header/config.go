@@ -47,7 +47,7 @@ var (
 type LicenseConfig struct {
 	SpdxID         string `yaml:"spdx-id"`
 	CopyrightOwner string `yaml:"copyright-owner"`
-	Name           string `yaml:"name"`
+	SoftwareName   string `yaml:"software-name"`
 	Content        string `yaml:"content"`
 	Pattern        string `yaml:"pattern"`
 }
@@ -182,7 +182,7 @@ func (config *ConfigHeader) GetLicenseContent() string {
 }
 
 func readLicenseFromSpdx(config *ConfigHeader) (string, error) {
-	spdxID, owner, name := config.License.SpdxID, config.License.CopyrightOwner, config.License.Name
+	spdxID, owner, name := config.License.SpdxID, config.License.CopyrightOwner, config.License.SoftwareName
 	filename := fmt.Sprintf("header-templates/%v.txt", spdxID)
 
 	if spdxID == "Apache-2.0" && ASFNames.MatchString(owner) {
@@ -198,7 +198,7 @@ func readLicenseFromSpdx(config *ConfigHeader) (string, error) {
 	template := string(content)
 	template = strings.Replace(template, "[year]", strconv.Itoa(time.Now().Year()), 1)
 	template = strings.Replace(template, "[owner]", owner, 1)
-	template = strings.Replace(template, "[name]", name, 1)
+	template = strings.Replace(template, "[software-name]", name, 1)
 
 	return template, nil
 }

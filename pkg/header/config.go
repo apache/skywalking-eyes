@@ -196,9 +196,9 @@ func readLicenseFromSpdx(config *ConfigHeader) (string, error) {
 		return "", fmt.Errorf("failed to find a license template for spdx id %v, %w", spdxID, err)
 	}
 	template := string(content)
-	template = strings.Replace(template, "[year]", strconv.Itoa(time.Now().Year()), 1)
-	template = strings.Replace(template, "[owner]", owner, 1)
-	template = strings.Replace(template, "[software-name]", name, 1)
+	template = strings.ReplaceAll(template, "[year]", strconv.Itoa(time.Now().Year()))
+	template = strings.ReplaceAll(template, "[owner]", owner)
+	template = strings.ReplaceAll(template, "[software-name]", name)
 
 	return template, nil
 }

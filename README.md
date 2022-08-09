@@ -69,12 +69,12 @@ pull request using another GitHub action. For example:
     mode: fix
 - name: Apply Changes
   uses: EndBug/add-and-commit@v4
+  env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   with:
     author_name: License Bot
     author_email: license_bot@github.com
     message: 'Automatic application of license header'
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 > **Warning**: The exit code of fix mode is always 0 and can not be used to block CI

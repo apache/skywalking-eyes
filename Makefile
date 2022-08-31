@@ -72,15 +72,16 @@ build: windows linux darwin
 
 .PHONY: docker
 docker:
-	docker build . -t $(HUB)/$(PROJECT):$(VERSION)
+	docker build . -t $(HUB)/$(PROJECT):$(VERSION) -t $(HUB)/$(PROJECT):latest
 
 .PHONY: docker-push
 docker-push:
-	docker push $(HUB)/$(PROJECT):$(VERSION)
+	docker buildx create --use --driver docker-container --name skywalking_eyes_main
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t $(HUB)/$(PROJECT):$(VERSION) -t $(HUB)/$(PROJECT):latest .
+	docker buildx rm skywalking_eyes_main
 
 .PHONY: docker-release
 docker-release: docker docker-push
-	docker tag $(HUB)/$(PROJECT):$(VERSION) $(HUB)/$(PROJECT):latest && docker push $(HUB)/$(PROJECT):latest
 
 .PHONY: clean
 clean:

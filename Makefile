@@ -76,11 +76,10 @@ docker:
 
 .PHONY: docker-push
 docker-push:
-	docker buildx create --use --driver docker-container --name skywalking_eyes_main
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t $(HUB)/$(PROJECT):$(VERSION) -t $(HUB)/$(PROJECT):latest .
+	docker buildx create --use --driver docker-container --name skywalking_eyes_main > /dev/null 2>&1
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t $(HUB)/$(PROJECT):$(VERSION) -t $(HUB)/$(PROJECT):latest . || true
 	docker buildx rm skywalking_eyes_main
 
-.PHONY: docker-release
 docker-release: docker docker-push
 
 .PHONY: clean

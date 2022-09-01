@@ -86,8 +86,6 @@ docker-push:
 
 docker-release: docker docker-push
 
-tabish : 
-	
 .PHONY: clean
 clean:
 	-rm -rf bin

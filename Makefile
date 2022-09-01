@@ -76,12 +76,18 @@ docker:
 
 .PHONY: docker-push
 docker-push:
-	docker buildx create --use --driver docker-container --name skywalking_eyes_main
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t $(HUB)/$(PROJECT):$(VERSION) -t $(HUB)/$(PROJECT):latest . || true
-	docker buildx rm skywalking_eyes_main
+	@{\
+		docker buildx create --use --driver docker-container --name skywalking_eyes_main ;\
+		docker buildx build --push --platform linux/amd64,linux/arm64 -t $(HUB)/$(PROJECT):$(VERSION) -t $(HUB)/$(PROJECT):latest . ;\
+		build_exit_code=$$? ;\
+		docker buildx rm skywalking_eyes_main ;\
+		exit $$build_exit_code;\
+	}
 
 docker-release: docker docker-push
 
+tabish : 
+	
 .PHONY: clean
 clean:
 	-rm -rf bin

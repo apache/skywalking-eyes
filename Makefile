@@ -41,7 +41,7 @@ RELEASE_SRC = skywalking-$(PROJECT)-$(VERSION)-src
 all: clean lint license test build
 
 $(GO_LINT):
-	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GO_PATH)/bin v1.46.2
+	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GO_PATH)/bin v1.49.0
 
 .PHONY: lint
 lint: $(GO_LINT)

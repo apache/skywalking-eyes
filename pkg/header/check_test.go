@@ -38,14 +38,15 @@ func TestCheckFile(t *testing.T) {
 		Header ConfigHeader `yaml:"header"`
 	}
 
-	content, err := os.ReadFile("../../test/testdata/.licenserc_for_test_check.yaml")
+	require.NoError(t, os.Chdir("../.."))
+	content, err := os.ReadFile("test/testdata/.licenserc_for_test_check.yaml")
 	require.NoError(t, err)
 	require.NoError(t, yaml.Unmarshal(content, &c))
 	require.NoError(t, c.Header.Finalize())
 
 	t.Run("WithLicense", func(t *testing.T) {
 		tests := func() []args {
-			files, err := filepath.Glob("../../test/testdata/include_test/with_license/*")
+			files, err := filepath.Glob("test/testdata/include_test/with_license/*")
 			require.NoError(t, err)
 			var cases []args
 			for _, file := range files {
@@ -71,7 +72,7 @@ func TestCheckFile(t *testing.T) {
 
 	t.Run("WithoutLicense", func(t *testing.T) {
 		tests := func() []args {
-			files, err := filepath.Glob("../../test/testdata/include_test/without_license/*")
+			files, err := filepath.Glob("test/testdata/include_test/without_license/*")
 			require.NoError(t, err)
 			var cases []args
 			for _, file := range files {

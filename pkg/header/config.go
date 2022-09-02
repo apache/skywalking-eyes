@@ -117,7 +117,7 @@ func (config *ConfigHeader) NormalizedPattern() *regexp.Regexp {
 func (config *ConfigHeader) ShouldIgnore(path string) (bool, error) {
 	matched, err := tryMatchPatten(path, config.Paths)
 	if !matched || err != nil {
-		return matched, err
+		return !matched, err
 	}
 
 	ignored, err := tryMatchPatten(path, config.PathsIgnore)

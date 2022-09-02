@@ -18,9 +18,7 @@
 package header
 
 import (
-	"bufio"
 	"fmt"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -116,18 +114,27 @@ func (config *ConfigHeader) NormalizedPattern() *regexp.Regexp {
 }
 
 func (config *ConfigHeader) ShouldIgnore(path string) (bool, error) {
-	for _, ignorePattern := range config.PathsIgnore {
-		if matched, err := doublestar.Match(ignorePattern, path); matched || err != nil {
-			return matched, err
+	var matched bool
+
+	for _, ignorePattern := range config.Paths {
+		m, err := doublestar.Match(ignorePattern, path)
+		if err != nil {
+			return true, err
+		}
+
+		if m {
+			matched = m
+			break
 		}
 	}
 
-	if stat, err := os.Stat(path); err == nil {
-		for _, ignorePattern := range config.PathsIgnore {
-			ignorePattern = strings.TrimRight(ignorePattern, "/")
-			if strings.HasPrefix(path, ignorePattern+"/") || stat.Name() == ignorePattern {
-				return true, nil
-			}
+	if !matched {
+		return true, nil
+	}
+
+	for _, ignorePattern := range config.PathsIgnore {
+		if m, err := doublestar.Match(ignorePattern, path); m || err != nil {
+			return true, err
 		}
 	}
 
@@ -141,23 +148,10 @@ func (config *ConfigHeader) Finalize() error {
 
 	comments.OverrideLanguageCommentStyle(config.Languages)
 
-	config.PathsIgnore = append(config.PathsIgnore, ".git", "**/*.txt")
-
-	if file, err := os.Open(".gitignore"); err == nil {
-		defer func() { _ = file.Close() }()
-
-		for scanner := bufio.NewScanner(file); scanner.Scan(); {
-			line := scanner.Text()
-			if strings.HasPrefix(line, "#") || strings.TrimSpace(line) == "" {
-				continue
-			}
-			line = strings.TrimLeft(line, "/")
-			logger.Log.Debugln("Add ignore path from .gitignore:", line)
-			config.PathsIgnore = append(config.PathsIgnore, strings.TrimSpace(line))
-		}
-	}
+	config.PathsIgnore = append(config.PathsIgnore, "**/*.txt")
 
 	logger.Log.Debugln("License header is:", config.NormalizedLicense())
+
 	if p := config.NormalizedPattern(); p != nil {
 		logger.Log.Debugln("Pattern is:", p)
 	}

@@ -26,6 +26,7 @@ import (
 
 	"github.com/apache/skywalking-eyes/internal/logger"
 	lcs "github.com/apache/skywalking-eyes/pkg/license"
+	"github.com/bmatcuk/doublestar/v2"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
@@ -51,8 +52,26 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 
 	repo, err := git.PlainOpen("./")
 
-	if err != nil {
-		return nil, err
+	if err != nil { // we're not in a Git workspace, fallback to glob paths
+		var localFileList []string
+		for _, pattern := range config.Paths {
+			if pattern == "." {
+				pattern = "./"
+			}
+			files, err := doublestar.Glob(pattern)
+			if err != nil {
+				return nil, err
+			}
+			localFileList = append(localFileList, files...)
+		}
+
+		var seen = make(map[string]bool)
+		for _, file := range localFileList {
+			if _, s := seen[file]; !s {
+				seen[file] = true
+				fileList = append(fileList, file)
+			}
+		}
 	} else {
 		head, _ := repo.Head()
 		commit, _ := repo.CommitObject(head.Hash())

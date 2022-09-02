@@ -128,8 +128,6 @@ func walkFile(file string, seen map[string]bool) ([]string, error) {
 				return files, err
 			}
 		}
-	} else {
-		return files, err
 	}
 
 	return files, nil

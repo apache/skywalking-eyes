@@ -19,8 +19,6 @@ package header
 
 import (
 	"errors"
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing/object"
 	"net/http"
 	"os"
 	"regexp"
@@ -28,6 +26,8 @@ import (
 
 	"github.com/apache/skywalking-eyes/internal/logger"
 	lcs "github.com/apache/skywalking-eyes/pkg/license"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 // Check checks the license headers of the specified paths/globs.

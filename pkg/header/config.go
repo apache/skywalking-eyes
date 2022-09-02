@@ -19,6 +19,7 @@ package header
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -135,6 +136,19 @@ func (config *ConfigHeader) ShouldIgnore(path string) (bool, error) {
 	for _, ignorePattern := range config.PathsIgnore {
 		if m, err := doublestar.Match(ignorePattern, path); m || err != nil {
 			return true, err
+		}
+	}
+
+	if stat, err := os.Stat(path); err == nil {
+		for _, ignorePattern := range config.PathsIgnore {
+			ignorePattern = strings.TrimRight(ignorePattern, "/")
+			if stat.Name() == ignorePattern {
+				return true, nil
+			}
+			ignorePattern += "/"
+			if strings.HasPrefix(path, ignorePattern) {
+				return true, nil
+			}
 		}
 	}
 

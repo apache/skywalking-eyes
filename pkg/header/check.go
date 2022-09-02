@@ -63,6 +63,7 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 		err = tree.Files().ForEach(func(file *object.File) error {
 			if file != nil {
 				fileList = append(fileList, file.Name)
+				return nil
 			}
 			return errors.New("file pointer is nil")
 		})
@@ -74,14 +75,10 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 	return fileList, nil
 }
 
-var seen = make(map[string]bool)
-
 // CheckFile checks whether the file contains the configured license header.
 func CheckFile(file string, config *ConfigHeader, result *Result) error {
 	if yes, err := config.ShouldIgnore(file); yes || err != nil {
-		if !seen[file] {
-			result.Ignore(file)
-		}
+		result.Ignore(file)
 		return err
 	}
 

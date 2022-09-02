@@ -117,8 +117,8 @@ func (config *ConfigHeader) NormalizedPattern() *regexp.Regexp {
 func (config *ConfigHeader) ShouldIgnore(path string) (bool, error) {
 	var matched bool
 
-	for _, ignorePattern := range config.Paths {
-		m, err := doublestar.Match(ignorePattern, path)
+	for _, matchPattern := range config.Paths {
+		m, err := doublestar.Match(matchPattern, path)
 		if err != nil {
 			return true, err
 		}
@@ -130,7 +130,24 @@ func (config *ConfigHeader) ShouldIgnore(path string) (bool, error) {
 	}
 
 	if !matched {
-		return true, nil
+		if stat, err := os.Stat(path); err == nil {
+			for _, matchPattern := range config.Paths {
+				matchPattern = strings.TrimRight(matchPattern, "/")
+				if stat.Name() == matchPattern {
+					matched = true
+					break
+				}
+				matchPattern += "/"
+				if strings.HasPrefix(path, matchPattern) {
+					matched = true
+					break
+				}
+			}
+		}
+
+		if matched {
+			return true, nil
+		}
 	}
 
 	for _, ignorePattern := range config.PathsIgnore {

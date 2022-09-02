@@ -19,8 +19,10 @@ package header
 
 import (
 	"errors"
+	"io/fs"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -40,7 +42,7 @@ func Check(config *ConfigHeader, result *Result) error {
 
 	for _, file := range fileList {
 		if err := CheckFile(file, config, result); err != nil {
-			return nil
+			return err
 		}
 	}
 
@@ -60,24 +62,25 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 			}
 			files, err := doublestar.Glob(pattern)
 			if err != nil {
-				return nil, err
+				return fileList, err
 			}
 			localFileList = append(localFileList, files...)
 		}
 
 		var seen = make(map[string]bool)
 		for _, file := range localFileList {
-			if _, s := seen[file]; !s {
-				seen[file] = true
-				fileList = append(fileList, file)
+			files, err := walkFile(file, seen)
+			if err != nil {
+				return fileList, err
 			}
+			fileList = append(fileList, files...)
 		}
 	} else {
 		head, _ := repo.Head()
 		commit, _ := repo.CommitObject(head.Hash())
 		tree, err := commit.Tree()
 		if err != nil {
-			return nil, err
+			return fileList, err
 		}
 		err = tree.Files().ForEach(func(file *object.File) error {
 			if file != nil {
@@ -87,11 +90,49 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 			return errors.New("file pointer is nil")
 		})
 		if err != nil {
-			return nil, err
+			return fileList, err
 		}
 	}
 
 	return fileList, nil
+}
+
+func walkFile(file string, seen map[string]bool) ([]string, error) {
+	var files []string
+
+	if seen[file] {
+		return files, nil
+	}
+	seen[file] = true
+
+	if stat, err := os.Stat(file); err == nil {
+		switch mode := stat.Mode(); {
+		case mode.IsRegular():
+			files = append(files, file)
+		case mode.IsDir():
+			err := filepath.Walk(file, func(path string, info fs.FileInfo, err error) error {
+				if path == file {
+					// when path is symbolic link file, it causes infinite recursive calls
+					return nil
+				}
+				if seen[path] {
+					return nil
+				}
+				seen[path] = true
+				if info.Mode().IsRegular() {
+					files = append(files, path)
+				}
+				return nil
+			})
+			if err != nil {
+				return files, err
+			}
+		}
+	} else {
+		return files, err
+	}
+
+	return files, nil
 }
 
 // CheckFile checks whether the file contains the configured license header.

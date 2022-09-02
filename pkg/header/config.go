@@ -136,13 +136,13 @@ func tryMatchPatten(path string, patterns []string) (bool, error) {
 	}
 
 	if stat, err := os.Stat(path); err == nil {
-		for _, ignorePattern := range patterns {
-			ignorePattern = strings.TrimRight(ignorePattern, "/")
-			if stat.Name() == ignorePattern {
+		for _, pattern := range patterns {
+			pattern = strings.TrimRight(pattern, "/")
+			if stat.Name() == pattern {
 				return true, nil
 			}
-			ignorePattern += "/"
-			if strings.HasPrefix(path, ignorePattern) {
+			pattern += "/"
+			if strings.HasPrefix(path, pattern) {
 				return true, nil
 			}
 		}

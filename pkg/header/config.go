@@ -115,49 +115,28 @@ func (config *ConfigHeader) NormalizedPattern() *regexp.Regexp {
 }
 
 func (config *ConfigHeader) ShouldIgnore(path string) (bool, error) {
-	var matched bool
-
-	for _, matchPattern := range config.Paths {
-		m, err := doublestar.Match(matchPattern, path)
-		if err != nil {
-			return true, err
-		}
-
-		if m {
-			matched = m
-			break
-		}
+	matched, err := tryMatchPatten(path, config.Paths)
+	if !matched || err != nil {
+		return matched, err
 	}
 
-	if !matched {
-		if stat, err := os.Stat(path); err == nil {
-			for _, matchPattern := range config.Paths {
-				matchPattern = strings.TrimRight(matchPattern, "/")
-				if stat.Name() == matchPattern {
-					matched = true
-					break
-				}
-				matchPattern += "/"
-				if strings.HasPrefix(path, matchPattern) {
-					matched = true
-					break
-				}
-			}
-		}
-
-		if matched {
-			return true, nil
-		}
+	ignored, err := tryMatchPatten(path, config.PathsIgnore)
+	if ignored || err != nil {
+		return ignored, err
 	}
 
-	for _, ignorePattern := range config.PathsIgnore {
-		if m, err := doublestar.Match(ignorePattern, path); m || err != nil {
-			return true, err
+	return false, nil
+}
+
+func tryMatchPatten(path string, patterns []string) (bool, error) {
+	for _, pattern := range patterns {
+		if m, err := doublestar.Match(pattern, path); m || err != nil {
+			return m, err
 		}
 	}
 
 	if stat, err := os.Stat(path); err == nil {
-		for _, ignorePattern := range config.PathsIgnore {
+		for _, ignorePattern := range patterns {
 			ignorePattern = strings.TrimRight(ignorePattern, "/")
 			if stat.Name() == ignorePattern {
 				return true, nil

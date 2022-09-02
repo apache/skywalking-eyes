@@ -18,7 +18,7 @@
 package header
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -30,8 +30,11 @@ var c struct {
 	Header ConfigHeader `yaml:"header"`
 }
 
-func init() {
-	content, err := ioutil.ReadFile("../../test/testdata/.licenserc_for_test_check.yaml")
+func TestMain(m *testing.M) {
+	if err := os.Chdir("../.."); err != nil {
+		panic(err)
+	}
+	content, err := os.ReadFile("test/testdata/.licenserc_for_test_check.yaml")
 	if err != nil {
 		panic(err)
 	}
@@ -41,6 +44,7 @@ func init() {
 	if err := c.Header.Finalize(); err != nil {
 		panic(err)
 	}
+	os.Exit(m.Run())
 }
 
 func TestCheckFile(t *testing.T) {
@@ -52,7 +56,7 @@ func TestCheckFile(t *testing.T) {
 		hasFailure bool
 	}
 	tests := func() []args {
-		files, err := filepath.Glob("../../test/testdata/include_test/with_license/*")
+		files, err := filepath.Glob("test/testdata/include_test/with_license/*")
 		if err != nil {
 			t.Error(err)
 		}
@@ -103,7 +107,7 @@ func TestCheckFileFailure(t *testing.T) {
 		hasFailure bool
 	}
 	tests := func() []args {
-		files, err := filepath.Glob("../../test/testdata/include_test/without_license/*")
+		files, err := filepath.Glob("test/testdata/include_test/without_license/*")
 		if err != nil {
 			panic(err)
 		}

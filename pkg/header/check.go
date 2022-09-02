@@ -28,6 +28,7 @@ import (
 
 	"github.com/apache/skywalking-eyes/internal/logger"
 	lcs "github.com/apache/skywalking-eyes/pkg/license"
+
 	"github.com/bmatcuk/doublestar/v2"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"

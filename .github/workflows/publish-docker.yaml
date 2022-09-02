@@ -54,6 +54,4 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and push docker image
         run: |
-          make docker && make docker-push
-          docker tag $HUB/license-eye:$VERSION $HUB/license-eye:latest
-          docker push $HUB/license-eye:latest
+          make docker-release

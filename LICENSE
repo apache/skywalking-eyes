@@ -217,3 +217,14 @@ The following components are provided under the MIT license. See project link fo
 The text of each license is also included at licenses/LICENSE-[project].txt.
 
     languages.yaml from GitHub: https://github.com/github/linguist/blob/master/lib/linguist/languages.yml MIT
+
+
+========================================================================
+Apache 2.0 licenses
+========================================================================
+
+The following components are provided under the Apache License. See project link for details.
+The text of each license is the standard Apache 2.0 license.
+
+   pkg/deps/testdata/maven/mvnw files from https://github.com/apache/maven-wrapper Apache 2.0
+   pkg/deps/testdata/maven/.mvn/wrapper/maven-wrapper.properties from https://github.com/apache/maven-wrapper Apache 2.0

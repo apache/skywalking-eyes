@@ -19,6 +19,8 @@ package header
 
 import (
 	"errors"
+	"github.com/go-git/go-billy/v5/osfs"
+	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
 	"io/fs"
 	"net/http"
 	"os"
@@ -80,6 +82,15 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 		var candidates []string
 
 		t, _ := repo.Worktree()
+		if t.Excludes == nil {
+			t.Excludes = make([]gitignore.Pattern, 0)
+		}
+		if ignorePattens, err := gitignore.LoadGlobalPatterns(osfs.New("")); err == nil {
+			t.Excludes = append(t.Excludes, ignorePattens...)
+		}
+		if ignorePattens, err := gitignore.LoadSystemPatterns(osfs.New("")); err == nil {
+			t.Excludes = append(t.Excludes, ignorePattens...)
+		}
 		s, _ := t.Status()
 		for file := range s {
 			candidates = append(candidates, file)

@@ -19,13 +19,14 @@ package deps_test
 
 import (
 	"bufio"
+	"embed"
 	"fmt"
+	"io/fs"
 	"os"
-	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
-	"github.com/apache/skywalking-eyes/internal/logger"
 	"github.com/apache/skywalking-eyes/pkg/deps"
 )
 
@@ -47,7 +48,7 @@ func TestCanResolvePomFile(t *testing.T) {
 	}
 }
 
-func dumpPomFile(fileName, content string) error {
+func writeFile(fileName, content string) error {
 	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
 	if err != nil {
 		return err
@@ -64,15 +65,40 @@ func dumpPomFile(fileName, content string) error {
 	return nil
 }
 
+func ensureDir(dirName string) error {
+	return os.MkdirAll(dirName, 0777)
+}
+
+//go:embed testdata/maven/*
+var testAssets embed.FS
+
 func TestResolveMaven(t *testing.T) {
-	if _, err := exec.Command("mvn", "--version").Output(); err != nil {
-		logger.Log.Warnf("Failed to find mvn, the test `TestResolveMaven` was skipped")
-		return
-	}
-
 	resolver := new(deps.MavenPomResolver)
+	tempDir := t.TempDir()
+	base := "testdata/maven"
 
-	pomFile := filepath.Join(t.TempDir(), "pom.xml")
+	fs.WalkDir(testAssets, base, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		filename := filepath.Join(tempDir, strings.Replace(path, base, "", 1))
+		if err := ensureDir(filepath.Dir(filename)); err != nil {
+			return err
+		}
+
+		content, err := testAssets.ReadFile(path)
+		if err != nil {
+			t.Error(err)
+		}
+		writeFile(filename, string(content))
+
+		return nil
+	})
+
+	pomFile := filepath.Join(tempDir, "pom.xml")
 
 	for _, test := range []struct {
 		pomContent string
@@ -82,11 +108,11 @@ func TestResolveMaven(t *testing.T) {
 	<project xmlns="http://maven.apache.org/POM/4.0.0"
 		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 		<modelVersion>4.0.0</modelVersion>
-	
+
 		<groupId>apache</groupId>
 		<artifactId>skywalking-eyes</artifactId>
 		<version>1.0</version>
-	
+
 		<dependencies>
 			<!-- https://mvnrepository.com/artifact/junit/junit -->
 			<dependency>
@@ -106,14 +132,22 @@ func TestResolveMaven(t *testing.T) {
 				<artifactId>skywalking-sharing-server-plugin</artifactId>
 				<version>8.6.0</version>
 			</dependency>
+			<dependency>
+				<groupId>com.fasterxml.jackson.datatype</groupId>
+				<artifactId>jackson-datatype-jsr310</artifactId>
+				<version>2.13.3</version>
+			</dependency>
 		</dependencies>
-	</project>`, 107},
+	</project>`, 110},
 	} {
-		_ = dumpPomFile(pomFile, test.pomContent)
+		_ = writeFile(pomFile, test.pomContent)
+
+		config := deps.ConfigDeps{}
+		config.Finalize("")
 
 		if resolver.CanResolve(pomFile) {
 			report := deps.Report{}
-			if err := resolver.Resolve(pomFile, nil, &report); err != nil {
+			if err := resolver.Resolve(pomFile, &config, &report); err != nil {
 				t.Error(err)
 				return
 			}

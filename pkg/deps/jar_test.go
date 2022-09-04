@@ -55,7 +55,7 @@ func copyJars(t *testing.T, pomFile, content string) ([]string, error) {
 		return nil, err
 	}
 
-	if err := dumpPomFile(pomFile, content); err != nil {
+	if err := writeFile(pomFile, content); err != nil {
 		return nil, err
 	}
 

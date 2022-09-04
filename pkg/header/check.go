@@ -63,37 +63,54 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 			}
 			files, err := doublestar.Glob(pattern)
 			if err != nil {
-				return fileList, err
+				return nil, err
 			}
 			localFileList = append(localFileList, files...)
 		}
 
-		var seen = make(map[string]bool)
+		seen := make(map[string]bool)
 		for _, file := range localFileList {
 			files, err := walkFile(file, seen)
 			if err != nil {
-				return fileList, err
+				return nil, err
 			}
 			fileList = append(fileList, files...)
 		}
 	} else {
+		var candidates []string
+
+		t, _ := repo.Worktree()
+		s, _ := t.Status()
+		for file := range s {
+			candidates = append(candidates, file)
+		}
+
 		head, _ := repo.Head()
 		commit, _ := repo.CommitObject(head.Hash())
 		tree, err := commit.Tree()
 		if err != nil {
-			return fileList, err
+			return nil, err
 		}
-		err = tree.Files().ForEach(func(file *object.File) error {
+		if err := tree.Files().ForEach(func(file *object.File) error {
 			if file != nil {
 				if _, err := os.Stat(file.Name); err == nil {
-					fileList = append(fileList, file.Name)
+					candidates = append(candidates, file.Name)
 				}
 				return nil
 			}
 			return errors.New("file pointer is nil")
-		})
-		if err != nil {
-			return fileList, err
+		}); err != nil {
+			return nil, err
+		}
+
+		seen := make(map[string]bool)
+		for _, file := range candidates {
+			if !seen[file] {
+				seen[file] = true
+				if _, err := os.Stat(file); err == nil {
+					fileList = append(fileList, file)
+				}
+			}
 		}
 	}
 

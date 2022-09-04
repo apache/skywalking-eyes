@@ -85,7 +85,9 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 		}
 		err = tree.Files().ForEach(func(file *object.File) error {
 			if file != nil {
-				fileList = append(fileList, file.Name)
+				if _, err := os.Stat(file.Name); err == nil {
+					fileList = append(fileList, file.Name)
+				}
 				return nil
 			}
 			return errors.New("file pointer is nil")

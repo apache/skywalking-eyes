@@ -19,8 +19,6 @@ package header
 
 import (
 	"errors"
-	"github.com/go-git/go-billy/v5/osfs"
-	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
 	"io/fs"
 	"net/http"
 	"os"
@@ -32,7 +30,9 @@ import (
 	lcs "github.com/apache/skywalking-eyes/pkg/license"
 
 	"github.com/bmatcuk/doublestar/v2"
+	"github.com/go-git/go-billy/v5/osfs"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
 

@@ -92,13 +92,13 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 			return nil, err
 		}
 		if err := tree.Files().ForEach(func(file *object.File) error {
-			if file != nil {
-				if _, err := os.Stat(file.Name); err == nil {
-					candidates = append(candidates, file.Name)
-				}
-				return nil
+			if file == nil {
+				return errors.New("file pointer is nil")
 			}
-			return errors.New("file pointer is nil")
+			if _, err := os.Stat(file.Name); err == nil {
+				candidates = append(candidates, file.Name)
+			}
+			return nil
 		}); err != nil {
 			return nil, err
 		}

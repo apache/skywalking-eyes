@@ -106,9 +106,7 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 			if file == nil {
 				return errors.New("file pointer is nil")
 			}
-			if _, err := os.Stat(file.Name); err == nil {
-				candidates = append(candidates, file.Name)
-			}
+			candidates = append(candidates, file.Name)
 			return nil
 		}); err != nil {
 			return nil, err
@@ -118,8 +116,11 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 		for _, file := range candidates {
 			if !seen[file] {
 				seen[file] = true
-				if _, err := os.Stat(file); err == nil {
+				_, err := os.Stat(file)
+				if err == nil {
 					fileList = append(fileList, file)
+				} else if !os.IsNotExist(err) {
+					return nil, err
 				}
 			}
 		}

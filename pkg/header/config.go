@@ -18,7 +18,6 @@
 package header
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"regexp"
@@ -116,16 +115,34 @@ func (config *ConfigHeader) NormalizedPattern() *regexp.Regexp {
 }
 
 func (config *ConfigHeader) ShouldIgnore(path string) (bool, error) {
-	for _, ignorePattern := range config.PathsIgnore {
-		if matched, err := doublestar.Match(ignorePattern, path); matched || err != nil {
-			return matched, err
+	matched, err := tryMatchPatten(path, config.Paths)
+	if !matched || err != nil {
+		return !matched, err
+	}
+
+	ignored, err := tryMatchPatten(path, config.PathsIgnore)
+	if ignored || err != nil {
+		return ignored, err
+	}
+
+	return false, nil
+}
+
+func tryMatchPatten(path string, patterns []string) (bool, error) {
+	for _, pattern := range patterns {
+		if m, err := doublestar.Match(pattern, path); m || err != nil {
+			return m, err
 		}
 	}
 
 	if stat, err := os.Stat(path); err == nil {
-		for _, ignorePattern := range config.PathsIgnore {
-			ignorePattern = strings.TrimRight(ignorePattern, "/")
-			if strings.HasPrefix(path, ignorePattern+"/") || stat.Name() == ignorePattern {
+		for _, pattern := range patterns {
+			pattern = strings.TrimRight(pattern, "/")
+			if stat.Name() == pattern {
+				return true, nil
+			}
+			pattern += "/"
+			if strings.HasPrefix(path, pattern) {
 				return true, nil
 			}
 		}
@@ -141,23 +158,10 @@ func (config *ConfigHeader) Finalize() error {
 
 	comments.OverrideLanguageCommentStyle(config.Languages)
 
-	config.PathsIgnore = append(config.PathsIgnore, ".git", "**/*.txt")
-
-	if file, err := os.Open(".gitignore"); err == nil {
-		defer func() { _ = file.Close() }()
-
-		for scanner := bufio.NewScanner(file); scanner.Scan(); {
-			line := scanner.Text()
-			if strings.HasPrefix(line, "#") || strings.TrimSpace(line) == "" {
-				continue
-			}
-			line = strings.TrimLeft(line, "/")
-			logger.Log.Debugln("Add ignore path from .gitignore:", line)
-			config.PathsIgnore = append(config.PathsIgnore, strings.TrimSpace(line))
-		}
-	}
+	config.PathsIgnore = append(config.PathsIgnore, "**/*.txt")
 
 	logger.Log.Debugln("License header is:", config.NormalizedLicense())
+
 	if p := config.NormalizedPattern(); p != nil {
 		logger.Log.Debugln("Pattern is:", p)
 	}

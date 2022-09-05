@@ -18,6 +18,8 @@
 package header
 
 import (
+	"errors"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -28,12 +30,21 @@ import (
 	lcs "github.com/apache/skywalking-eyes/pkg/license"
 
 	"github.com/bmatcuk/doublestar/v2"
+	"github.com/go-git/go-billy/v5/osfs"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
+	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 // Check checks the license headers of the specified paths/globs.
 func Check(config *ConfigHeader, result *Result) error {
-	for _, pattern := range config.Paths {
-		if err := checkPattern(pattern, result, config); err != nil {
+	fileList, err := listFiles(config)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range fileList {
+		if err := CheckFile(file, config, result); err != nil {
 			return err
 		}
 	}
@@ -41,79 +52,123 @@ func Check(config *ConfigHeader, result *Result) error {
 	return nil
 }
 
-var seen = make(map[string]bool)
+func listFiles(config *ConfigHeader) ([]string, error) {
+	var fileList []string
 
-func checkPattern(pattern string, result *Result, config *ConfigHeader) error {
-	paths, err := glob(pattern)
+	repo, err := git.PlainOpen("./")
 
-	if err != nil {
-		return err
-	}
-
-	for _, path := range paths {
-		if yes, err := config.ShouldIgnore(path); yes || err != nil {
-			result.Ignore(path)
-			continue
-		}
-		if err := checkPath(path, result, config); err != nil {
-			return err
-		}
-		seen[path] = true
-	}
-
-	return nil
-}
-
-func glob(pattern string) (matches []string, err error) {
-	if pattern == "." {
-		return doublestar.Glob("./")
-	}
-
-	return doublestar.Glob(pattern)
-}
-
-func checkPath(path string, result *Result, config *ConfigHeader) error {
-	defer func() { seen[path] = true }()
-
-	if seen[path] {
-		return nil
-	}
-
-	if yes, err := config.ShouldIgnore(path); yes || err != nil {
-		return err
-	}
-
-	pathInfo, err := os.Stat(path)
-
-	if err != nil {
-		return err
-	}
-
-	switch mode := pathInfo.Mode(); {
-	case mode.IsDir():
-		if err := filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
-			if info.IsDir() {
-				return nil
+	if err != nil { // we're not in a Git workspace, fallback to glob paths
+		var localFileList []string
+		for _, pattern := range config.Paths {
+			if pattern == "." {
+				pattern = "./"
 			}
-			if p == path { // when p is symbolic link file, it causes infinite recursive calls
-				return nil
+			files, err := doublestar.Glob(pattern)
+			if err != nil {
+				return nil, err
 			}
-			return checkPath(p, result, config)
+			localFileList = append(localFileList, files...)
+		}
+
+		seen := make(map[string]bool)
+		for _, file := range localFileList {
+			files, err := walkFile(file, seen)
+			if err != nil {
+				return nil, err
+			}
+			fileList = append(fileList, files...)
+		}
+	} else {
+		var candidates []string
+
+		t, _ := repo.Worktree()
+		if t.Excludes == nil {
+			t.Excludes = make([]gitignore.Pattern, 0)
+		}
+		if ignorePattens, err := gitignore.LoadGlobalPatterns(osfs.New("")); err == nil {
+			t.Excludes = append(t.Excludes, ignorePattens...)
+		}
+		if ignorePattens, err := gitignore.LoadSystemPatterns(osfs.New("")); err == nil {
+			t.Excludes = append(t.Excludes, ignorePattens...)
+		}
+		s, _ := t.Status()
+		for file := range s {
+			candidates = append(candidates, file)
+		}
+
+		head, _ := repo.Head()
+		commit, _ := repo.CommitObject(head.Hash())
+		tree, err := commit.Tree()
+		if err != nil {
+			return nil, err
+		}
+		if err := tree.Files().ForEach(func(file *object.File) error {
+			if file == nil {
+				return errors.New("file pointer is nil")
+			}
+			candidates = append(candidates, file.Name)
+			return nil
 		}); err != nil {
-			return err
+			return nil, err
 		}
-	case mode.IsRegular():
-		return CheckFile(path, config, result)
+
+		seen := make(map[string]bool)
+		for _, file := range candidates {
+			if !seen[file] {
+				seen[file] = true
+				_, err := os.Stat(file)
+				if err == nil {
+					fileList = append(fileList, file)
+				} else if !os.IsNotExist(err) {
+					return nil, err
+				}
+			}
+		}
 	}
-	return nil
+
+	return fileList, nil
 }
 
-// CheckFile checks whether or not the file contains the configured license header.
+func walkFile(file string, seen map[string]bool) ([]string, error) {
+	var files []string
+
+	if seen[file] {
+		return files, nil
+	}
+	seen[file] = true
+
+	if stat, err := os.Stat(file); err == nil {
+		switch mode := stat.Mode(); {
+		case mode.IsRegular():
+			files = append(files, file)
+		case mode.IsDir():
+			err := filepath.Walk(file, func(path string, info fs.FileInfo, err error) error {
+				if path == file {
+					// when path is symbolic link file, it causes infinite recursive calls
+					return nil
+				}
+				if seen[path] {
+					return nil
+				}
+				seen[path] = true
+				if info.Mode().IsRegular() {
+					files = append(files, path)
+				}
+				return nil
+			})
+			if err != nil {
+				return files, err
+			}
+		}
+	}
+
+	return files, nil
+}
+
+// CheckFile checks whether the file contains the configured license header.
 func CheckFile(file string, config *ConfigHeader, result *Result) error {
 	if yes, err := config.ShouldIgnore(file); yes || err != nil {
-		if !seen[file] {
-			result.Ignore(file)
-		}
+		result.Ignore(file)
 		return err
 	}
 

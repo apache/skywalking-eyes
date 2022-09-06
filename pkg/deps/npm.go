@@ -127,7 +127,9 @@ func (resolver *NpmResolver) NeedSkipInstallPkgs() bool {
 	}
 }
 
-// InstallPkgs runs command 'npm install' to install node packages
+// InstallPkgs runs command 'npm ci' to install node packages,
+// using `npm ci` instead of `npm install` to ensure the reproducible builds.
+// See https://blog.npmjs.org/post/171556855892/introducing-npm-ci-for-faster-more-reliable
 func (resolver *NpmResolver) InstallPkgs() {
 	cmd := exec.Command("npm", "ci")
 	logger.Log.Println(fmt.Sprintf("Run command: %v, please wait", cmd.String()))

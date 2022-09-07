@@ -49,7 +49,7 @@ func TestCanResolvePomFile(t *testing.T) {
 }
 
 func writeFile(fileName, content string) error {
-	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
+	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0777)
 	if err != nil {
 		return err
 	}

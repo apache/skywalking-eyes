@@ -320,7 +320,7 @@ func LoadDependenciesTree(data []byte) []*Dependency {
 	stack := []Elem{}
 	unique := make(map[string]struct{})
 
-	reFind := regexp.MustCompile(`(?im)^.*? ([| ]*)(\+-|\\-) (?P<gid>\b.+?):(?P<aid>\b.+?):(?P<packaging>\b.+)(:\b.+)?:(?P<version>\b.+):(?P<scope>\b.+?)$`) //nolint:lll // can't break down regex
+	reFind := regexp.MustCompile(`(?im)^.*? ([| ]*)(\+-|\\-) (?P<gid>\b.+?):(?P<aid>\b.+?):(?P<packaging>\b.+)(:\b.+)?:(?P<version>\b.+):(?P<scope>\b.+?)(?P<optional>\b.+?)?$`) //nolint:lll // can't break down regex
 	rawDeps := reFind.FindAllSubmatch(data, -1)
 
 	deps := make([]*Dependency, 0, len(rawDeps))

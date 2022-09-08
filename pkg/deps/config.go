@@ -42,8 +42,9 @@ type ConfigDepLicense struct {
 }
 
 type Exclude struct {
-	Name    string `yaml:"name"`
-	Version string `yaml:"version"`
+	Name      string `yaml:"name"`
+	Version   string `yaml:"version"`
+	Recursive bool   `yaml:"recursive"`
 }
 
 func (config *ConfigDeps) Finalize(configFile string) error {
@@ -83,19 +84,19 @@ func (config *ConfigDeps) GetUserConfiguredLicense(name, version string) (string
 	return "", false
 }
 
-func (config *ConfigDeps) IsExcluded(name, version string) bool {
+func (config *ConfigDeps) IsExcluded(name, version string) (exclude, recursive bool) {
 	for _, license := range config.Excludes {
 		if matched, _ := filepath.Match(license.Name, name); !matched && license.Name != name {
 			continue
 		}
 		if license.Version == "" {
-			return true
+			return true, license.Recursive
 		}
 		for _, v := range strings.Split(license.Version, ",") {
 			if v == version {
-				return true
+				return true, license.Recursive
 			}
 		}
 	}
-	return false
+	return false, false
 }

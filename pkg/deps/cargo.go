@@ -85,7 +85,7 @@ func (resolver *CargoTomlResolver) ResolvePackages(packages []CargoPackage, conf
 	for i := range packages {
 		pkg := packages[i]
 
-		if config.IsExcluded(pkg.Name, pkg.Version) {
+		if exclude, _ := config.IsExcluded(pkg.Name, pkg.Version); exclude {
 			continue
 		}
 		if l, ok := config.GetUserConfiguredLicense(pkg.Name, pkg.Version); ok {

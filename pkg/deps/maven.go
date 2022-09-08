@@ -295,17 +295,29 @@ func LoadDependencies(data []byte, config *ConfigDeps) []*Dependency {
 
 	queue := []*Dependency{}
 	for _, depTree := range depsTree {
-		if config.IsExcluded(depTree.Name(), depTree.Version) {
+		if exclude, recursive := config.IsExcluded(depTree.Name(), depTree.Version); !exclude {
+			queue = append(queue, depTree)
+		} else if recursive {
 			continue
 		}
-		queue = append(queue, depTree)
 		for len(queue) > 0 {
 			dep := queue[0]
-
 			queue = queue[1:]
-			queue = append(queue, dep.TransitiveDeps...)
 
-			deps = append(deps, dep.Clone())
+			exclude, recursive := config.IsExcluded(dep.Name(), dep.Version)
+			if exclude && recursive {
+				continue
+			}
+
+			if !exclude {
+				deps = append(deps, dep.Clone())
+				queue = append(queue, dep.TransitiveDeps...)
+				continue
+			}
+
+			if !recursive {
+				queue = append(queue, dep.TransitiveDeps...)
+			}
 		}
 	}
 	return deps

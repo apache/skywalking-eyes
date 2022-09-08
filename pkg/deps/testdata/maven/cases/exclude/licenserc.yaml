@@ -15,12 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
-.idea/
-.vscode/
-/bin/
-assets/assets.gen.go
-.DS_Store
-coverage.txt
-
-target/
-*.jar
+dependency:
+  files:
+    - pom.xml
+  excludes:
+    - name: org.apache.skywalking:skywalking-sharing-server-plugin
+      recursive: false

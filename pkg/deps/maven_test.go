@@ -20,13 +20,13 @@ package deps_test
 import (
 	"bufio"
 	"embed"
-	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/apache/skywalking-eyes/pkg/config"
 	"github.com/apache/skywalking-eyes/pkg/deps"
 )
 
@@ -69,85 +69,60 @@ func ensureDir(dirName string) error {
 	return os.MkdirAll(dirName, 0777)
 }
 
-//go:embed testdata/maven/*
+//go:embed testdata/maven/**/*
 var testAssets embed.FS
 
-func TestResolveMaven(t *testing.T) {
-	resolver := new(deps.MavenPomResolver)
-	tempDir := t.TempDir()
-	base := "testdata/maven"
-
-	fs.WalkDir(testAssets, base, func(path string, d fs.DirEntry, err error) error {
+func copy(assetDir, destination string) error {
+	return fs.WalkDir(testAssets, assetDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if d.IsDir() {
 			return nil
 		}
-		filename := filepath.Join(tempDir, strings.Replace(path, base, "", 1))
+		filename := filepath.Join(destination, strings.Replace(path, assetDir, "", 1))
 		if err := ensureDir(filepath.Dir(filename)); err != nil {
 			return err
 		}
 
 		content, err := testAssets.ReadFile(path)
 		if err != nil {
-			t.Error(err)
+			return err
 		}
 		writeFile(filename, string(content))
 
 		return nil
 	})
+}
 
-	pomFile := filepath.Join(tempDir, "pom.xml")
+func TestResolveMaven(t *testing.T) {
+	resolver := new(deps.MavenPomResolver)
 
 	for _, test := range []struct {
-		pomContent string
+		workingDir string
+		testCase   string
 		cnt        int
 	}{
-		{`<?xml version="1.0" encoding="UTF-8"?>
-	<project xmlns="http://maven.apache.org/POM/4.0.0"
-		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-		<modelVersion>4.0.0</modelVersion>
-
-		<groupId>apache</groupId>
-		<artifactId>skywalking-eyes</artifactId>
-		<version>1.0</version>
-
-		<dependencies>
-			<!-- https://mvnrepository.com/artifact/junit/junit -->
-			<dependency>
-				<groupId>junit</groupId>
-				<artifactId>junit</artifactId>
-				<version>4.12</version>
-			</dependency>
-			<!-- https://mvnrepository.com/artifact/commons-logging/commons-logging -->
-			<dependency>
-				<groupId>commons-logging</groupId>
-				<artifactId>commons-logging</artifactId>
-				<version>1.2</version>
-			</dependency>
-			<!-- https://mvnrepository.com/artifact/org.apache.skywalking/skywalking-sharing-server-plugin -->
-			<dependency>
-				<groupId>org.apache.skywalking</groupId>
-				<artifactId>skywalking-sharing-server-plugin</artifactId>
-				<version>8.6.0</version>
-			</dependency>
-			<dependency>
-				<groupId>com.fasterxml.jackson.datatype</groupId>
-				<artifactId>jackson-datatype-jsr310</artifactId>
-				<version>2.13.3</version>
-			</dependency>
-		</dependencies>
-	</project>`, 110},
+		{t.TempDir(), "normal", 110},
+		{t.TempDir(), "exclude", 109},
+		{t.TempDir(), "exclude-recursive", 7},
 	} {
-		_ = writeFile(pomFile, test.pomContent)
+		if err := copy("testdata/maven/base", test.workingDir); err != nil {
+			t.Error(err)
+		}
+		if err := copy(filepath.Join("testdata/maven/cases", test.testCase), test.workingDir); err != nil {
+			t.Error(err)
+		}
 
-		config := deps.ConfigDeps{}
-		config.Finalize("")
+		config, err := config.NewConfigFromFile(filepath.Join(test.workingDir, "licenserc.yaml"))
+		if err != nil {
+			t.Error(err)
+		}
 
+		pomFile := filepath.Join(test.workingDir, "pom.xml")
 		if resolver.CanResolve(pomFile) {
 			report := deps.Report{}
-			if err := resolver.Resolve(pomFile, &config, &report); err != nil {
+			if err := resolver.Resolve(pomFile, config.Dependencies(), &report); err != nil {
 				t.Error(err)
 				return
 			}
@@ -155,7 +130,6 @@ func TestResolveMaven(t *testing.T) {
 			if len(report.Resolved)+len(report.Skipped) != test.cnt {
 				t.Errorf("the expected number of jar packages is: %d, but actually: %d. result:\n%v", test.cnt, len(report.Resolved)+len(report.Skipped), report.String())
 			}
-			fmt.Println(report.String())
 		}
 	}
 }

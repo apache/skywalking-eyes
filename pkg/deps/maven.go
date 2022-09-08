@@ -299,7 +299,10 @@ func LoadDependencies(data []byte, config *ConfigDeps) []*Dependency {
 			queue = append(queue, depTree)
 		} else if recursive {
 			continue
+		} else {
+			queue = append(queue, depTree.TransitiveDeps...)
 		}
+
 		for len(queue) > 0 {
 			dep := queue[0]
 			queue = queue[1:]

@@ -85,7 +85,7 @@ func (resolver *GoModResolver) Resolve(goModFile string, config *ConfigDeps, rep
 func (resolver *GoModResolver) ResolvePackages(modules []*packages.Module, config *ConfigDeps, report *Report) error {
 	for _, module := range modules {
 		func() {
-			if config.IsExcluded(module.Path, module.Version) {
+			if exclued, _ := config.IsExcluded(module.Path, module.Version); exclued {
 				return
 			}
 			if l, ok := config.GetUserConfiguredLicense(module.Path, module.Version); ok {

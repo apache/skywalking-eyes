@@ -57,7 +57,9 @@ func (config *ConfigDeps) Finalize(configFile string) error {
 	}
 
 	for i, file := range config.Files {
-		config.Files[i] = filepath.Join(filepath.Dir(configFileAbsPath), file)
+		if !strings.HasPrefix(file, "/") {
+			config.Files[i] = filepath.Join(filepath.Dir(configFileAbsPath), file)
+		}
 	}
 
 	if config.Threshold <= 0 {

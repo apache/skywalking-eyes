@@ -115,7 +115,7 @@ func writeLicense(result *deps.Result) {
 	filename := string(fileNamePattern.ReplaceAll([]byte(result.Dependency), []byte("-")))
 	filename = filepath.Join(outDir, "license-"+filename+".txt")
 	if _, err := os.Stat(filename); err == nil {
-		logger.Log.Debug("File already exists, skipping: %s", filename)
+		logger.Log.Debugf("File already exists, skipping: %s", filename)
 		return
 	}
 	file, err := os.Create(filename)

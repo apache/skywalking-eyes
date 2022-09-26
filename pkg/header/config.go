@@ -29,8 +29,6 @@ import (
 	"github.com/apache/skywalking-eyes/internal/logger"
 	"github.com/apache/skywalking-eyes/pkg/comments"
 	"github.com/apache/skywalking-eyes/pkg/license"
-
-	"github.com/bmatcuk/doublestar/v2"
 )
 
 type CommentOption string
@@ -157,8 +155,6 @@ func (config *ConfigHeader) Finalize() error {
 	}
 
 	comments.OverrideLanguageCommentStyle(config.Languages)
-
-	config.PathsIgnore = append(config.PathsIgnore, "**/*.txt")
 
 	logger.Log.Debugln("License header is:", config.NormalizedLicense())
 

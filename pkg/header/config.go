@@ -158,8 +158,6 @@ func (config *ConfigHeader) Finalize() error {
 
 	comments.OverrideLanguageCommentStyle(config.Languages)
 
-	config.PathsIgnore = append(config.PathsIgnore, "**/*.txt")
-
 	logger.Log.Debugln("License header is:", config.NormalizedLicense())
 
 	if p := config.NormalizedPattern(); p != nil {

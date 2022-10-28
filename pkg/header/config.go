@@ -171,8 +171,16 @@ func (config *ConfigHeader) Finalize() error {
 	return nil
 }
 
-func (config *ConfigHeader) GetLicenseContent() string {
-	if c := strings.TrimSpace(config.License.Content); c != "" {
+func (config *ConfigHeader) GetLicenseContent() (c string) {
+	owner, name := config.License.CopyrightOwner, config.License.SoftwareName
+
+	defer func() {
+		c = strings.ReplaceAll(c, "[year]", strconv.Itoa(time.Now().Year()))
+		c = strings.ReplaceAll(c, "[owner]", owner)
+		c = strings.ReplaceAll(c, "[software-name]", name)
+	}()
+
+	if c = strings.TrimSpace(config.License.Content); c != "" {
 		return config.License.Content // Do not change anything in user config
 	}
 	c, err := readLicenseFromSpdx(config)
@@ -180,11 +188,12 @@ func (config *ConfigHeader) GetLicenseContent() string {
 		logger.Log.Warnln(err)
 		return ""
 	}
+
 	return c
 }
 
 func readLicenseFromSpdx(config *ConfigHeader) (string, error) {
-	spdxID, owner, name := config.License.SpdxID, config.License.CopyrightOwner, config.License.SoftwareName
+	spdxID, owner := config.License.SpdxID, config.License.CopyrightOwner
 	filename := fmt.Sprintf("header-templates/%v.txt", spdxID)
 
 	if spdxID == "Apache-2.0" && ASFNames.MatchString(owner) {
@@ -197,10 +206,5 @@ func readLicenseFromSpdx(config *ConfigHeader) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to find a license template for spdx id %v, %w", spdxID, err)
 	}
-	template := string(content)
-	template = strings.ReplaceAll(template, "[year]", strconv.Itoa(time.Now().Year()))
-	template = strings.ReplaceAll(template, "[owner]", owner)
-	template = strings.ReplaceAll(template, "[software-name]", name)
-
-	return template, nil
+	return string(content), nil
 }

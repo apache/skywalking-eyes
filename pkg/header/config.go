@@ -46,6 +46,7 @@ var (
 type LicenseConfig struct {
 	SpdxID         string `yaml:"spdx-id"`
 	CopyrightOwner string `yaml:"copyright-owner"`
+	CopyrightYear  string `yaml:"copyright-year"`
 	SoftwareName   string `yaml:"software-name"`
 	Content        string `yaml:"content"`
 	Pattern        string `yaml:"pattern"`
@@ -172,10 +173,13 @@ func (config *ConfigHeader) Finalize() error {
 }
 
 func (config *ConfigHeader) GetLicenseContent() (c string) {
-	owner, name := config.License.CopyrightOwner, config.License.SoftwareName
+	owner, name, year := config.License.CopyrightOwner, config.License.SoftwareName, config.License.CopyrightYear
+	if year == "" {
+		year = strconv.Itoa(time.Now().Year())
+	}
 
 	defer func() {
-		c = strings.ReplaceAll(c, "[year]", strconv.Itoa(time.Now().Year()))
+		c = strings.ReplaceAll(c, "[year]", year)
 		c = strings.ReplaceAll(c, "[owner]", owner)
 		c = strings.ReplaceAll(c, "[software-name]", name)
 	}()

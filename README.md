@@ -595,6 +595,7 @@ header: # <1>
   license:
     spdx-id: Apache-2.0 # <2>
     copyright-owner: Apache Software Foundation # <3>
+    copyright-year: '1993-2022' # <25>
     software-name: skywalking-eyes # <4>
     content: | # <5>
       Licensed to Apache Software Foundation (ASF) under one or more contributor
@@ -707,6 +708,7 @@ header:
 22. The minimum percentage of the file that must contain license text for identifying a license, default is `75`.
 23. The dependencies that should be excluded when analyzing the licenses, this is useful when you declare the dependencies in `pom.xml` with `compile` scope but don't distribute them in package. (Note that non-`compile` scope dependencies are automatically excluded so you don't need to put them here).
 24. The transitive dependencies brought by <23> should be recursively excluded when analyzing the licenses, currently only maven project supports this.
+25. The copyright year of the work, if it's empty, it will be set to the current year. If you don't want to update the license year anually, you can set this to the year of the first publication of your work, such as `1994`, or `1994-2023`.
 
 **NOTE**: When the `SPDX-ID` is Apache-2.0 and the owner is Apache Software foundation, the content would be [a dedicated license](https://www.apache.org/legal/src-headers.html#headers) specified by the ASF, otherwise, the license would be [the standard one](https://www.apache.org/foundation/license-faq.html#Apply-My-Software).
 

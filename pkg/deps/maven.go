@@ -18,11 +18,10 @@
 package deps
 
 import (
-	"bufio"
-	"bytes"
 	"encoding/xml"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -126,19 +125,23 @@ func (resolver *MavenPomResolver) DownloadDeps() error {
 }
 
 func (resolver *MavenPomResolver) LoadDependencies(config *ConfigDeps) ([]*Dependency, error) {
-	buf := bytes.NewBuffer(nil)
-
-	cmd := exec.Command(resolver.maven, "dependency:tree") // #nosec G204
-	cmd.Stdout = bufio.NewWriter(buf)
-	cmd.Stderr = os.Stderr
-
-	logger.Log.Debugf("Running command: [%v], please wait", cmd.String())
-	err := cmd.Run()
+	depsFile, err := ioutil.TempFile(os.TempDir(), "maven-dependencies.txt")
 	if err != nil {
 		return nil, err
 	}
+	defer os.Remove(depsFile.Name())
 
-	deps := LoadDependencies(buf.Bytes(), config)
+	output, err := exec.Command(resolver.maven, "dependency:tree", "-DoutputFile="+depsFile.Name()).Output() // #nosec G204
+	if err != nil {
+		logger.Log.Errorln(string(output))
+		return nil, err
+	}
+
+	buf, err := os.ReadFile(depsFile.Name())
+	if err != nil {
+		return nil, err
+	}
+	deps := LoadDependencies(buf, config)
 	return deps, nil
 }
 
@@ -335,7 +338,7 @@ func LoadDependenciesTree(data []byte) []*Dependency {
 	stack := []Elem{}
 	unique := make(map[string]struct{})
 
-	reFind := regexp.MustCompile(`(?im)^.*? ([| ]*)(\+-|\\-) (?P<gid>\b.+?):(?P<aid>\b.+?):(?P<packaging>\b.+)(:\b.+)?:(?P<version>\b.+):(?P<scope>\b.+?)(?P<optional>\b.+?)?$`) //nolint:lll // can't break down regex
+	reFind := regexp.MustCompile(`(?im)^.*?([| ]*)(\+-|\\-) (?P<gid>\b.+?):(?P<aid>\b.+?):(?P<packaging>\b.+)(:\b.+)?:(?P<version>\b.+):(?P<scope>\b.+?)(?P<optional>\b.+?)?$`) //nolint:lll // can't break down regex
 	rawDeps := reFind.FindAllSubmatch(data, -1)
 
 	deps := make([]*Dependency, 0, len(rawDeps))

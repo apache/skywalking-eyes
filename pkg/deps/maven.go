@@ -57,17 +57,13 @@ func (resolver *MavenPomResolver) Resolve(mavenPomFile string, config *ConfigDep
 		return err
 	}
 
+	// Attempt to resolve dependencies before loading them
+	if err := resolver.ResolveDeps(); err != nil {
+		return fmt.Errorf("dependencies download error")
+	}
 	deps, err := resolver.LoadDependencies(config)
 	if err != nil {
-		// attempt to download dependencies
-		if err = resolver.DownloadDeps(); err != nil {
-			return fmt.Errorf("dependencies download error")
-		}
-		// load again
-		deps, err = resolver.LoadDependencies(config)
-		if err != nil {
-			return err
-		}
+		return err
 	}
 
 	return resolver.ResolveDependencies(deps, config, report)
@@ -107,19 +103,23 @@ func (resolver *MavenPomResolver) FindLocalRepository() error {
 	return nil
 }
 
-func (resolver *MavenPomResolver) DownloadDeps() error {
+func (resolver *MavenPomResolver) ResolveDeps() error {
 	cmd := exec.Command(resolver.maven, "dependency:resolve") // #nosec G204
-	cmd.Stdout = os.Stdout
+	cmd.Stdout = io.Discard
 	cmd.Stderr = os.Stderr
 
-	err := cmd.Run()
-	if err == nil {
+	logger.Log.Debugf("resolving dependencies with command %v", cmd.Args)
+
+	if err := cmd.Run(); err == nil {
 		return nil
 	}
-	// the failure may be caused by the lack of sub modules, try to install it
+
+	// the failure may be caused by the lack of submodules, try to install it
 	install := exec.Command(resolver.maven, "clean", "install", "-Dcheckstyle.skip=true", "-Drat.skip=true", "-Dmaven.test.skip=true") // #nosec G204
-	install.Stdout = os.Stdout
+	install.Stdout = io.Discard
 	install.Stderr = os.Stderr
+
+	logger.Log.Debugf("resolving dependencies with command %v", install.Args)
 
 	return install.Run()
 }

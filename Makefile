@@ -18,6 +18,7 @@
 HUB ?= docker.io/apache
 PROJECT ?= license-eye
 VERSION ?= latest
+INSTALL_DIR ?= /usr/local/bin
 OUT_DIR = bin
 ARCH := $(shell uname)
 OSNAME := $(if $(findstring Darwin,$(ARCH)),darwin,linux)
@@ -28,6 +29,7 @@ GO_BUILD = $(GO) build
 GO_TEST = $(GO) test
 GO_LINT = $(GO_PATH)/bin/golangci-lint
 GO_BUILD_LDFLAGS = -X github.com/apache/skywalking-eyes/commands.version=$(VERSION)
+GOOS ?= $(shell $(GO) env GOOS)
 
 PLANTUML_VERSION = 1.2021.9
 
@@ -142,3 +144,11 @@ verify-docs: docs-gen
 		git diff --color --word-diff --exit-code docs; \
 		exit 1; \
 	fi
+
+.PHONY: install
+install: $(GOOS)
+	-cp $(OUT_DIR)/$(GOOS)/$(PROJECT) $(INSTALL_DIR)
+
+.PHONY: uninstall
+uninstall: $(GOOS)
+	-rm $(INSTALL_DIR)/$(PROJECT)

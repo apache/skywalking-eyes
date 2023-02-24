@@ -73,7 +73,7 @@ runs:
         key: license-eye-${{ runner.os }}-go-${{ hashFiles(format('{0}/{1}', github.action_path, 'go.sum')) }}
         restore-keys: license-eye-${{ runner.os }}-go-
     - shell: bash
-      run: make -C $GITHUB_ACTION_PATH install
+      run: make -C $GITHUB_ACTION_PATH/.. install
     - shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.token }}

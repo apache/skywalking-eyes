@@ -18,12 +18,13 @@
 package deps_test
 
 import (
-	"github.com/apache/skywalking-eyes/internal/logger"
-	"github.com/apache/skywalking-eyes/pkg/deps"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
+
+	"github.com/apache/skywalking-eyes/internal/logger"
+	"github.com/apache/skywalking-eyes/pkg/deps"
 )
 
 func TestCanResolveCargo(t *testing.T) {
@@ -134,7 +135,8 @@ edition = "2021"
 license = "Apache-2.0"
 
 [dependencies]
-libc = "0.2.126"
+libc = "0.2.126"    # actual license: MIT OR Apache-2.0
+bitflags = "1.3.2"  # actual license: MIT/Apache-2.0
 `
 
 		config := deps.ConfigDeps{
@@ -145,12 +147,17 @@ libc = "0.2.126"
 		}
 
 		report := resolveTmpCargo(t, cargoToml, &config)
-		if len(report.Resolved) != 2 {
-			t.Error("len(report.Resolved) != 2")
+		if len(report.Resolved) != 3 {
+			t.Error("len(report.Resolved) != 3")
 		}
 		for _, result := range report.Resolved {
 			if result.Dependency == "libc" {
-				if result.LicenseSpdxID != "MIT OR Apache-2.0" || result.LicenseContent == "" {
+				if result.LicenseSpdxID != "Apache-2.0 OR MIT" || result.LicenseContent == "" {
+					t.Error("Resolve dependency libc failed")
+				}
+			}
+			if result.Dependency == "bitflags" {
+				if result.LicenseSpdxID != "Apache-2.0 OR MIT" || result.LicenseContent == "" {
 					t.Error("Resolve dependency libc failed")
 				}
 			}

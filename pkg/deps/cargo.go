@@ -23,6 +23,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"sort"
+	"strings"
 
 	"github.com/apache/skywalking-eyes/internal/logger"
 	"github.com/apache/skywalking-eyes/pkg/license"
@@ -73,6 +75,10 @@ func (resolver *CargoTomlResolver) Resolve(cargoTomlFile string, config *ConfigD
 	var metadata CargoMetadata
 	if err := json.Unmarshal(output, &metadata); err != nil {
 		return err
+	}
+
+	for i := range metadata.Packages {
+		metadata.Packages[i].License = normalizeLicense(metadata.Packages[i].License)
 	}
 
 	logger.Log.Debugln("Package size:", len(metadata.Packages))
@@ -155,4 +161,19 @@ func (resolver *CargoTomlResolver) ResolvePackageLicense(config *ConfigDeps, pkg
 	})
 
 	return nil
+}
+
+func normalizeLicense(license string) string {
+	segs := make(map[string]struct{})
+	for _, ss := range strings.Split(license, "/") {
+		for _, s := range strings.Split(ss, " OR ") {
+			segs[s] = struct{}{}
+		}
+	}
+	var items []string
+	for seg := range segs {
+		items = append(items, seg)
+	}
+	sort.Strings(items)
+	return strings.Join(items, " OR ")
 }

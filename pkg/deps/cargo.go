@@ -167,6 +167,7 @@ func normalizeLicense(licenseStr string) string {
 	segs := make(map[string]struct{})
 	for _, ss := range strings.Split(licenseStr, "/") {
 		for _, s := range strings.Split(ss, " OR ") {
+			s = strings.TrimSpace(s)
 			segs[s] = struct{}{}
 		}
 	}

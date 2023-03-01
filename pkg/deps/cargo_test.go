@@ -137,7 +137,7 @@ license = "Apache-2.0"
 [dependencies]
 libc = "0.2.126"    # actual license: MIT OR Apache-2.0
 bitflags = "1.3.2"  # actual license: MIT/Apache-2.0
-fnv = "1.0.7"       # actual license: MIT/Apache-2.0
+fnv = "1.0.7"       # actual license: Apache-2.0 / MIT
 `
 
 		cargoLock := `

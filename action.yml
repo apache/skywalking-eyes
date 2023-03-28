@@ -48,30 +48,7 @@ runs:
       uses: actions/setup-go@v4
       with:
         go-version: 1.18
-    - if: runner.os == 'Linux'
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: license-eye-${{ runner.os }}-go-${{ hashFiles(format('{0}/{1}', github.action_path, 'go.sum')) }}
-        restore-keys: license-eye-${{ runner.os }}-go-
-    - if: runner.os == 'macOS'
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/Library/Caches/go-build
-          ~/go/pkg/mod
-        key: license-eye-${{ runner.os }}-go-${{ hashFiles(format('{0}/{1}', github.action_path, 'go.sum')) }}
-        restore-keys: license-eye-${{ runner.os }}-go-
-    - if: runner.os == 'Windows'
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~\AppData\Local\go-build
-          ~\go\pkg\mod
-        key: license-eye-${{ runner.os }}-go-${{ hashFiles(format('{0}/{1}', github.action_path, 'go.sum')) }}
-        restore-keys: license-eye-${{ runner.os }}-go-
+        cache-dependency-path: ${{ github.action_path }}/go.sum
     - shell: bash
       run: make -C $GITHUB_ACTION_PATH install
     - shell: bash

@@ -43,6 +43,7 @@ compatible:
   - Unlicense.txt
   - HPND.txt
   - MulanPSL-2.0.txt
+  - MIT
 
 incompatible:
   - Unknown

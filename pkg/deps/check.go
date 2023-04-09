@@ -19,6 +19,7 @@ package deps
 
 import (
 	"fmt"
+	"math"
 	"path/filepath"
 	"strings"
 
@@ -73,34 +74,35 @@ func Check(mainLicenseSpdxID string, config *ConfigDeps) error {
 	return CheckWithMatrix(mainLicenseSpdxID, &matrix, &report)
 }
 
-func CheckWithMatrix(mainLicenseSpdxID string, matrix *CompatibilityMatrix, report *Report) error {
-	var incompatibleResults []*Result
-	for _, result := range append(report.Resolved, report.Skipped...) {
-		compare := func(list []string, spdxID string) bool {
-			for _, com := range list {
-				if spdxID == com {
-					return true
-				}
-			}
-			return false
-		}
-		compareAll := func(spdxIDs []string, compare func(spdxID string) bool) bool {
-			for _, spdxID := range spdxIDs {
-				if !compare(spdxID) {
-					return false
-				}
-			}
+func compare(list []string, spdxID string) bool {
+	for _, com := range list {
+		if spdxID == com {
 			return true
 		}
-		compareAny := func(spdxIDs []string, compare func(spdxID string) bool) bool {
-			for _, spdxID := range spdxIDs {
-				if compare(spdxID) {
-					return true
-				}
-			}
+	}
+	return false
+}
+func compareAll(spdxIDs []string, compare func(spdxID string) bool) bool {
+	for _, spdxID := range spdxIDs {
+		if !compare(spdxID) {
 			return false
 		}
+	}
+	return true
+}
+func compareAny(spdxIDs []string, compare func(spdxID string) bool) bool {
+	for _, spdxID := range spdxIDs {
+		if compare(spdxID) {
+			return true
+		}
+	}
+	return false
+}
 
+func CheckWithMatrix(mainLicenseSpdxID string, matrix *CompatibilityMatrix, report *Report) error {
+	var incompatibleResults []*Result
+	var unknownResults []*Result
+	for _, result := range append(report.Resolved, report.Skipped...) {
 		operator, spdxIDs := parseLicenseExpression(result.LicenseSpdxID)
 
 		switch operator {
@@ -134,16 +136,34 @@ func CheckWithMatrix(mainLicenseSpdxID string, matrix *CompatibilityMatrix, repo
 			}
 			if incompatible := compare(matrix.Incompatible, spdxIDs[0]); incompatible {
 				incompatibleResults = append(incompatibleResults, result)
+				continue
 			}
+			unknownResults = append(unknownResults, result)
 		}
 	}
 
-	if len(incompatibleResults) > 0 {
-		str := ""
+	if len(incompatibleResults) > 0 || len(unknownResults) > 0 {
+		dWidth, lWidth := float64(len("Dependency")), float64(len("License"))
 		for _, r := range incompatibleResults {
-			str += fmt.Sprintf("\nLicense: %v Dependency: %v", r.LicenseSpdxID, r.Dependency)
+			dWidth = math.Max(float64(len(r.Dependency)), dWidth)
+			lWidth = math.Max(float64(len(r.LicenseSpdxID)), lWidth)
 		}
-		return fmt.Errorf("the following licenses are incompatible with the main license: %v %v", mainLicenseSpdxID, str)
+		for _, r := range unknownResults {
+			dWidth = math.Max(float64(len(r.Dependency)), dWidth)
+			lWidth = math.Max(float64(len(r.LicenseSpdxID)), lWidth)
+		}
+
+		rowTemplate := fmt.Sprintf("%%-%dv | %%%dv\n", int(dWidth), int(lWidth))
+		s := fmt.Sprintf(rowTemplate, "Dependency", "License")
+		s += fmt.Sprintf(rowTemplate, strings.Repeat("-", int(dWidth)), strings.Repeat("-", int(lWidth)))
+		for _, r := range incompatibleResults {
+			s += fmt.Sprintf(rowTemplate, r.Dependency, r.LicenseSpdxID)
+		}
+		for _, r := range unknownResults {
+			s += fmt.Sprintf(rowTemplate, r.Dependency, r.LicenseSpdxID)
+		}
+
+		return fmt.Errorf("the following licenses are unknown or incompatible with the main license, please check manually: %v\n%v", mainLicenseSpdxID, s)
 	}
 
 	return nil

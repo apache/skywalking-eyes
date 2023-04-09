@@ -79,7 +79,7 @@ func TestCheckWithMatrix(t *testing.T) {
 		},
 	}); err == nil {
 		t.Errorf("Should return error")
-	} else if !strings.Contains(err.Error(), "License: LGPL-2.0 Dependency: Bar") {
+	} else if !strings.Contains(err.Error(), "Bar        | LGPL-2.0") {
 		t.Errorf("Should return error and contains dependency Bar, now is `%s`", err.Error())
 	}
 
@@ -98,7 +98,7 @@ func TestCheckWithMatrix(t *testing.T) {
 		},
 	}); err == nil {
 		t.Errorf("Should return error")
-	} else if !strings.Contains(err.Error(), "License: Unknown Dependency: Bar") {
+	} else if !strings.Contains(err.Error(), "Bar        | Unknown") {
 		t.Errorf("Should return error and has dependency Bar, now is `%s`", err.Error())
 	}
 

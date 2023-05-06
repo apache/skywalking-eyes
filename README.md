@@ -678,12 +678,12 @@ dependency: # <16>
 1. The `header` section is configurations for source codes license header. If you have multiple modules or packages in your project that have differing licenses, this section may contain a list of licenses:
 ```yaml
 header:
-  - license:
+  - path: "/path/to/module/a"
+    license:
       spdx-id: Apache-2.0
-      path: "/path/to/module/a"
-  - license:
+  - path: "/path/to/module/b"
+    license:
       spdx-id: MPL-2.0
-      path: "/path/to/module/b"
 ```
 2. The [SPDX ID](https://spdx.org/licenses/) of the license, it’s convenient when your license is standard SPDX license, so that you can simply specify this identifier without copying the whole license `content` or `pattern`. This will be used as the content when `fix` command needs to insert a license header.
 3. The copyright owner to replace the `[owner]` in the `SPDX-ID` license template.

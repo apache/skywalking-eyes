@@ -52,4 +52,4 @@ runs:
     - shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.token }}
-      run: license-eye -v ${{ inputs.log }} -c ${{ inputs.config }} dependency ${{ inputs.mode }} {{ input.flags }}
+      run: license-eye -v ${{ inputs.log }} -c ${{ inputs.config }} dependency ${{ inputs.mode }} {{ inputs.flags }}

@@ -35,6 +35,10 @@ inputs:
       default value is `check`.
     required: false
     default: check
+  flags:
+    description: |
+      Extra flags appended to the command, for example, --summary=path/to/tmplate.tmpl
+    required: false
 runs:
   using: "composite"
   steps:
@@ -48,4 +52,4 @@ runs:
     - shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.token }}
-      run: license-eye -v ${{ inputs.log }} -c ${{ inputs.config }} dependency ${{ inputs.mode }}
+      run: license-eye -v ${{ inputs.log }} -c ${{ inputs.config }} dependency ${{ inputs.mode }} {{ input.flags }}

@@ -45,12 +45,15 @@ type SummaryRenderLicense struct {
 	LicenseID string // License ID
 }
 
+func ParseTemplateFromString(templateStr string) (*template.Template, error) {
+	return template.New("summary").Funcs(sprig.TxtFuncMap()).Parse(templateStr)
+}
 func ParseTemplate(path string) (*template.Template, error) {
 	tpl, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	return template.New("summary").Funcs(sprig.TxtFuncMap()).Parse(string(tpl))
+	return ParseTemplateFromString(string(tpl))
 }
 
 // GenerateSummary generate the summary content by template, license config and dependency report

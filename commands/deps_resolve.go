@@ -31,7 +31,18 @@ import (
 	"github.com/apache/skywalking-eyes/pkg/deps"
 )
 
+var defaultTmplStr = `{{.LicenseContent }}
+{{ range .Groups }}
+========================================================================
+{{.LicenseID}} licenses
+========================================================================
+{{range .Deps}}
+    {{.Name}} {{.Version}} {{.LicenseID}}
+{{- end }}
+{{ end }}`
+
 var outDir string
+var licensePath string
 var summaryTplPath string
 var summaryTpl *template.Template
 
@@ -41,6 +52,8 @@ func init() {
 	DepsResolveCommand.PersistentFlags().StringVarP(&summaryTplPath, "summary", "s", "",
 		"the template file to write the summary of dependencies' licenses, a new file named \"LICENSE\" will be "+
 			"created in the same directory as the template file, to save the final summary.")
+	DepsResolveCommand.PersistentFlags().StringVarP(&licensePath, "license", "l", "",
+		"the path to the LICENSE file to be generated. The default summary format will be used if summary template file is not specified")
 }
 
 var fileNamePattern = regexp.MustCompile(`[^a-zA-Z0-9\\.\-]`)
@@ -72,6 +85,24 @@ var DepsResolveCommand = &cobra.Command{
 			}
 			summaryTpl = tpl
 		}
+		if licensePath != "" {
+			absPath, err := filepath.Abs(licensePath)
+			if err != nil {
+				return err
+			}
+			licensePath = absPath
+			if err := os.MkdirAll(filepath.Dir(outDir), 0o700); err != nil && !os.IsExist(err) {
+				return err
+			}
+
+			if summaryTpl == nil {
+				tpl, err := deps.ParseTemplateFromString(defaultTmplStr)
+				if err != nil {
+					return err
+				}
+				summaryTpl = tpl
+			}
+		}
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -83,7 +114,7 @@ var DepsResolveCommand = &cobra.Command{
 		}
 
 		if summaryTpl != nil {
-			if err := writeSummary(&report); err != nil {
+			if err := writeSummary(&report, licensePath); err != nil {
 				return err
 			}
 		}
@@ -131,8 +162,12 @@ func writeLicense(result *deps.Result) {
 	}
 }
 
-func writeSummary(rep *deps.Report) error {
-	file, err := os.Create(filepath.Join(filepath.Dir(summaryTplPath), "LICENSE"))
+func writeSummary(rep *deps.Report, path string) error {
+
+	if path == "" {
+		path = filepath.Join(filepath.Dir(summaryTplPath), "LICENSE")
+	}
+	file, err := os.Create(path)
 	if err != nil {
 		return err
 	}

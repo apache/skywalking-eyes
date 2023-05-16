@@ -71,6 +71,7 @@ header: # `header` section is configurations for source codes license header.
     - '**/assets/header-templates/**'
     - '**/assets/lcs-templates/**'
     - '**/assets/languages.yaml'
+    - '**/assets/default-license.tpl'
     - '**/assets/assets.gen.go'
     - 'docs/**.svg'
 

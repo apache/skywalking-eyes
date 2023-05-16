@@ -19,12 +19,13 @@ package commands
 
 import (
 	"fmt"
-	"github.com/apache/skywalking-eyes/assets"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"text/template"
+
+	"github.com/apache/skywalking-eyes/assets"
 
 	"github.com/spf13/cobra"
 
@@ -154,7 +155,6 @@ func writeLicense(result *deps.Result) {
 }
 
 func writeSummary(rep *deps.Report, path string) error {
-
 	if path == "" {
 		path = filepath.Join(filepath.Dir(summaryTplPath), "LICENSE")
 	}

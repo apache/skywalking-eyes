@@ -99,6 +99,7 @@ To check dependencies license in GitHub Actions, add a step in your GitHub workf
       # log: debug # optional: set the log level. The default value is `info`.
       # config: .licenserc.yaml # optional: set the config file. The default value is `.licenserc.yaml`.
       # mode: # optional: Which mode License-Eye should be run in. Choices are `check` or `resolve`. The default value is `check`.
+      # flags: # optional: Extra flags appended to the command, for example, `--summary=path/to/template.tmpl`
 ```
 
 ### Docker Image
@@ -189,10 +190,11 @@ This command assists human audits of the dependencies licenses. It's exit code i
 
 It supports two flags:
 
-|Flag name|Short name|Description|
-|---------|----------|-----------|
-|`--output`|`-o`|Save the dependencies' `LICENSE` files to a specified directory so that you can put them in distribution package if needed.|
-|`--summary`|`-s`|Based on the template, aggregate all dependency information and generate a `LICENSE` file.|
+| Flag name   | Short name | Description                                                                                                                            |
+|-------------|------------|----------------------------------------------------------------------------------------------------------------------------------------|
+| `--output`  | `-o`       | Save the dependencies' `LICENSE` files to a specified directory so that you can put them in distribution package if needed.            |
+| `--summary` | `-s`       | Based on the template, aggregate all dependency information and generate a `LICENSE` file.                                             |
+| `--license` | `-l`       | The output path to the LICENSE file to be generated. The default summary format will be used if summary template file is not specified |
 
 ```bash
 license-eye -c test/testdata/.licenserc_for_test_check.yaml dep resolve -o ./dependencies/licenses -s LICENSE.tpl

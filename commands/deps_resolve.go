@@ -19,6 +19,7 @@ package commands
 
 import (
 	"fmt"
+	"github.com/apache/skywalking-eyes/assets"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -30,16 +31,6 @@ import (
 	"github.com/apache/skywalking-eyes/internal/logger"
 	"github.com/apache/skywalking-eyes/pkg/deps"
 )
-
-var defaultTmplStr = `{{.LicenseContent }}
-{{ range .Groups }}
-========================================================================
-{{.LicenseID}} licenses
-========================================================================
-{{range .Deps}}
-    {{.Name}} {{.Version}} {{.LicenseID}}
-{{- end }}
-{{ end }}`
 
 var outDir string
 var licensePath string
@@ -79,7 +70,7 @@ var DepsResolveCommand = &cobra.Command{
 				return err
 			}
 			summaryTplPath = absPath
-			tpl, err := deps.ParseTemplate(summaryTplPath)
+			tpl, err := deps.ParseTemplate(os.DirFS(filepath.Dir(absPath)), filepath.Base(absPath))
 			if err != nil {
 				return err
 			}
@@ -96,7 +87,7 @@ var DepsResolveCommand = &cobra.Command{
 			}
 
 			if summaryTpl == nil {
-				tpl, err := deps.ParseTemplateFromString(defaultTmplStr)
+				tpl, err := deps.ParseTemplate(assets.FS(), "default-license.tpl")
 				if err != nil {
 					return err
 				}

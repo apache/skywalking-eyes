@@ -37,7 +37,7 @@ inputs:
     default: check
   flags:
     description: |
-      Extra flags appended to the command, for example, --summary=path/to/tmplate.tmpl
+      Extra flags appended to the command, for example, --summary=path/to/template.tmpl
     required: false
 runs:
   using: "composite"

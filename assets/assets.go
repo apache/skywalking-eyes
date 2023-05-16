@@ -26,6 +26,10 @@ import (
 //go:embed *
 var assets embed.FS
 
+func FS() fs.FS {
+	return assets
+}
+
 func Asset(file string) ([]byte, error) {
 	return assets.ReadFile(filepath.ToSlash(file))
 }

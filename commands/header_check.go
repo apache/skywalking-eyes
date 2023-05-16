@@ -74,7 +74,7 @@ func writeSummaryQuietly(result *header.Result) {
 			if result.HasFailure() {
 				_, _ = summaryFile.WriteString(", the following files are lack of license headers:\n")
 				for _, failure := range result.Failure {
-					_, _ = summaryFile.WriteString(fmt.Sprintf("- %s\n", failure))
+					_, _ = fmt.Fprintf(summaryFile, "- %s\n", failure)
 				}
 			}
 		}

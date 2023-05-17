@@ -19,7 +19,7 @@ package deps
 
 import (
 	"bytes"
-	"os"
+	"io/fs"
 	"sort"
 	"text/template"
 
@@ -45,8 +45,8 @@ type SummaryRenderLicense struct {
 	LicenseID string // License ID
 }
 
-func ParseTemplate(path string) (*template.Template, error) {
-	tpl, err := os.ReadFile(path)
+func ParseTemplate(f fs.FS, path string) (*template.Template, error) {
+	tpl, err := fs.ReadFile(f, path)
 	if err != nil {
 		return nil, err
 	}

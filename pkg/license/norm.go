@@ -233,11 +233,6 @@ var (
 			regexp.MustCompile(`(?m)\s+[*]$`),
 			" ",
 		},
-		// Portions Copyright (C) ...
-		{
-			regexp.MustCompile(`(?m)^\s*Portions Copyright (\([cC©]\))?.+$`),
-			"",
-		},
 		// All rights reserved
 		{
 			regexp.MustCompile(`(?m)^\s*All rights reserved\.?$`),

@@ -753,6 +753,11 @@ The `header check` command theoretically supports all kinds of file types, while
 - There is an [activity diagram](./docs/header_fix_logic.svg) explaining the implemented license header
   fixing mechanism in-depth. The diagram's source file can be found [here](./docs/header_fix_logic.plantuml).
 
+## Papers
+
+- CCF-A [AUGER: Automatically Generating Review Comments with Pre-training Models](https://2022.esec-fse.org/details/fse-2022-research-papers/21/AUGER-Automatically-Generating-Review-Comments-with-Pre-training-Models)
+- CCF-C [DeepRelease: Language-agnostic Release Notes Generation from Pull Requests of Open-source Software](https://www.computer.org/csdl/proceedings-article/apsec/2021/378400a101/1B4mbM3STVm)
+
 ## Contribution
 
 - If you find any file type should be supported by the aforementioned configurations, but it's not listed there, feel free to [open a pull request](https://github.com/apache/skywalking-eyes/pulls) to add the configuration into the two files.

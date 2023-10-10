@@ -763,7 +763,7 @@ The `header check` command theoretically supports all kinds of file types, while
 [Apache License 2.0](https://github.com/apache/skywalking-eyes/blob/master/LICENSE)
 
 ## Contact Us
-* Submit [an issue](https://github.com/apache/skywalking/issues/new) by using [INFRA] as title prefix.
-* Mail list: **dev@skywalking.apache.org**. Mail to dev-subscribe@skywalking.apache.org, follow the reply to subscribe the mail list.
-* Join `skywalking` channel at [Apache Slack](http://s.apache.org/slack-invite). If the link is not working, find the latest one at [Apache INFRA WIKI](https://cwiki.apache.org/confluence/display/INFRA/Slack+Guest+Invites).
-* Twitter, [ASFSkyWalking](https://twitter.com/ASFSkyWalking)
+* Mail list: **dev@skywalking.apache.org**. Mail to `dev-subscribe@skywalking.apache.org`, follow the reply to subscribe the mail list.
+* Send `Request to join SkyWalking slack` mail to the mail list(`dev@skywalking.apache.org`), we will invite you in.
+* For Chinese speaker, send `[CN] Request to join SkyWalking slack` mail to the mail list(`dev@skywalking.apache.org`), we will invite you in.
+* Twitter, [ASFSkyWalking](https://twitter.com/AsfSkyWalking)

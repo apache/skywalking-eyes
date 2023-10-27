@@ -89,3 +89,6 @@ incompatible:
   - CPOL-1.02
   - NPL-1.0
   - NPL-1.1
+
+compatible-with-conditions:
+  - MPL-2.0

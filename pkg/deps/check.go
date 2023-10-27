@@ -30,8 +30,9 @@ import (
 )
 
 type CompatibilityMatrix struct {
-	Compatible   []string `yaml:"compatible"`
-	Incompatible []string `yaml:"incompatible"`
+	Compatible               []string `yaml:"compatible"`
+	Incompatible             []string `yaml:"incompatible"`
+	CompatibleWithConditions []string `yaml:"compatible-with-conditions"`
 }
 
 var matrices = make(map[string]CompatibilityMatrix)
@@ -108,7 +109,7 @@ func CheckWithMatrix(mainLicenseSpdxID string, matrix *CompatibilityMatrix, repo
 		switch operator {
 		case LicenseOperatorAND:
 			if compareAll(spdxIDs, func(spdxID string) bool {
-				return compare(matrix.Compatible, spdxID)
+				return compare(matrix.Compatible, spdxID) || compare(matrix.CompatibleWithConditions, spdxID)
 			}) {
 				continue
 			}
@@ -120,7 +121,7 @@ func CheckWithMatrix(mainLicenseSpdxID string, matrix *CompatibilityMatrix, repo
 
 		case LicenseOperatorOR:
 			if compareAny(spdxIDs, func(spdxID string) bool {
-				return compare(matrix.Compatible, spdxID)
+				return compare(matrix.Compatible, spdxID) || compare(matrix.CompatibleWithConditions, spdxID)
 			}) {
 				continue
 			}

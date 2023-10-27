@@ -134,7 +134,7 @@ func CheckWithMatrix(mainLicenseSpdxID string, matrix *CompatibilityMatrix, repo
 			}
 
 		default:
-			if compatible := compare(matrix.Compatible, spdxIDs[0]); compatible {
+			if compatible := compare(matrix.Compatible, spdxIDs[0]) || compare(matrix.CompatibleWithConditions, spdxIDs[0]); compatible {
 				continue
 			}
 			if incompatible := compare(matrix.Incompatible, spdxIDs[0]); incompatible {

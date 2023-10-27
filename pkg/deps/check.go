@@ -105,7 +105,7 @@ func CheckWithMatrix(mainLicenseSpdxID string, matrix *CompatibilityMatrix, repo
 	var unknownResults []*Result
 	for _, result := range append(report.Resolved, report.Skipped...) {
 		operator, spdxIDs := parseLicenseExpression(result.LicenseSpdxID)
-		fmt.Printf("Result: %+v\n", result)
+		fmt.Println("spdxIDs:", spdxIDs)
 		fmt.Println("operator:", operator)
 		switch operator {
 		case LicenseOperatorAND:

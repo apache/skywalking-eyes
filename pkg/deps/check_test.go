@@ -158,7 +158,7 @@ func TestCheckWithMatrix(t *testing.T) {
 			},
 		},
 	}, false); err == nil {
-		t.Errorf("Should return error since compatibleWithConditions is turned off")
+		t.Errorf("Should return error since weak-compatible is turned off")
 	}
 
 	if err := deps.CheckWithMatrix("Apache-2.0", &TestMatrix, &deps.Report{

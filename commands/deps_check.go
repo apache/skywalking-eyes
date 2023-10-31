@@ -26,6 +26,12 @@ import (
 	"github.com/apache/skywalking-eyes/pkg/deps"
 )
 
+var compatibleWithConditions bool
+
+func init() {
+	DepsCheckCommand.PersistentFlags().BoolVarP(&compatibleWithConditions, "compatible-with-conditions", "cc", false, "if set, include compatible-with-conditions list in dependencies checking")
+}
+
 var DepsCheckCommand = &cobra.Command{
 	Use:     "check",
 	Aliases: []string{"c"},
@@ -34,7 +40,7 @@ var DepsCheckCommand = &cobra.Command{
 		var errors []error
 		configDeps := Config.Dependencies()
 		for _, header := range Config.Headers() {
-			if err := deps.Check(header.License.SpdxID, configDeps); err != nil {
+			if err := deps.Check(header.License.SpdxID, configDeps, compatibleWithConditions); err != nil {
 				errors = append(errors, err)
 			}
 		}

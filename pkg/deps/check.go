@@ -64,7 +64,7 @@ func init() {
 	}
 }
 
-func Check(mainLicenseSpdxID string, config *ConfigDeps) error {
+func Check(mainLicenseSpdxID string, config *ConfigDeps, compatibleWithConditions bool) error {
 	matrix := matrices[mainLicenseSpdxID]
 
 	report := Report{}
@@ -72,7 +72,7 @@ func Check(mainLicenseSpdxID string, config *ConfigDeps) error {
 		return nil
 	}
 
-	return CheckWithMatrix(mainLicenseSpdxID, &matrix, &report)
+	return CheckWithMatrix(mainLicenseSpdxID, &matrix, &report, compatibleWithConditions)
 }
 
 func compare(list []string, spdxID string) bool {
@@ -100,18 +100,19 @@ func compareAny(spdxIDs []string, compare func(spdxID string) bool) bool {
 	return false
 }
 
-func CheckWithMatrix(mainLicenseSpdxID string, matrix *CompatibilityMatrix, report *Report) error {
+func CheckWithMatrix(mainLicenseSpdxID string, matrix *CompatibilityMatrix, report *Report, compatibleWithConditions bool) error {
 	var incompatibleResults []*Result
 	var unknownResults []*Result
+	fmt.Println("compatibleWithConditions:", compatibleWithConditions)
 	for _, result := range append(report.Resolved, report.Skipped...) {
 		operator, spdxIDs := parseLicenseExpression(result.LicenseSpdxID)
-		fmt.Println("spdxIDs:", spdxIDs)
-		fmt.Println("result.LicenseSpdxID:", result.LicenseSpdxID)
-		fmt.Println("operator:", operator)
 		switch operator {
 		case LicenseOperatorAND:
 			if compareAll(spdxIDs, func(spdxID string) bool {
-				return compare(matrix.Compatible, spdxID) || compare(matrix.CompatibleWithConditions, spdxID)
+				if compatibleWithConditions {
+					return compare(matrix.Compatible, spdxID) || compare(matrix.CompatibleWithConditions, spdxID)
+				}
+				return compare(matrix.Compatible, spdxID)
 			}) {
 				continue
 			}
@@ -123,7 +124,10 @@ func CheckWithMatrix(mainLicenseSpdxID string, matrix *CompatibilityMatrix, repo
 
 		case LicenseOperatorOR:
 			if compareAny(spdxIDs, func(spdxID string) bool {
-				return compare(matrix.Compatible, spdxID) || compare(matrix.CompatibleWithConditions, spdxID)
+				if compatibleWithConditions {
+					return compare(matrix.Compatible, spdxID) || compare(matrix.CompatibleWithConditions, spdxID)
+				}
+				return compare(matrix.Compatible, spdxID)
 			}) {
 				continue
 			}
@@ -134,7 +138,10 @@ func CheckWithMatrix(mainLicenseSpdxID string, matrix *CompatibilityMatrix, repo
 			}
 
 		default:
-			if compatible := compare(matrix.Compatible, spdxIDs[0]) || compare(matrix.CompatibleWithConditions, spdxIDs[0]); compatible {
+			if compatible := compare(matrix.Compatible, spdxIDs[0]); compatible {
+				continue
+			}
+			if compatibleWithConditions && compare(matrix.CompatibleWithConditions, spdxIDs[0]) {
 				continue
 			}
 			if incompatible := compare(matrix.Incompatible, spdxIDs[0]); incompatible {

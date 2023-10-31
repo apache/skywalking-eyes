@@ -18,9 +18,10 @@
 package deps_test
 
 import (
-	"github.com/apache/skywalking-eyes/pkg/deps"
 	"strings"
 	"testing"
+
+	"github.com/apache/skywalking-eyes/pkg/deps"
 )
 
 var TestMatrix = deps.CompatibilityMatrix{
@@ -52,6 +53,9 @@ var TestMatrix = deps.CompatibilityMatrix{
 		"GPL-2.0-only",
 		"GPL-2.0-or-later",
 	},
+	CompatibleWithConditions: []string{
+		"MPL-2.0",
+	},
 }
 
 func TestCheckWithMatrix(t *testing.T) {
@@ -62,7 +66,7 @@ func TestCheckWithMatrix(t *testing.T) {
 				LicenseSpdxID: "Apache-2.0",
 			},
 		},
-	}); err != nil {
+	}, false); err != nil {
 		t.Errorf("Shouldn't return error")
 	}
 
@@ -77,7 +81,7 @@ func TestCheckWithMatrix(t *testing.T) {
 				LicenseSpdxID: "LGPL-2.0",
 			},
 		},
-	}); err == nil {
+	}, false); err == nil {
 		t.Errorf("Should return error")
 	} else if !strings.Contains(err.Error(), "Bar        | LGPL-2.0") {
 		t.Errorf("Should return error and contains dependency Bar, now is `%s`", err.Error())
@@ -96,7 +100,7 @@ func TestCheckWithMatrix(t *testing.T) {
 				LicenseSpdxID: "Unknown",
 			},
 		},
-	}); err == nil {
+	}, false); err == nil {
 		t.Errorf("Should return error")
 	} else if !strings.Contains(err.Error(), "Bar        | Unknown") {
 		t.Errorf("Should return error and has dependency Bar, now is `%s`", err.Error())
@@ -109,7 +113,7 @@ func TestCheckWithMatrix(t *testing.T) {
 				LicenseSpdxID: "Apache-2.0 OR MIT",
 			},
 		},
-	}); err != nil {
+	}, false); err != nil {
 		t.Errorf("Shouldn't return error")
 	}
 
@@ -120,7 +124,7 @@ func TestCheckWithMatrix(t *testing.T) {
 				LicenseSpdxID: "GPL-3.0 and GPL-3.0-or-later",
 			},
 		},
-	}); err == nil {
+	}, false); err == nil {
 		t.Errorf("Should return error")
 	}
 
@@ -131,7 +135,7 @@ func TestCheckWithMatrix(t *testing.T) {
 				LicenseSpdxID: "LGPL-2.1-only AND MIT AND BSD-2-Clause",
 			},
 		},
-	}); err == nil {
+	}, false); err == nil {
 		t.Errorf("Should return error")
 	}
 
@@ -142,7 +146,29 @@ func TestCheckWithMatrix(t *testing.T) {
 				LicenseSpdxID: "GPL-2.0-or-later WITH Bison-exception-2.2",
 			},
 		},
-	}); err == nil {
+	}, false); err == nil {
 		t.Errorf("Should return error")
+	}
+
+	if err := deps.CheckWithMatrix("Apache-2.0", &TestMatrix, &deps.Report{
+		Resolved: []*deps.Result{
+			{
+				Dependency:    "Foo",
+				LicenseSpdxID: "MPL-2.0",
+			},
+		},
+	}, false); err == nil {
+		t.Errorf("Should return error since compatibleWithConditions is turned off")
+	}
+
+	if err := deps.CheckWithMatrix("Apache-2.0", &TestMatrix, &deps.Report{
+		Resolved: []*deps.Result{
+			{
+				Dependency:    "Bar",
+				LicenseSpdxID: "MPL-2.0",
+			},
+		},
+	}, true); err != nil {
+		t.Errorf("Shouldn't return error")
 	}
 }

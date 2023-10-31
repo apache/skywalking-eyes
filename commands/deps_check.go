@@ -29,7 +29,7 @@ import (
 var compatibleWithConditions bool
 
 func init() {
-	DepsCheckCommand.PersistentFlags().BoolVarP(&compatibleWithConditions, "compatible-with-conditions", "cc", false, "if set, include compatible-with-conditions list in dependencies checking")
+	DepsCheckCommand.PersistentFlags().BoolVar(&compatibleWithConditions, "compatible-with-conditions", false, "if set, include compatible-with-conditions list in dependencies checking")
 }
 
 var DepsCheckCommand = &cobra.Command{

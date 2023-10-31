@@ -30,9 +30,9 @@ import (
 )
 
 type CompatibilityMatrix struct {
-	Compatible               []string `yaml:"compatible"`
-	Incompatible             []string `yaml:"incompatible"`
-	CompatibleWithConditions []string `yaml:"compatible-with-conditions"`
+	Compatible     []string `yaml:"compatible"`
+	Incompatible   []string `yaml:"incompatible"`
+	WeakCompatible []string `yaml:"weak-compatible"`
 }
 
 var matrices = make(map[string]CompatibilityMatrix)
@@ -64,7 +64,7 @@ func init() {
 	}
 }
 
-func Check(mainLicenseSpdxID string, config *ConfigDeps, compatibleWithConditions bool) error {
+func Check(mainLicenseSpdxID string, config *ConfigDeps, weakCompatible bool) error {
 	matrix := matrices[mainLicenseSpdxID]
 
 	report := Report{}
@@ -72,7 +72,7 @@ func Check(mainLicenseSpdxID string, config *ConfigDeps, compatibleWithCondition
 		return nil
 	}
 
-	return CheckWithMatrix(mainLicenseSpdxID, &matrix, &report, compatibleWithConditions)
+	return CheckWithMatrix(mainLicenseSpdxID, &matrix, &report, weakCompatible)
 }
 
 func compare(list []string, spdxID string) bool {
@@ -100,17 +100,16 @@ func compareAny(spdxIDs []string, compare func(spdxID string) bool) bool {
 	return false
 }
 
-func CheckWithMatrix(mainLicenseSpdxID string, matrix *CompatibilityMatrix, report *Report, compatibleWithConditions bool) error {
+func CheckWithMatrix(mainLicenseSpdxID string, matrix *CompatibilityMatrix, report *Report, weakCompatible bool) error {
 	var incompatibleResults []*Result
 	var unknownResults []*Result
-	fmt.Println("compatibleWithConditions:", compatibleWithConditions)
 	for _, result := range append(report.Resolved, report.Skipped...) {
 		operator, spdxIDs := parseLicenseExpression(result.LicenseSpdxID)
 		switch operator {
 		case LicenseOperatorAND:
 			if compareAll(spdxIDs, func(spdxID string) bool {
-				if compatibleWithConditions {
-					return compare(matrix.Compatible, spdxID) || compare(matrix.CompatibleWithConditions, spdxID)
+				if weakCompatible {
+					return compare(matrix.Compatible, spdxID) || compare(matrix.WeakCompatible, spdxID)
 				}
 				return compare(matrix.Compatible, spdxID)
 			}) {
@@ -124,8 +123,8 @@ func CheckWithMatrix(mainLicenseSpdxID string, matrix *CompatibilityMatrix, repo
 
 		case LicenseOperatorOR:
 			if compareAny(spdxIDs, func(spdxID string) bool {
-				if compatibleWithConditions {
-					return compare(matrix.Compatible, spdxID) || compare(matrix.CompatibleWithConditions, spdxID)
+				if weakCompatible {
+					return compare(matrix.Compatible, spdxID) || compare(matrix.WeakCompatible, spdxID)
 				}
 				return compare(matrix.Compatible, spdxID)
 			}) {
@@ -141,7 +140,7 @@ func CheckWithMatrix(mainLicenseSpdxID string, matrix *CompatibilityMatrix, repo
 			if compatible := compare(matrix.Compatible, spdxIDs[0]); compatible {
 				continue
 			}
-			if compatibleWithConditions && compare(matrix.CompatibleWithConditions, spdxIDs[0]) {
+			if weakCompatible && compare(matrix.WeakCompatible, spdxIDs[0]) {
 				continue
 			}
 			if incompatible := compare(matrix.Incompatible, spdxIDs[0]); incompatible {

@@ -53,7 +53,7 @@ var TestMatrix = deps.CompatibilityMatrix{
 		"GPL-2.0-only",
 		"GPL-2.0-or-later",
 	},
-	CompatibleWithConditions: []string{
+	WeakCompatible: []string{
 		"MPL-2.0",
 	},
 }

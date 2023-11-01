@@ -89,3 +89,22 @@ incompatible:
   - CPOL-1.02
   - NPL-1.0
   - NPL-1.1
+
+weak-compatible:
+  - CDDL-1.0
+  - CDDL-1.1
+  - CPL-1.0
+  - EPL-1.0
+  - EPL-2.0
+  - ErlPL-1.1
+  - IPA
+  - IPL-1.0
+  - LicenseRef-scancode-ubuntu-font-1.0
+  - LicenseRef-scancode-unrar
+  - MPL-1.0
+  - MPL-1.1
+  - MPL-2.0
+  - OFL-1.1
+  - OSL-3.0
+  - Ruby
+  - SPL-1.0

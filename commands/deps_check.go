@@ -26,6 +26,15 @@ import (
 	"github.com/apache/skywalking-eyes/pkg/deps"
 )
 
+var weakCompatible bool
+
+func init() {
+	DepsCheckCommand.PersistentFlags().BoolVarP(&weakCompatible, "weak-compatible", "w", false,
+		"if set to true, treat the weak-compatible licenses as compatible in dependencies check. "+
+			"Note: when set to true, make sure to manually confirm that weak-compatible licenses "+
+			"are used under the required conditions.")
+}
+
 var DepsCheckCommand = &cobra.Command{
 	Use:     "check",
 	Aliases: []string{"c"},
@@ -34,7 +43,7 @@ var DepsCheckCommand = &cobra.Command{
 		var errors []error
 		configDeps := Config.Dependencies()
 		for _, header := range Config.Headers() {
-			if err := deps.Check(header.License.SpdxID, configDeps); err != nil {
+			if err := deps.Check(header.License.SpdxID, configDeps, weakCompatible); err != nil {
 				errors = append(errors, err)
 			}
 		}

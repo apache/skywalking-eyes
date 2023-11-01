@@ -29,7 +29,10 @@ import (
 var weakCompatible bool
 
 func init() {
-	DepsCheckCommand.PersistentFlags().BoolVarP(&weakCompatible, "weak-compatible", "w", false, "if set to true, treat the weak-compatible licenses as compatible in dependencies check. Note: when set to true, make sure to manually confirm that weak-compatible licenses are used under the required conditions.")
+	DepsCheckCommand.PersistentFlags().BoolVarP(&weakCompatible, "weak-compatible", "w", false,
+		"if set to true, treat the weak-compatible licenses as compatible in dependencies check. "+
+			"Note: when set to true, make sure to manually confirm that weak-compatible licenses "+
+			"are used under the required conditions.")
 }
 
 var DepsCheckCommand = &cobra.Command{

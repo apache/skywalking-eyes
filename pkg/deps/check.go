@@ -100,6 +100,13 @@ func compareAny(spdxIDs []string, compare func(spdxID string) bool) bool {
 	return false
 }
 
+func compareCompatible(matrix *CompatibilityMatrix, spdxID string, weakCompatible bool) bool {
+	if weakCompatible {
+		return compare(matrix.Compatible, spdxID) || compare(matrix.WeakCompatible, spdxID)
+	}
+	return compare(matrix.Compatible, spdxID)
+}
+
 func CheckWithMatrix(mainLicenseSpdxID string, matrix *CompatibilityMatrix, report *Report, weakCompatible bool) error {
 	var incompatibleResults []*Result
 	var unknownResults []*Result
@@ -108,10 +115,7 @@ func CheckWithMatrix(mainLicenseSpdxID string, matrix *CompatibilityMatrix, repo
 		switch operator {
 		case LicenseOperatorAND:
 			if compareAll(spdxIDs, func(spdxID string) bool {
-				if weakCompatible {
-					return compare(matrix.Compatible, spdxID) || compare(matrix.WeakCompatible, spdxID)
-				}
-				return compare(matrix.Compatible, spdxID)
+				return compareCompatible(matrix, spdxID, weakCompatible)
 			}) {
 				continue
 			}
@@ -123,10 +127,7 @@ func CheckWithMatrix(mainLicenseSpdxID string, matrix *CompatibilityMatrix, repo
 
 		case LicenseOperatorOR:
 			if compareAny(spdxIDs, func(spdxID string) bool {
-				if weakCompatible {
-					return compare(matrix.Compatible, spdxID) || compare(matrix.WeakCompatible, spdxID)
-				}
-				return compare(matrix.Compatible, spdxID)
+				return compareCompatible(matrix, spdxID, weakCompatible)
 			}) {
 				continue
 			}

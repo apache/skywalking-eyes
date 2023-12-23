@@ -3841,6 +3841,7 @@ Open Policy Agent:
     - ".rego"
   language_id: 840483232
   tm_scope: source.rego
+  comment_style_id: Hashtag
 OpenCL:
   type: programming
   group: C

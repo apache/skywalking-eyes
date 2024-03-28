@@ -257,11 +257,10 @@ func IsPR() bool {
 	return os.Getenv("GITHUB_EVENT_NAME") == "pull_request"
 }
 
-// TODO add fixing guide
 func Markdown(result *header2.Result) string {
 	return fmt.Sprintf(`
 <!-- %s -->
-[license-eye](https://github.com/apache/skywalking-eyes/tree/main/cmd/license-eye) has totally checked %d files.
+[license-eye](https://github.com/apache/skywalking-eyes/tree/main/cmd/license-eye) has checked %d files.
 | Valid | Invalid | Ignored | Fixed |
 | --- | --- | --- | --- |
 | %d | %d | %d | %d |
@@ -269,6 +268,15 @@ func Markdown(result *header2.Result) string {
   <summary>Click to see the invalid file list</summary>
 
   %v
+</details>
+
+<details>
+	<summary>Use this command to fix any missing license headers</summary>
+
+	`+"```bash\n"+
+		"docker run -it --rm -v $(pwd):/github/workspace apache/skywalking-eyes header fix\n"+
+		"```"+
+		`
 </details>
 `,
 		Identification,

@@ -1,3 +1,10 @@
+## 0.6.0
+
+* Add instructions to fix header issues in markdown comment.
+* Add Eclipse Foundation specific Apache 2.0 license header.
+* Add support for OPA policy files, protobuf.
+* Add weak-compatible check to dependency check.
+
 ## 0.5.0
 
 * feat(header templates): add support for AGPL-3.0 by @elijaholmos in https://github.com/apache/skywalking-eyes/pull/125

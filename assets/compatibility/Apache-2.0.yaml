@@ -22,6 +22,7 @@ compatible:
   - PHP-3.01
   - BSD-3-Clause
   - BSD-2-Clause
+  - BSD-2-Clause-Views
   - PostgreSQL
   - EPL-1.0
   - ISC

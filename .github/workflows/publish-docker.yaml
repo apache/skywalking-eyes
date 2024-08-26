@@ -19,8 +19,8 @@ name: publish-docker
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - 'v*.*.*'
 
 env:
   HUB: ghcr.io/apache/skywalking-eyes
@@ -39,6 +39,10 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: true
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - uses: actions/cache@v2
         with:
           path: |
@@ -52,6 +56,17 @@ jobs:
           registry: ${{ env.HUB }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push docker image
-        run: |
-          make docker-release
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ github.repository }}
+      - name: Push to Registry(s)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: 'linux/amd64,linux/arm64'
+          push: true
+          provenance: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

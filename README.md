@@ -138,6 +138,20 @@ If you have the Go SDK installed, you can also use the `go install` command to i
 go install github.com/apache/skywalking-eyes/cmd/license-eye@latest
 ```
 
+### Use Homebrew on macOS
+
+If you don’t have it installed, you can install it by running the following command in terminal:
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+Then install license-eye using the following command:
+
+```bash
+brew install license-eye
+```
+
 #### Check License Header
 
 ```bash

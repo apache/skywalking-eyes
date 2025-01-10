@@ -132,6 +132,8 @@ cd skywalking-eyes
 make build
 ```
 
+Notes: The `make build` command will generate a bin directory in the current project directory. Choose the appropriate binary file according to your operating system.
+
 If you have the Go SDK installed, you can also use the `go install` command to install the latest code.
 
 ```bash
@@ -185,7 +187,7 @@ exit status 1
 #### Fix License Header
 
 ```bash
-bin/darwin/license-eye -c test/testdata/.licenserc_for_test_fix.yaml header fix
+license-eye -c test/testdata/.licenserc_for_test_fix.yaml header fix
 ```
 
 <details>

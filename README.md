@@ -109,6 +109,18 @@ docker run -it --rm -v $(pwd):/github/workspace apache/skywalking-eyes header ch
 docker run -it --rm -v $(pwd):/github/workspace apache/skywalking-eyes header fix
 ```
 
+#### Using Docker for License Dependency Checks
+
+To check dependencies' licenses in Docker, you'll need the appropriate language runtime and package managers in your environment. The base Docker image only includes the license-eye binary. To check dependencies, you can build a custom Docker image with your required language tools:
+
+```dockerfile
+FROM apache/skywalking-eyes:latest
+
+# Install the tools you need
+```
+
+See the [examples directory](examples/) for more detailed examples and Dockerfiles for different languages.
+
 ### Docker Image from the latest codes
 
 For users and developers who want to help to test the latest codes on main branch, we publish a Docker image to the GitHub

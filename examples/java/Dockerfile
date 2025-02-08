@@ -15,18 +15,15 @@
 # specific language governing permissions and limitations
 # under the License.
 
-FROM golang:1.23-alpine AS build
+FROM apache/skywalking-eyes:latest
 
-WORKDIR /license-eye
+ARG JAVA_VERSION=17
+ARG TARGETARCH
 
-COPY . .
+# Install OpenJDK
+RUN apk add --no-cache --update openjdk${JAVA_VERSION}-jdk
 
-RUN apk add --no-cache make curl && make linux
+ENV JAVA_HOME=/usr/lib/jvm/java-${JAVA_VERSION}-openjdk-${TARGETARCH}
+ENV PATH=$PATH:$JAVA_HOME/bin
 
-FROM alpine:3 AS bin
-
-COPY --from=build /license-eye/bin/linux/license-eye /bin/license-eye
-
-WORKDIR /github/workspace/
-
-ENTRYPOINT ["/bin/license-eye"]
+WORKDIR /github/workspace 

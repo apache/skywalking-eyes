@@ -23,6 +23,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"math"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -126,7 +127,12 @@ func (resolver *JarResolver) ReadFileFromZip(archiveFile *zip.File) (*bytes.Buff
 
 	buf := bytes.NewBuffer(nil)
 	w := bufio.NewWriter(buf)
-	_, err = io.CopyN(w, file, int64(archiveFile.UncompressedSize64))
+
+	size := archiveFile.UncompressedSize64
+	if size > math.MaxInt64 {
+		return nil, fmt.Errorf("file too large: size %d exceeds maximum supported size", size)
+	}
+	_, err = io.CopyN(w, file, int64(size))
 	if err != nil {
 		return nil, err
 	}

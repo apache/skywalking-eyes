@@ -21,7 +21,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -125,7 +124,7 @@ func (resolver *MavenPomResolver) ResolveDeps() error {
 }
 
 func (resolver *MavenPomResolver) LoadDependencies(config *ConfigDeps) ([]*Dependency, error) {
-	depsFile, err := ioutil.TempFile(os.TempDir(), "maven-dependencies.txt")
+	depsFile, err := os.CreateTemp(os.TempDir(), "maven-dependencies.txt")
 	if err != nil {
 		return nil, err
 	}

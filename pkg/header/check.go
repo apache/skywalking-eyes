@@ -142,7 +142,7 @@ func walkFile(file string, seen map[string]bool) ([]string, error) {
 		case mode.IsRegular():
 			files = append(files, file)
 		case mode.IsDir():
-			err := filepath.Walk(file, func(path string, info fs.FileInfo, err error) error {
+			err := filepath.Walk(file, func(path string, info fs.FileInfo, _ error) error {
 				if path == file {
 					// when path is symbolic link file, it causes infinite recursive calls
 					return nil

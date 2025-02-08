@@ -39,7 +39,7 @@ var DepsCheckCommand = &cobra.Command{
 	Use:     "check",
 	Aliases: []string{"c"},
 	Long:    "resolves and check license compatibility in all dependencies of a module and their transitive dependencies",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		var errors []error
 		configDeps := Config.Dependencies()
 		for _, header := range Config.Headers() {

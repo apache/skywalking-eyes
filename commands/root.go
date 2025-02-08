@@ -37,7 +37,7 @@ var root = &cobra.Command{
 	Long:          "A full-featured license guard to check and fix license headers and dependencies' licenses",
 	SilenceUsage:  true,
 	SilenceErrors: true,
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+	PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
 		level, err := logrus.ParseLevel(verbosity)
 		if err != nil {
 			return err

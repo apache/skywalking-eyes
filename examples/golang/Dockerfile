@@ -15,18 +15,18 @@
 # specific language governing permissions and limitations
 # under the License.
 
-FROM golang:1.23-alpine AS build
+FROM apache/skywalking-eyes:latest
 
-WORKDIR /license-eye
+ARG GO_VERSION=1.23.1
+ARG TARGETARCH
 
-COPY . .
+# Install Go
+RUN wget https://golang.org/dl/go${GO_VERSION}.linux-${TARGETARCH}.tar.gz \
+    && tar -C /usr/local -xzf go${GO_VERSION}.linux-${TARGETARCH}.tar.gz \
+    && rm go${GO_VERSION}.linux-${TARGETARCH}.tar.gz
 
-RUN apk add --no-cache make curl && make linux
+ENV PATH=$PATH:/usr/local/go/bin
+ENV GOPATH=/go
+ENV PATH=$PATH:$GOPATH/bin
 
-FROM alpine:3 AS bin
-
-COPY --from=build /license-eye/bin/linux/license-eye /bin/license-eye
-
-WORKDIR /github/workspace/
-
-ENTRYPOINT ["/bin/license-eye"]
+WORKDIR /github/workspace 

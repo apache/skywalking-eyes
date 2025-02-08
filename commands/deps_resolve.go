@@ -33,10 +33,12 @@ import (
 	"github.com/apache/skywalking-eyes/pkg/deps"
 )
 
-var outDir string
-var licensePath string
-var summaryTplPath string
-var summaryTpl *template.Template
+var (
+	outDir         string
+	licensePath    string
+	summaryTplPath string
+	summaryTpl     *template.Template
+)
 
 func init() {
 	DepsResolveCommand.PersistentFlags().StringVarP(&outDir, "output", "o", "",
@@ -54,7 +56,7 @@ var DepsResolveCommand = &cobra.Command{
 	Use:     "resolve",
 	Aliases: []string{"r"},
 	Long:    "resolves all dependencies of a module and their transitive dependencies",
-	PreRunE: func(cmd *cobra.Command, args []string) error {
+	PreRunE: func(_ *cobra.Command, _ []string) error {
 		if outDir != "" {
 			absPath, err := filepath.Abs(outDir)
 			if err != nil {
@@ -97,7 +99,7 @@ var DepsResolveCommand = &cobra.Command{
 		}
 		return nil
 	},
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		report := deps.Report{}
 
 		configDeps := Config.Dependencies()

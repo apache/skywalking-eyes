@@ -33,10 +33,11 @@ linters-settings:
     min-len: 2
     min-occurrences: 2
   depguard:
-    list-type: blacklist
-    include-go-root: true
-    packages-with-error-messages:
-      fmt: "logging is allowed only by logutils.Log"
+    rules:
+      main:
+        deny:
+          - pkg: "fmt"
+            desc: "logging is allowed only by logutils.Log"
   misspell:
     locale: US
     ignore-words:
@@ -94,11 +95,9 @@ linters-settings:
 linters:
   enable:
     - bodyclose
-    - deadcode
-    - depguard
+    - errcheck
     - dogsled
     - dupl
-    - errcheck
     - funlen
     - goconst
     - gocritic
@@ -114,16 +113,13 @@ linters:
     - misspell
     - nakedret
     - staticcheck
-    - structcheck
-    - stylecheck
     - typecheck
     - unconvert
     - unparam
     - unused
-    - varcheck
     - whitespace
 
 service:
-  golangci-lint-version: 1.20.x
+  golangci-lint-version: 1.63.4
   prepare:
     - echo "here I can run custom commands, but no preparation needed for this repo"

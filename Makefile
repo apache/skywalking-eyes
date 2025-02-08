@@ -43,7 +43,7 @@ RELEASE_SRC = skywalking-$(PROJECT)-$(VERSION)-src
 all: clean lint license test build
 
 $(GO_LINT):
-	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GO_PATH)/bin v1.49.0
+	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GO_PATH)/bin v1.63.4
 
 .PHONY: lint
 lint: $(GO_LINT)
@@ -74,7 +74,7 @@ build: windows linux darwin
 
 .PHONY: docker
 docker:
-	docker build . -t $(HUB)/$(PROJECT):$(VERSION) -t $(HUB)/$(PROJECT):latest
+	docker build --no-cache . -t $(HUB)/$(PROJECT):$(VERSION) -t $(HUB)/$(PROJECT):latest
 
 .PHONY: docker-push
 docker-push:

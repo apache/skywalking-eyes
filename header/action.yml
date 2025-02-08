@@ -44,10 +44,10 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Set up Go 1.18
+    - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: 1.18
+        go-version: 1.23
         cache-dependency-path: ${{ github.action_path }}/go.sum
     - shell: bash
       run: make -C $GITHUB_ACTION_PATH/.. install

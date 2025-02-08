@@ -31,7 +31,7 @@ var FixCommand = &cobra.Command{
 	Use:     "fix",
 	Aliases: []string{"f"},
 	Long:    "fix command walks the specified paths recursively and fix the license header if the specified files don't have the license header.",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, args []string) error {
 		var errors []string
 		for _, h := range Config.Headers() {
 			var result header.Result

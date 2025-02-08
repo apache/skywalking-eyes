@@ -15,18 +15,12 @@
 # specific language governing permissions and limitations
 # under the License.
 
-FROM golang:1.23-alpine AS build
+FROM apache/skywalking-eyes:latest
 
-WORKDIR /license-eye
+ARG NODE_VERSION=22.13.1
+ARG TARGETARCH
 
-COPY . .
+# Install Node.js
+RUN apk add --no-cache --update nodejs=${NODE_VERSION}-r0 npm
 
-RUN apk add --no-cache make curl && make linux
-
-FROM alpine:3 AS bin
-
-COPY --from=build /license-eye/bin/linux/license-eye /bin/license-eye
-
-WORKDIR /github/workspace/
-
-ENTRYPOINT ["/bin/license-eye"]
+WORKDIR /github/workspace 

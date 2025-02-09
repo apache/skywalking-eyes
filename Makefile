@@ -56,6 +56,7 @@ fix-lint: $(GO_LINT)
 .PHONY: license
 license: clean
 	$(GO) run cmd/$(PROJECT)/main.go header check
+	$(GO) run cmd/$(PROJECT)/main.go dependency check
 
 .PHONY: test
 test: clean
@@ -115,7 +116,12 @@ release-src: clean
 	mv $(RELEASE_SRC)/$(RELEASE_SRC).tgz $(RELEASE_SRC).tgz
 	-rm -rf "$(RELEASE_SRC)"
 
-release-bin: build
+.PHONY: release-license-bin
+release-license-bin: clean
+	$(GO) run cmd/$(PROJECT)/main.go dependency resolve --summary dist/LICENSE.tpl --output dist/licenses/ || \
+		(echo "Error: Failed to resolve license dependencies automatically. Please check licenses manually." && exit 1)
+
+release-bin: release-license-bin build
 	-mkdir $(RELEASE_BIN)
 	-cp -R bin $(RELEASE_BIN)
 	-cp -R dist/* $(RELEASE_BIN)

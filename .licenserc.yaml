@@ -19,7 +19,8 @@ header: # `header` section is configurations for source codes license header.
   license:
     spdx-id: Apache-2.0 # the spdx id of the license, it's convenient when your license is standard SPDX license.
     copyright-owner: Apache Software Foundation # the copyright owner to replace the [owner] in the `spdx-id` template.
-    content: | # `license` will be used as the content when `fix` command needs to insert a license header.
+    content:
+      | # `license` will be used as the content when `fix` command needs to insert a license header.
       Licensed to the Apache Software Foundation (ASF) under one
       or more contributor license agreements.  See the NOTICE file
       distributed with this work for additional information
@@ -57,23 +58,24 @@ header: # `header` section is configurations for source codes license header.
       under the License.
 
   paths: # `paths` are the path list that will be checked (and fixed) by license-eye, default is ['**'].
-    - '**'
+    - "**"
 
   paths-ignore: # `paths-ignore` are the path list that will be ignored by license-eye.
-    - 'dist'
-    - 'licenses'
-    - '**/*.md'
-    - '**/testdata/**'
-    - '**/go.mod'
-    - '**/go.sum'
-    - 'LICENSE'
-    - 'NOTICE'
-    - '**/assets/header-templates/**'
-    - '**/assets/lcs-templates/**'
-    - '**/assets/languages.yaml'
-    - '**/assets/default-license.tpl'
-    - '**/assets/assets.gen.go'
-    - 'docs/**.svg'
+    - "dist"
+    - "licenses"
+    - "**/*.md"
+    - "**/testdata/**"
+    - "**/go.mod"
+    - "**/go.sum"
+    - "LICENSE"
+    - "NOTICE"
+    - "**/assets/header-templates/**"
+    - "**/assets/lcs-templates/**"
+    - "**/assets/languages.yaml"
+    - "**/assets/default-license.tpl"
+    - "**/assets/assets.gen.go"
+    - "docs/**.svg"
+    - "pkg/gitignore/dir.go"
 
   comment: on-failure # on what condition license-eye will comment on the pull request, `on-failure`, `always`, `never`.
 

@@ -24,3 +24,6 @@ coverage.txt
 
 target/
 *.jar
+
+dist/licenses
+dist/LICENSE

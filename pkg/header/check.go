@@ -27,6 +27,7 @@ import (
 	"strings"
 
 	"github.com/apache/skywalking-eyes/internal/logger"
+	eyeignore "github.com/apache/skywalking-eyes/pkg/gitignore"
 	lcs "github.com/apache/skywalking-eyes/pkg/license"
 
 	"github.com/bmatcuk/doublestar/v2"
@@ -85,12 +86,7 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 		if t.Excludes == nil {
 			t.Excludes = make([]gitignore.Pattern, 0)
 		}
-		if ignorePattens, err := gitignore.LoadGlobalPatterns(osfs.New("")); err == nil {
-			t.Excludes = append(t.Excludes, ignorePattens...)
-		}
-		if ignorePattens, err := gitignore.LoadSystemPatterns(osfs.New("")); err == nil {
-			t.Excludes = append(t.Excludes, ignorePattens...)
-		}
+		addIgnorePatterns(t)
 		s, _ := t.Status()
 		for file := range s {
 			candidates = append(candidates, file)
@@ -127,6 +123,24 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 	}
 
 	return fileList, nil
+}
+
+func addIgnorePatterns(t *git.Worktree) {
+	if ignorePattens, err := gitignore.LoadGlobalPatterns(osfs.New("")); err == nil {
+		t.Excludes = append(t.Excludes, ignorePattens...)
+	}
+	if ignorePattens, err := gitignore.LoadSystemPatterns(osfs.New("")); err == nil {
+		t.Excludes = append(t.Excludes, ignorePattens...)
+	}
+	if ignorePatterns, err := eyeignore.LoadGlobalPatterns(); err == nil {
+		t.Excludes = append(t.Excludes, ignorePatterns...)
+	}
+	if ignorePatterns, err := eyeignore.LoadSystemPatterns(); err == nil {
+		t.Excludes = append(t.Excludes, ignorePatterns...)
+	}
+	if ignorePatterns, err := eyeignore.LoadGlobalIgnoreFile(); err == nil {
+		t.Excludes = append(t.Excludes, ignorePatterns...)
+	}
 }
 
 func walkFile(file string, seen map[string]bool) ([]string, error) {

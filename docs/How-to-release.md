@@ -5,8 +5,6 @@ This documentation guides the release manager to release the SkyWalking Eyes in 
 ## Prerequisites
 
 1. Close (if finished, or move to next milestone otherwise) all issues in the current milestone from [skywalking-eyes](https://github.com/apache/skywalking-eyes/milestones) and [skywalking](https://github.com/apache/skywalking/milestones), create a new milestone if needed.
-1. Update [CHANGES.md](../CHANGES.md).
-
 
 ## Add your GPG public key to Apache svn
 
@@ -15,7 +13,6 @@ This documentation guides the release manager to release the SkyWalking Eyes in 
 1. Log in [id.apache.org](https://id.apache.org/) and submit your key fingerprint.
 
 1. Add your GPG public key into [SkyWalking GPG KEYS](https://dist.apache.org/repos/dist/release/skywalking/KEYS) file, **you can do this only if you are a PMC member**.  You can ask a PMC member for help. **DO NOT override the existed `KEYS` file content, only append your key at the end of the file.**
-
 
 ## Build and sign the source code package
 
@@ -27,10 +24,11 @@ git tag -a "v$VERSION" -m "Release Apache SkyWalking-Eyes $VERSION"
 git push --tags
 
 make clean 
-
-make test # this is optional, it runs sanity checks to verify the features
-
+make verify # this is optional, it runs sanity checks to verify the features
 make release
+
+# Create a draft release in GitHub, this can be optionally done in GitHub web ui.
+gh release create v$VERSION --generate-notes --draft skywalking-license-eye-$VERSION-*
 ```
 
 ## Upload to Apache svn

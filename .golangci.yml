@@ -20,7 +20,8 @@ run:
 
 linters-settings:
   govet:
-    check-shadowing: true
+    enable:
+      - shadow
   revive:
     min-confidence: 0
   gocyclo:

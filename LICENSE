@@ -228,3 +228,4 @@ The text of each license is the standard Apache 2.0 license.
 
    pkg/deps/testdata/maven/mvnw files from https://github.com/apache/maven-wrapper Apache 2.0
    pkg/deps/testdata/maven/.mvn/wrapper/maven-wrapper.properties from https://github.com/apache/maven-wrapper Apache 2.0
+   pkg/gitignore/dir.go from https://github.com/go-git/go-git/blob/db681b472344540816df80736860c6af23e8cf94/plumbing/format/gitignore/dir.go Apache 2.0

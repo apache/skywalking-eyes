@@ -1402,6 +1402,7 @@ Elixir:
   interpreters:
     - elixir
   language_id: 100
+  comment_style_id: Hashtag
 Elm:
   type: programming
   color: "#60B5CC"

@@ -4,7 +4,7 @@
 
 A full-featured license tool to check and fix license headers and resolve dependencies' licenses.
 
-[![Twitter Follow](https://img.shields.io/twitter/follow/asfskywalking.svg?style=for-the-badge&label=Follow&logo=twitter)](https://twitter.com/AsfSkyWalking)
+[![X Follow](https://img.shields.io/badge/2K%2B-follow?style=for-the-badge&logo=X&label=%40ASFSKYWALKING)](https://twitter.com/AsfSkyWalking)
 
 ## Usage
 

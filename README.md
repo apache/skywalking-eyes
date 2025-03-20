@@ -104,9 +104,18 @@ To check dependencies license in GitHub Actions, add a step in your GitHub workf
 
 ### Docker Image
 
+For Bash, users can execute the following command,
+
 ```shell
 docker run -it --rm -v $(pwd):/github/workspace apache/skywalking-eyes header check
 docker run -it --rm -v $(pwd):/github/workspace apache/skywalking-eyes header fix
+```
+
+For PowerShell 7, users can execute the following command,
+
+```
+docker run -it --rm -v ${pwd}:/github/workspace apache/skywalking-eyes header check
+docker run -it --rm -v ${pwd}:/github/workspace apache/skywalking-eyes header fix
 ```
 
 #### Using Docker for License Dependency Checks

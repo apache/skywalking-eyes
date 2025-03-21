@@ -1,6 +1,9 @@
 module github.com/apache/skywalking-eyes
 
-go 1.23
+go 1.23.0
+
+toolchain go1.23.6
+
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/bmatcuk/doublestar/v2 v2.0.4

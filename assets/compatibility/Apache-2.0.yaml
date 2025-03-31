@@ -20,6 +20,7 @@
 compatible:
   - Apache-2.0
   - PHP-3.01
+  - 0BSD
   - BSD-3-Clause
   - BSD-2-Clause
   - BSD-2-Clause-Views

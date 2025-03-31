@@ -24,7 +24,7 @@ compatible:
   - BSD-2-Clause
   - BSD-2-Clause-Views
   - PostgreSQL
-  - EPL-1.0
+  - EDL-1.0
   - ISC
   - SMLNJ
   - ICU.txt
@@ -45,6 +45,7 @@ compatible:
   - HPND.txt
   - MulanPSL-2.0.txt
   - MIT
+  - MIT-0
 
 incompatible:
   - Unknown

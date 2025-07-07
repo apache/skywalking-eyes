@@ -92,20 +92,29 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 			candidates = append(candidates, file)
 		}
 
-		head, _ := repo.Head()
-		commit, _ := repo.CommitObject(head.Hash())
-		tree, err := commit.Tree()
-		if err != nil {
-			return nil, err
-		}
-		if err := tree.Files().ForEach(func(file *object.File) error {
-			if file == nil {
-				return errors.New("file pointer is nil")
+		head, err := repo.Head()
+		if err != nil || head == nil {
+			// Repository has no commits or invalid HEAD, skip git-based file discovery
+			logger.Log.Debugf("Repository has no commits or invalid HEAD (head: %v), skipping git-based file discovery. Error: %v", head, err)
+		} else {
+			commit, err := repo.CommitObject(head.Hash())
+			if err != nil {
+				logger.Log.Debugln("Failed to get commit object:", err)
+			} else {
+				tree, err := commit.Tree()
+				if err != nil {
+					return nil, err
+				}
+				if err := tree.Files().ForEach(func(file *object.File) error {
+					if file == nil {
+						return errors.New("file pointer is nil")
+					}
+					candidates = append(candidates, file.Name)
+					return nil
+				}); err != nil {
+					return nil, err
+				}
 			}
-			candidates = append(candidates, file.Name)
-			return nil
-		}); err != nil {
-			return nil, err
 		}
 
 		seen := make(map[string]bool)

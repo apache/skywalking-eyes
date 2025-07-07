@@ -17,4 +17,17 @@
 
 package commands
 
+import (
+	"runtime/debug"
+)
+
 var version = "dev"
+
+func init() {
+	// Try to get version from build info first (for go install)
+	if info, ok := debug.ReadBuildInfo(); ok {
+		if info.Main.Version != "" && info.Main.Version != "(devel)" {
+			version = info.Main.Version
+		}
+	}
+}

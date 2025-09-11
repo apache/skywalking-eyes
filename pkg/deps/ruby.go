@@ -21,6 +21,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -303,97 +304,102 @@ func fetchRubyGemsLicenseFrom(url string) (string, error) {
 			continue
 		}
 
-		// Ensure body is always closed
-		func() {
-			defer resp.Body.Close()
+		license, wait, retry, hErr := handleRubyGemsResponse(resp)
+		_ = resp.Body.Close()
 
-			switch {
-			case resp.StatusCode == http.StatusOK:
-				var info rubyGemsVersionInfo
-				dec := json.NewDecoder(resp.Body)
-				if err = dec.Decode(&info); err != nil {
-					break
-				}
-				var items []string
-				if len(info.Licenses) > 0 {
-					items = info.Licenses
-				} else if info.License != "" {
-					items = []string{info.License}
-				}
-				for i := range items {
-					items[i] = strings.TrimSpace(items[i])
-				}
-				m := make(map[string]struct{})
-				for _, it := range items {
-					if it == "" {
-						continue
-					}
-					m[it] = struct{}{}
-				}
-				if len(m) == 0 {
-					err = nil
-					// empty license info
-					return
-				}
-				var out []string
-				for k := range m {
-					out = append(out, k)
-				}
-				slicesSort(out)
-				// Return successfully
-				err = nil
-				url = strings.Join(out, " OR ")
-				return
-
-			case resp.StatusCode == http.StatusNotFound:
-				// Treat as no license info available
-				err = nil
-				return
-
-			case resp.StatusCode == http.StatusTooManyRequests || (resp.StatusCode >= 500 && resp.StatusCode <= 599):
-				// Respect Retry-After if present (in seconds)
-				ra := strings.TrimSpace(resp.Header.Get("Retry-After"))
-				if ra != "" {
-					if secs, parseErr := strconv.Atoi(ra); parseErr == nil {
-						wait := time.Duration(secs) * time.Second
-						if wait > 10*time.Second {
-							wait = 10 * time.Second
-						}
-						time.Sleep(wait)
-					} else {
-						time.Sleep(backoff)
-					}
+		if hErr != nil {
+			if retry && attempt < maxAttempts {
+				if wait > 0 {
+					time.Sleep(wait)
 				} else {
 					time.Sleep(backoff)
 				}
 				backoff *= 2
-				// Mark a retryable error by setting err non-nil so outer loop continues
-				err = fmt.Errorf("retryable status: %s", resp.Status)
-				return
-
-			default:
-				err = fmt.Errorf("unexpected status: %s", resp.Status)
-				return
+				continue
 			}
-		}()
-
-		// Decide based on err and what we set in the closure
-		if err == nil {
-			// For 200 OK with parsed license, we smuggled the result in url variable; for 404 we return "".
-			// Detect if url was replaced by license string by checking it doesn't start with http.
-			if !strings.HasPrefix(url, "http") {
-				return url, nil
-			}
-			// 404 case or empty license
-			return "", nil
+			return "", hErr
 		}
 
-		// If retryable and attempts left, continue; otherwise return error
-		if attempt == maxAttempts {
-			return "", err
+		if retry { // safety branch, normally handled above when hErr != nil
+			if attempt == maxAttempts {
+				return "", fmt.Errorf("max attempts reached")
+			}
+			if wait > 0 {
+				time.Sleep(wait)
+			} else {
+				time.Sleep(backoff)
+			}
+			backoff *= 2
+			continue
 		}
+
+		return license, nil
 	}
 	return "", nil
+}
+
+func handleRubyGemsResponse(resp *http.Response) (string, time.Duration, bool, error) {
+	switch {
+	case resp.StatusCode == http.StatusOK:
+		license, err := parseRubyGemsLicenseJSON(resp.Body)
+		return license, 0, false, err
+	case resp.StatusCode == http.StatusNotFound:
+		// Treat as no license info available
+		return "", 0, false, nil
+	case resp.StatusCode == http.StatusTooManyRequests || (resp.StatusCode >= 500 && resp.StatusCode <= 599):
+		wait := retryAfterDuration(resp.Header.Get("Retry-After"))
+		return "", wait, true, fmt.Errorf("retryable status: %s", resp.Status)
+	default:
+		return "", 0, false, fmt.Errorf("unexpected status: %s", resp.Status)
+	}
+}
+
+func parseRubyGemsLicenseJSON(r io.Reader) (string, error) {
+	var info rubyGemsVersionInfo
+	dec := json.NewDecoder(r)
+	if err := dec.Decode(&info); err != nil {
+		return "", err
+	}
+	var items []string
+	if len(info.Licenses) > 0 {
+		items = info.Licenses
+	} else if info.License != "" {
+		items = []string{info.License}
+	}
+	for i := range items {
+		items[i] = strings.TrimSpace(items[i])
+	}
+	m := make(map[string]struct{})
+	for _, it := range items {
+		if it == "" {
+			continue
+		}
+		m[it] = struct{}{}
+	}
+	if len(m) == 0 {
+		return "", nil
+	}
+	var out []string
+	for k := range m {
+		out = append(out, k)
+	}
+	slicesSort(out)
+	return strings.Join(out, " OR "), nil
+}
+
+func retryAfterDuration(v string) time.Duration {
+	v = strings.TrimSpace(v)
+	if v == "" {
+		return 0
+	}
+	if secs, err := strconv.Atoi(v); err == nil {
+		wait := time.Duration(secs) * time.Second
+		if wait > 10*time.Second {
+			wait = 10 * time.Second
+		}
+		return wait
+	}
+	return 0
 }
 
 // small helper to sort string slice without importing sort here to keep imports aligned with style used in this package

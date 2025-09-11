@@ -104,8 +104,7 @@ To check dependencies license in GitHub Actions, add a step in your GitHub workf
 ```
 
 <details>
-
-    <summary>Ruby projects (Bundler)</summary>
+<summary>Ruby projects (Bundler)</summary>
 
 License-Eye can resolve Ruby dependencies and their licenses directly from Gemfile.lock.
 

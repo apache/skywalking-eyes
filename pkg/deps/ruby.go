@@ -286,7 +286,7 @@ func fetchRubyGemsLicenseFrom(url string) (string, error) {
 	backoff := 1 * time.Second
 
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		req, err := http.NewRequest(http.MethodGet, url, nil)
+		req, err := http.NewRequest(http.MethodGet, url, http.NoBody)
 		if err != nil {
 			return "", err
 		}

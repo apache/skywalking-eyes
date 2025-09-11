@@ -38,6 +38,7 @@ dependency:
     - Cargo.toml        # If this is a rust project.
     - package.json      # If this is a npm project.
     - go.mod            # If this is a Go project.
+    - Gemfile.lock      # If this is a Ruby project (Bundler). Ensure Gemfile.lock is committed.
 ```
 
 #### Check License Headers
@@ -101,6 +102,40 @@ To check dependencies license in GitHub Actions, add a step in your GitHub workf
       # mode: # optional: Which mode License-Eye should be run in. Choices are `check` or `resolve`. The default value is `check`.
       # flags: # optional: Extra flags appended to the command, for example, `--summary=path/to/template.tmpl`
 ```
+
+<details>
+<summary>Ruby projects (Bundler)</summary>
+
+License-Eye can resolve Ruby dependencies and their licenses directly from Gemfile.lock.
+
+Rules applied:
+- If a .gemspec file exists in the same directory as Gemfile.lock, the project is treated as a library and development dependencies are ignored. Runtime dependencies (and their transitives) are included.
+- If no .gemspec is present, the project is treated as an app and all dependencies from Gemfile.lock are considered (both runtime and development).
+
+Requirements:
+- Commit Gemfile.lock to version control so License-Eye can read the locked dependency graph.
+- For libraries, ensure the .gemspec is present in the same directory as Gemfile.lock.
+
+Minimal config snippet:
+
+```yaml
+dependency:
+  files:
+    - Gemfile.lock
+```
+
+GitHub Actions example:
+
+```yaml
+- name: Check Ruby dependencies' licenses
+  uses: apache/skywalking-eyes/dependency@main
+  with:
+    config: .licenserc.yaml
+```
+
+Note: License-Eye may query the RubyGems API to determine licenses when they are not specified in your configuration. Ensure the workflow has network access.
+
+</details>
 
 ### Docker Image
 

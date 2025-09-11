@@ -32,6 +32,7 @@ var Resolvers = []Resolver{
 	new(MavenPomResolver),
 	new(JarResolver),
 	new(CargoTomlResolver),
+	new(GemfileLockResolver),
 }
 
 func Resolve(config *ConfigDeps, report *Report) error {

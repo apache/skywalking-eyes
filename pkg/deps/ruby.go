@@ -338,7 +338,7 @@ func fetchRubyGemsLicenseFrom(url string) (string, error) {
 	return "", nil
 }
 
-func handleRubyGemsResponse(resp *http.Response) (string, time.Duration, bool, error) {
+func handleRubyGemsResponse(resp *http.Response) (license string, wait time.Duration, retry bool, err error) {
 	switch {
 	case resp.StatusCode == http.StatusOK:
 		license, err := parseRubyGemsLicenseJSON(resp.Body)

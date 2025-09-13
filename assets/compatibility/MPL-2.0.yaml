@@ -57,22 +57,22 @@ weak-compatible:
   - EDL-1.0
   - ISC
   - SMLNJ
-  - ICU.txt
-  - NCSA.txt
-  - W3C.txt
-  - Xnet.txt
-  - Zlib.txt
-  - Libpng.txt
-  - AFL-3.0.txt
-  - MS-PL.txt
-  - PSF-2.0.txt
-  - BSL-1.0.txt
-  - WTFPL.txt
-  - Unicode-DFS-2016.txt
-  - Unicode-DFS-2015.txt
-  - ZPL-2.0.txt
-  - Unlicense.txt
-  - HPND.txt
-  - MulanPSL-2.0.txt
+  - ICU
+  - NCSA
+  - W3C
+  - Xnet
+  - Zlib
+  - Libpng
+  - AFL-3.0
+  - MS-PL
+  - Python-2.0
+  - BSL-1.0
+  - WTFPL
+  - Unicode-DFS-2016
+  - Unicode-DFS-2015
+  - ZPL-2.0
+  - Unlicense
+  - HPND
+  - MulanPSL-2.0
   - MIT
   - MIT-0

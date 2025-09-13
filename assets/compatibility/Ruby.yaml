@@ -22,11 +22,31 @@
 # Category B (weak copyleft) licenses are weak-compatible with Category A (permissive).
 # Category B (weak copyleft) licenses are compatible with each other.
 
-# Compatibility matrix for the Apache-2.0 license.
-# Category: Category A (permissive)
-# SPDX: https://spdx.org/licenses/Apache-2.0.html
+# Compatibility matrix for the Ruby license.
+# Category: Category B (weak copyleft)
+# SPDX: https://spdx.org/licenses/Ruby.html
 
 compatible:
+  - CDDL-1.0
+  - CDDL-1.1
+  - CPL-1.0
+  - EPL-1.0
+  - EPL-2.0
+  - ErlPL-1.1
+  - IPA
+  - IPL-1.0
+  - MPL-1.0
+  - MPL-1.1
+  - MPL-2.0
+  - OFL-1.1
+  - OSL-3.0
+  - Ruby
+  - SPL-1.0
+
+incompatible:
+  - Unknown
+
+weak-compatible:
   - Apache-2.0
   - PHP-3.01
   - 0BSD
@@ -56,67 +76,3 @@ compatible:
   - MulanPSL-2.0
   - MIT
   - MIT-0
-
-incompatible:
-  - Unknown
-  - LGPL-2.0+
-  - LGPL-2.0
-  - LGPL-2.0-only
-  - LGPL-2.0-or-later
-  - LGPL-2.1+
-  - LGPL-2.1
-  - LGPL-2.1-only
-  - LGPL-2.1-or-later
-  - LGPL-3.0+
-  - LGPL-3.0
-  - LGPL-3.0-linking-exception
-  - LGPL-3.0-only
-  - LGPL-3.0-or-later
-  - LGPLLR
-  - GPL-1.0+
-  - GPL-1.0
-  - GPL-1.0-only
-  - GPL-1.0-or-later
-  - GPL-2.0+
-  - GPL-2.0
-  - GPL-2.0-only
-  - GPL-2.0-or-later
-  - GPL-2.0-with-autoconf-exception
-  - GPL-2.0-with-bison-exception
-  - GPL-2.0-with-classpath-exception
-  - GPL-2.0-with-font-exception
-  - GPL-2.0-with-GCC-exception
-  - GPL-3.0+
-  - GPL-3.0
-  - GPL-3.0-linking-exception
-  - GPL-3.0-linking-source-exception
-  - GPL-3.0-only
-  - GPL-3.0-or-later
-  - GPL-3.0-with-autoconf-exception
-  - GPL-3.0-with-GCC-exception
-  - GPL-CC-1.0
-  - QPL-1.0
-  - Sleepycat
-  - SSPL-1.0
-  - CPOL-1.02
-  - NPL-1.0
-  - NPL-1.1
-
-weak-compatible:
-  - CDDL-1.0
-  - CDDL-1.1
-  - CPL-1.0
-  - EPL-1.0
-  - EPL-2.0
-  - ErlPL-1.1
-  - IPA
-  - IPL-1.0
-  - UFL-1.0
-  - UnRAR
-  - MPL-1.0
-  - MPL-1.1
-  - MPL-2.0
-  - OFL-1.1
-  - OSL-3.0
-  - Ruby
-  - SPL-1.0

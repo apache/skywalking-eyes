@@ -92,7 +92,11 @@ func (r *GemfileLockResolver) Resolve(lockfile string, config *ConfigDeps, repor
 
 	// Resolve licenses for included gems
 	for name := range include {
-		version := specs[name].Version
+		// Some roots may not exist in the specs graph (e.g., git-sourced gems)
+		var version string
+		if spec, ok := specs[name]; ok && spec != nil {
+			version = spec.Version
+		}
 		if exclude, _ := config.IsExcluded(name, version); exclude {
 			continue
 		}
@@ -103,6 +107,7 @@ func (r *GemfileLockResolver) Resolve(lockfile string, config *ConfigDeps, repor
 
 		licenseID, err := fetchRubyGemsLicense(name, version)
 		if err != nil || licenseID == "" {
+			// Gracefully treat as unresolved license and record in report
 			report.Skip(&Result{Dependency: name, LicenseSpdxID: Unknown, Version: version})
 			continue
 		}
@@ -269,6 +274,11 @@ type rubyGemsVersionInfo struct {
 }
 
 func fetchRubyGemsLicense(name, version string) (string, error) {
+	// If version is unknown (e.g., git-sourced), query latest gem info endpoint
+	if strings.TrimSpace(version) == "" {
+		url := fmt.Sprintf("https://rubygems.org/api/v1/gems/%s.json", name)
+		return fetchRubyGemsLicenseFrom(url)
+	}
 	// Prefer version-specific API
 	url := fmt.Sprintf("https://rubygems.org/api/v2/rubygems/%s/versions/%s.json", name, version)
 	licenseID, err := fetchRubyGemsLicenseFrom(url)

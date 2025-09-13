@@ -15,7 +15,16 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# The compatibility is extracted from https://www.apache.org/legal/resolved.html
+# Compatibility matrix derived from:
+# https://www.apache.org/legal/resolved.html
+# Category A (permissive) licenses are compatible with each other.
+# Category A (permissive) licenses are weak-compatible with Category B (weak copyleft).
+# Category B (weak copyleft) licenses are weak-compatible with Category A (permissive).
+# Category B (weak copyleft) licenses are compatible with each other.
+
+# Compatibility matrix for the Apache-2.0 license.
+# Category: Category A (permissive)
+# SPDX: https://spdx.org/licenses/Apache-2.0.html
 
 compatible:
   - Apache-2.0
@@ -102,8 +111,6 @@ weak-compatible:
   - ErlPL-1.1
   - IPA
   - IPL-1.0
-  - LicenseRef-scancode-ubuntu-font-1.0
-  - LicenseRef-scancode-unrar
   - MPL-1.0
   - MPL-1.1
   - MPL-2.0

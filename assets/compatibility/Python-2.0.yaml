@@ -69,6 +69,8 @@ weak-compatible:
   - ErlPL-1.1
   - IPA
   - IPL-1.0
+  - UFL-1.0
+  - UnRAR
   - MPL-1.0
   - MPL-1.1
   - MPL-2.0

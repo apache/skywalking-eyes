@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"math"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -69,20 +70,16 @@ func Check(mainLicenseSpdxID string, config *ConfigDeps, weakCompatible bool) er
 
 	report := Report{}
 	if err := Resolve(config, &report); err != nil {
-		return nil
+		return err
 	}
 
 	return CheckWithMatrix(mainLicenseSpdxID, &matrix, &report, weakCompatible)
 }
 
 func compare(list []string, spdxID string) bool {
-	for _, com := range list {
-		if spdxID == com {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(list, spdxID)
 }
+
 func compareAll(spdxIDs []string, compare func(spdxID string) bool) bool {
 	for _, spdxID := range spdxIDs {
 		if !compare(spdxID) {
@@ -91,13 +88,9 @@ func compareAll(spdxIDs []string, compare func(spdxID string) bool) bool {
 	}
 	return true
 }
+
 func compareAny(spdxIDs []string, compare func(spdxID string) bool) bool {
-	for _, spdxID := range spdxIDs {
-		if compare(spdxID) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(spdxIDs, compare)
 }
 
 func compareCompatible(matrix *CompatibilityMatrix, spdxID string, weakCompatible bool) bool {

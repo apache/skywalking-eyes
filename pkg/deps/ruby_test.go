@@ -15,18 +15,18 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package deps_test
+package deps
 
 import (
 	"bufio"
 	"embed"
+	"io"
 	"io/fs"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/apache/skywalking-eyes/pkg/deps"
 )
 
 func writeFileRuby(fileName, content string) error {
@@ -73,7 +73,7 @@ func copyRuby(assetDir, destination string) error {
 }
 
 func TestRubyGemfileLockResolver(t *testing.T) {
-	resolver := new(deps.GemfileLockResolver)
+	resolver := new(GemfileLockResolver)
 
 	// App case: include all specs (3)
 	{
@@ -85,12 +85,12 @@ func TestRubyGemfileLockResolver(t *testing.T) {
 		if !resolver.CanResolve(lock) {
 			t.Fatalf("GemfileLockResolver cannot resolve %s", lock)
 		}
-		cfg := &deps.ConfigDeps{Files: []string{lock}, Licenses: []*deps.ConfigDepLicense{
+		cfg := &ConfigDeps{Files: []string{lock}, Licenses: []*ConfigDepLicense{
 			{Name: "rake", Version: "13.0.6", License: "MIT"},
 			{Name: "rspec", Version: "3.10.0", License: "MIT"},
 			{Name: "rspec-core", Version: "3.10.1", License: "MIT"},
 		}}
-		report := deps.Report{}
+		report := Report{}
 		if err := resolver.Resolve(lock, cfg, &report); err != nil {
 			t.Fatal(err)
 		}
@@ -106,15 +106,84 @@ func TestRubyGemfileLockResolver(t *testing.T) {
 			t.Fatal(err)
 		}
 		lock := filepath.Join(tmp, "Gemfile.lock")
-		cfg := &deps.ConfigDeps{Files: []string{lock}, Licenses: []*deps.ConfigDepLicense{
+		cfg := &ConfigDeps{Files: []string{lock}, Licenses: []*ConfigDepLicense{
 			{Name: "rake", Version: "13.0.6", License: "MIT"},
 		}}
-		report := deps.Report{}
+		report := Report{}
 		if err := resolver.Resolve(lock, cfg, &report); err != nil {
 			t.Fatal(err)
 		}
 		if len(report.Resolved)+len(report.Skipped) != 1 {
 			t.Fatalf("expected 1 dependency for library, got %d", len(report.Resolved)+len(report.Skipped))
 		}
+	}
+}
+
+// mock RoundTripper to control HTTP responses
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) { return f(req) }
+
+func TestRubyMissingSpecIsSkippedGracefully(t *testing.T) {
+	// Mock HTTP client to avoid real network: always return 404 Not Found
+	saved := httpClientRuby
+	httpClientRuby = &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusNotFound,
+			Status:     "404 Not Found",
+			Body:       io.NopCloser(strings.NewReader("{}")),
+			Header:     make(http.Header),
+		}, nil
+	})}
+	defer func() { httpClientRuby = saved }()
+
+	// Create a Gemfile.lock where a dependency is not present in specs
+	content := "" +
+		"GEM\n" +
+		"  remote: https://rubygems.org/\n" +
+		"  specs:\n" +
+		"    rake (13.0.6)\n" +
+		"\n" +
+		"PLATFORMS\n" +
+		"  ruby\n" +
+		"\n" +
+		"DEPENDENCIES\n" +
+		"  rake\n" +
+		"  missing_gem\n" +
+		"\n" +
+		"BUNDLED WITH\n" +
+		"   2.4.10\n"
+
+	dir := t.TempDir()
+	lock := filepath.Join(dir, "Gemfile.lock")
+	if err := writeFileRuby(lock, content); err != nil {
+		t.Fatal(err)
+	}
+
+	resolver := new(GemfileLockResolver)
+	cfg := &ConfigDeps{Files: []string{lock}, Licenses: []*ConfigDepLicense{
+		{Name: "rake", Version: "13.0.6", License: "MIT"}, // only rake is configured; missing_gem should be skipped
+	}}
+	report := Report{}
+	if err := resolver.Resolve(lock, cfg, &report); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := len(report.Resolved) + len(report.Skipped); got != 2 {
+		t.Fatalf("expected 2 dependencies total, got %d", got)
+	}
+
+	// Ensure 'missing_gem' is in skipped with empty version
+	found := false
+	for _, s := range report.Skipped {
+		if s.Dependency == "missing_gem" {
+			found = true
+			if s.Version != "" {
+				t.Fatalf("expected empty version for missing_gem, got %q", s.Version)
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected missing_gem to be marked as skipped")
 	}
 }

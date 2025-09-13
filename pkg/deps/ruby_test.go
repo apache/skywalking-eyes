@@ -187,3 +187,58 @@ func TestRubyMissingSpecIsSkippedGracefully(t *testing.T) {
 		t.Fatalf("expected missing_gem to be marked as skipped")
 	}
 }
+
+func TestRubyLibraryWithNoRuntimeDependenciesIncludesNone(t *testing.T) {
+	resolver := new(GemfileLockResolver)
+
+	// Prepare a library project with a gemspec that has NO runtime dependencies
+	dir := t.TempDir()
+	lockContent := "" +
+		"GEM\n" +
+		"  remote: https://rubygems.org/\n" +
+		"  specs:\n" +
+		"    rake (13.0.6)\n" +
+		"    rspec (3.10.0)\n" +
+		"      rspec-core (~> 3.10)\n" +
+		"    rspec-core (3.10.1)\n" +
+		"\n" +
+		"PLATFORMS\n" +
+		"  ruby\n" +
+		"\n" +
+		"DEPENDENCIES\n" +
+		"  rake\n" +
+		"  rspec\n" +
+		"\n" +
+		"BUNDLED WITH\n" +
+		"   2.4.10\n"
+	if err := writeFileRuby(filepath.Join(dir, "Gemfile.lock"), lockContent); err != nil {
+		t.Fatal(err)
+	}
+
+	gemspec := "" +
+		"# minimal gemspec without runtime dependencies\n" +
+		"Gem::Specification.new do |spec|\n" +
+		"  spec.name          = \"sample\"\n" +
+		"  spec.version       = \"0.1.0\"\n" +
+		"  spec.summary       = \"Sample gem\"\n" +
+		"  spec.description   = \"Sample\"\n" +
+		"  spec.authors       = [\"Test\"]\n" +
+		"  spec.files         = []\n" +
+		"  # only development dependency present\n" +
+		"  spec.add_development_dependency 'rspec', '~> 3.10'\n" +
+		"end\n"
+	if err := writeFileRuby(filepath.Join(dir, "sample.gemspec"), gemspec); err != nil {
+		t.Fatal(err)
+	}
+
+	lock := filepath.Join(dir, "Gemfile.lock")
+	cfg := &ConfigDeps{Files: []string{lock}}
+	report := Report{}
+	if err := resolver.Resolve(lock, cfg, &report); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := len(report.Resolved) + len(report.Skipped); got != 0 {
+		t.Fatalf("expected 0 dependencies for library with no runtime deps, got %d", got)
+	}
+}

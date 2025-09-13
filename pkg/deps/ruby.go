@@ -70,12 +70,11 @@ func (r *GemfileLockResolver) Resolve(lockfile string, config *ConfigDeps, repor
 		if err != nil {
 			return err
 		}
-		if len(runtimeRoots) == 0 {
-			// Fallback: if not found, use DEPENDENCIES from lockfile
-			roots = deps
-		} else {
-			roots = runtimeRoots
-		}
+		// Use only runtime dependencies from gemspec(s);
+		// Do not fallback to DEPENDENCIES
+		// A gem library inherits runtime dependencies ONLY from the gemspec.
+		// All other dependencies are development only.
+		roots = runtimeRoots
 	} else {
 		// App: all declared dependencies are relevant
 		roots = deps
@@ -84,7 +83,7 @@ func (r *GemfileLockResolver) Resolve(lockfile string, config *ConfigDeps, repor
 	// Compute the set of included gems
 	include := reachable(specs, roots)
 	// For app without explicit deps (rare), include all specs
-	if len(roots) == 0 {
+	if !isLibrary && len(roots) == 0 {
 		for name := range specs {
 			include[name] = struct{}{}
 		}

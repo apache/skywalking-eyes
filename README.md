@@ -163,6 +163,10 @@ jobs:
         uses: apache/skywalking-eyes/dependency@main
         with:
           config: .licenserc.yaml
+          # Ruby packages declared as dependencies in gemspecs or Gemfiles are
+          #   typically consumed as binaries; enable weak-compatibility
+          #   so permissive and weak-copyleft combinations are treated as compatible.
+          flags: --weak-compatible
 ```
 
 Note: License-Eye may query the RubyGems API to determine licenses when they are not specified in your configuration. Ensure the workflow has network access.

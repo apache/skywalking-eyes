@@ -79,4 +79,5 @@ weak-compatible:
   - Ruby
   - SPL-1.0
 
-fsf-free: true
+fsf-free: false
+osi-approved: true

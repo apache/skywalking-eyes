@@ -22,9 +22,9 @@
 # Category B (weak copyleft) licenses are weak-compatible with Category A (permissive).
 # Category B (weak copyleft) licenses are compatible with each other.
 
-# Compatibility matrix for the MIT license.
+# Compatibility matrix for the AFL-3.0 license.
 # Category: Category A (permissive)
-# SPDX: https://spdx.org/licenses/MIT.html
+# SPDX: https://spdx.org/licenses/AFL-3.0.html
 
 compatible:
   - Apache-2.0

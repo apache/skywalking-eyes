@@ -213,7 +213,7 @@ func hasGemspec(dir string) bool {
 	return false
 }
 
-var gemspecRuntimeRe = regexp.MustCompile(`(?m)\badd_(?:runtime_)?dependency\s*\(?\s*["']([^"']+)["']`)
+var gemspecRuntimeRe = regexp.MustCompile(`\badd_(?:runtime_)?dependency\s*\(?\s*["']([^"']+)["']`)
 
 func runtimeDepsFromGemspecs(dir string) ([]string, error) {
 	entries, err := os.ReadDir(dir)
@@ -225,14 +225,25 @@ func runtimeDepsFromGemspecs(dir string) ([]string, error) {
 		if e.IsDir() || !strings.HasSuffix(e.Name(), ".gemspec") {
 			continue
 		}
-		b, err := os.ReadFile(filepath.Join(dir, e.Name()))
+		path := filepath.Join(dir, e.Name())
+		f, err := os.Open(path)
 		if err != nil {
 			return nil, err
 		}
-		for _, m := range gemspecRuntimeRe.FindAllStringSubmatch(string(b), -1) {
-			if len(m) == 2 {
+		scanner := bufio.NewScanner(f)
+		for scanner.Scan() {
+			line := scanner.Text()
+			trimLeft := strings.TrimLeft(line, " \t")
+			if strings.HasPrefix(trimLeft, "#") {
+				continue // ignore commented-out lines
+			}
+			if m := gemspecRuntimeRe.FindStringSubmatch(line); len(m) == 2 {
 				runtime[m[1]] = struct{}{}
 			}
+		}
+		_ = f.Close()
+		if err := scanner.Err(); err != nil {
+			return nil, err
 		}
 	}
 	res := make([]string, 0, len(runtime))

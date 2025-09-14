@@ -24,7 +24,7 @@
 
 # Compatibility matrix for the UnRAR license.
 # Category: Category B (weak copyleft)
-# SPDX: https://spdx.org/licenses/UnRAR.html
+# SPDX: N/A - Not assigned yet
 
 compatible:
   - CDDL-1.0

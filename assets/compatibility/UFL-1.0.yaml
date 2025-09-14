@@ -24,7 +24,7 @@
 
 # Compatibility matrix for the UFL-1.0 license.
 # Category: Category B (weak copyleft)
-# SPDX: https://spdx.org/licenses/UFL-1.0.html
+# SPDX: N/A - Not assigned yet
 
 compatible:
   - CDDL-1.0

@@ -77,14 +77,20 @@ func init() {
 	}
 }
 
-func Check(mainLicenseSpdxID string, config *ConfigDeps, weakCompatible bool) error {
-	// set FSF requirement from project config
+// applyRequirementFlags sets the internal requirement flags based on the provided config.
+// If config is nil, all requirements are reset to their default (false).
+func applyRequirementFlags(config *ConfigDeps) {
 	requireFSFFree = false
 	requireOSIApproved = false
 	if config != nil {
 		requireFSFFree = config.RequireFSFFree
 		requireOSIApproved = config.RequireOSIApproved
 	}
+}
+
+func Check(mainLicenseSpdxID string, config *ConfigDeps, weakCompatible bool) error {
+	// set requirement flags from project config
+	applyRequirementFlags(config)
 	matrix := matrices[mainLicenseSpdxID]
 
 	report := Report{}

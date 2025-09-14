@@ -29,10 +29,11 @@ import (
 const DefaultCoverageThreshold = 75
 
 type ConfigDeps struct {
-	Threshold int                 `yaml:"threshold"`
-	Files     []string            `yaml:"files"`
-	Licenses  []*ConfigDepLicense `yaml:"licenses"`
-	Excludes  []Exclude           `yaml:"excludes"`
+	Threshold      int                 `yaml:"threshold"`
+	Files          []string            `yaml:"files"`
+	Licenses       []*ConfigDepLicense `yaml:"licenses"`
+	Excludes       []Exclude           `yaml:"excludes"`
+	RequireFSFFree bool                `yaml:"require_fsf_free"`
 }
 
 type ConfigDepLicense struct {

@@ -34,9 +34,15 @@ type CompatibilityMatrix struct {
 	Compatible     []string `yaml:"compatible"`
 	Incompatible   []string `yaml:"incompatible"`
 	WeakCompatible []string `yaml:"weak-compatible"`
+	FSFFree        bool     `yaml:"fsf-free"`
 }
 
 var matrices = make(map[string]CompatibilityMatrix)
+
+// requireFSFFree indicates whether a dependency license must be FSF Free/Libre
+// to be considered compatible. It is configured via ConfigDeps.RequireFSFFree
+// and set in Check(). Default is false to preserve backward compatibility.
+var requireFSFFree bool
 
 type LicenseOperator int
 
@@ -66,6 +72,11 @@ func init() {
 }
 
 func Check(mainLicenseSpdxID string, config *ConfigDeps, weakCompatible bool) error {
+	// set FSF requirement from project config
+	requireFSFFree = false
+	if config != nil {
+		requireFSFFree = config.RequireFSFFree
+	}
 	matrix := matrices[mainLicenseSpdxID]
 
 	report := Report{}
@@ -78,6 +89,13 @@ func Check(mainLicenseSpdxID string, config *ConfigDeps, weakCompatible bool) er
 
 func compare(list []string, spdxID string) bool {
 	return slices.Contains(list, spdxID)
+}
+
+func isFSFFree(spdxID string) bool {
+	if m, ok := matrices[spdxID]; ok {
+		return m.FSFFree
+	}
+	return false
 }
 
 func compareAll(spdxIDs []string, compare func(spdxID string) bool) bool {
@@ -94,10 +112,17 @@ func compareAny(spdxIDs []string, compare func(spdxID string) bool) bool {
 }
 
 func compareCompatible(matrix *CompatibilityMatrix, spdxID string, weakCompatible bool) bool {
-	if weakCompatible {
-		return compare(matrix.Compatible, spdxID) || compare(matrix.WeakCompatible, spdxID)
+	matched := compare(matrix.Compatible, spdxID)
+	if !matched && weakCompatible {
+		matched = compare(matrix.WeakCompatible, spdxID)
 	}
-	return compare(matrix.Compatible, spdxID)
+	if !matched {
+		return false
+	}
+	if requireFSFFree {
+		return isFSFFree(spdxID)
+	}
+	return true
 }
 
 func CheckWithMatrix(mainLicenseSpdxID string, matrix *CompatibilityMatrix, report *Report, weakCompatible bool) error {
@@ -131,10 +156,7 @@ func CheckWithMatrix(mainLicenseSpdxID string, matrix *CompatibilityMatrix, repo
 			}
 
 		default:
-			if compatible := compare(matrix.Compatible, spdxIDs[0]); compatible {
-				continue
-			}
-			if weakCompatible && compare(matrix.WeakCompatible, spdxIDs[0]) {
+			if compareCompatible(matrix, spdxIDs[0], weakCompatible) {
 				continue
 			}
 			if incompatible := compare(matrix.Incompatible, spdxIDs[0]); incompatible {

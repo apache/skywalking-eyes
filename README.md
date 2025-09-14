@@ -173,6 +173,22 @@ Note: License-Eye may query the RubyGems API to determine licenses when they are
 
 </details>
 
+### Global CLI flags
+
+The following flags are available for all commands:
+
+| Flag name     | Short name | Description                                                           |
+|---------------|------------|-----------------------------------------------------------------------|
+| `--verbosity` | `-v`       | Set log level (debug, info, warn, error, fatal, panic). Default: info |
+| `--config`    | `-c`       | Path to the configuration file. Default: .licenserc.yaml              |
+
+Examples:
+
+```bash
+license-eye --verbosity debug --config .licenserc.yaml header check
+license-eye -v warn -c path/to/.licenserc.yaml dep resolve
+```
+
 ### Docker Image
 
 For Bash, users can execute the following command,
@@ -296,7 +312,7 @@ INFO Totally checked 20 files, valid: 10, invalid: 10, ignored: 0, fixed: 10
 
 This command assists human audits of the dependencies licenses. It's exit code is always 0.
 
-It supports two flags:
+It supports three flags, in addition to the [global](#global-cli-flags) ones:
 
 | Flag name   | Short name | Description                                                                                                                            |
 |-------------|------------|----------------------------------------------------------------------------------------------------------------------------------------|
@@ -670,6 +686,20 @@ the command will exit with status code 1 and fail the command.
 
 ```bash
 license-eye -c test/testdata/.licenserc_for_test_check.yaml dep check
+```
+
+It supports three flags, in addition to the [global](#global-cli-flags) ones:
+
+| Flag name           | Short name | Description                                                                                                                                       |
+|---------------------|------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--weak-compatible` | `-w`       | Treat weak-compatible licenses as compatible during checks. Use with caution and manually confirm the usage conditions for such licenses are met. |
+| `--fsf-free`        | `-f`       | Only consider licenses marked as FSF Free/Libre when determining compatibility. Non‑FSF‑free licenses are treated as incompatible.                |
+| `--osi-approved`    | `-o`       | Only consider OSI‑approved licenses when determining compatibility. Non‑OSI‑approved licenses are treated as incompatible.                        |
+
+Example using weak-compatible mode:
+
+```bash
+license-eye -c test/testdata/.licenserc_for_test_check.yaml dep check -w
 ```
 
 <details>

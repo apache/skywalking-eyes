@@ -120,3 +120,5 @@ weak-compatible:
   - OSL-3.0
   - Ruby
   - SPL-1.0
+
+fsf-free: true

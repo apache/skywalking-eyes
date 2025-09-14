@@ -34,9 +34,21 @@ type CompatibilityMatrix struct {
 	Compatible     []string `yaml:"compatible"`
 	Incompatible   []string `yaml:"incompatible"`
 	WeakCompatible []string `yaml:"weak-compatible"`
+	FSFFree        bool     `yaml:"fsf-free"`
+	OSIApproved    bool     `yaml:"osi-approved"`
 }
 
 var matrices = make(map[string]CompatibilityMatrix)
+
+// requireFSFFree indicates whether a dependency license must be FSF Free/Libre
+// to be considered compatible. It is configured via ConfigDeps.RequireFSFFree
+// and set in Check(). Default is false to preserve backward compatibility.
+var requireFSFFree bool
+
+// requireOSIApproved indicates whether a dependency license must be OSI-approved
+// to be considered compatible. It is configured via ConfigDeps.RequireOSIApproved
+// and set in Check(). Default is false to preserve backward compatibility.
+var requireOSIApproved bool
 
 type LicenseOperator int
 
@@ -65,7 +77,20 @@ func init() {
 	}
 }
 
+// applyRequirementFlags sets the internal requirement flags based on the provided config.
+// If config is nil, all requirements are reset to their default (false).
+func applyRequirementFlags(config *ConfigDeps) {
+	requireFSFFree = false
+	requireOSIApproved = false
+	if config != nil {
+		requireFSFFree = config.RequireFSFFree
+		requireOSIApproved = config.RequireOSIApproved
+	}
+}
+
 func Check(mainLicenseSpdxID string, config *ConfigDeps, weakCompatible bool) error {
+	// set requirement flags from project config
+	applyRequirementFlags(config)
 	matrix := matrices[mainLicenseSpdxID]
 
 	report := Report{}
@@ -78,6 +103,20 @@ func Check(mainLicenseSpdxID string, config *ConfigDeps, weakCompatible bool) er
 
 func compare(list []string, spdxID string) bool {
 	return slices.Contains(list, spdxID)
+}
+
+func isFSFFree(spdxID string) bool {
+	if m, ok := matrices[spdxID]; ok {
+		return m.FSFFree
+	}
+	return false
+}
+
+func isOSIApproved(spdxID string) bool {
+	if m, ok := matrices[spdxID]; ok {
+		return m.OSIApproved
+	}
+	return false
 }
 
 func compareAll(spdxIDs []string, compare func(spdxID string) bool) bool {
@@ -94,10 +133,21 @@ func compareAny(spdxIDs []string, compare func(spdxID string) bool) bool {
 }
 
 func compareCompatible(matrix *CompatibilityMatrix, spdxID string, weakCompatible bool) bool {
-	if weakCompatible {
-		return compare(matrix.Compatible, spdxID) || compare(matrix.WeakCompatible, spdxID)
+	matched := compare(matrix.Compatible, spdxID)
+	if !matched && weakCompatible {
+		matched = compare(matrix.WeakCompatible, spdxID)
 	}
-	return compare(matrix.Compatible, spdxID)
+	if !matched {
+		return false
+	}
+	// Enforce additional boolean requirements if configured
+	if requireFSFFree && !isFSFFree(spdxID) {
+		return false
+	}
+	if requireOSIApproved && !isOSIApproved(spdxID) {
+		return false
+	}
+	return true
 }
 
 func CheckWithMatrix(mainLicenseSpdxID string, matrix *CompatibilityMatrix, report *Report, weakCompatible bool) error {
@@ -131,10 +181,7 @@ func CheckWithMatrix(mainLicenseSpdxID string, matrix *CompatibilityMatrix, repo
 			}
 
 		default:
-			if compatible := compare(matrix.Compatible, spdxIDs[0]); compatible {
-				continue
-			}
-			if weakCompatible && compare(matrix.WeakCompatible, spdxIDs[0]) {
+			if compareCompatible(matrix, spdxIDs[0], weakCompatible) {
 				continue
 			}
 			if incompatible := compare(matrix.Incompatible, spdxIDs[0]); incompatible {

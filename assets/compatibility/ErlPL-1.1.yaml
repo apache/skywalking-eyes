@@ -78,3 +78,6 @@ weak-compatible:
   - MulanPSL-2.0
   - MIT
   - MIT-0
+
+fsf-free: true
+osi-approved: false

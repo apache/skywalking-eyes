@@ -27,12 +27,18 @@ import (
 )
 
 var weakCompatible bool
+var fsfFreeOnly bool
+var osiApprovedOnly bool
 
 func init() {
 	DepsCheckCommand.PersistentFlags().BoolVarP(&weakCompatible, "weak-compatible", "w", false,
 		"if set to true, treat the weak-compatible licenses as compatible in dependencies check. "+
 			"Note: when set to true, make sure to manually confirm that weak-compatible licenses "+
 			"are used under the required conditions.")
+	DepsCheckCommand.PersistentFlags().BoolVarP(&fsfFreeOnly, "fsf-free", "f", false,
+		"Only consider licenses marked as FSF Free/Libre when determining compatibility. Non-FSF-free licenses are treated as incompatible.")
+	DepsCheckCommand.PersistentFlags().BoolVarP(&osiApprovedOnly, "osi-approved", "o", false,
+		"Only consider OSI-approved licenses when determining compatibility. Non-OSI-approved licenses are treated as incompatible.")
 }
 
 var DepsCheckCommand = &cobra.Command{
@@ -42,6 +48,15 @@ var DepsCheckCommand = &cobra.Command{
 	RunE: func(_ *cobra.Command, _ []string) error {
 		var errors []error
 		configDeps := Config.Dependencies()
+		// CLI flags override to enable stricter requirements, cannot disable if enabled by config
+		if configDeps != nil {
+			if fsfFreeOnly {
+				configDeps.RequireFSFFree = true
+			}
+			if osiApprovedOnly {
+				configDeps.RequireOSIApproved = true
+			}
+		}
 		for _, header := range Config.Headers() {
 			if err := deps.Check(header.License.SpdxID, configDeps, weakCompatible); err != nil {
 				errors = append(errors, err)

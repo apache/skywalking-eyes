@@ -24,7 +24,7 @@
 
 # Compatibility matrix for the UnRAR license.
 # Category: Category B (weak copyleft)
-# SPDX: https://spdx.org/licenses/UnRAR.html
+# SPDX: N/A - Not assigned yet
 
 compatible:
   - CDDL-1.0
@@ -78,3 +78,6 @@ weak-compatible:
   - MulanPSL-2.0
   - MIT
   - MIT-0
+
+fsf-free: false
+osi-approved: false

@@ -22,9 +22,9 @@
 # Category B (weak copyleft) licenses are weak-compatible with Category A (permissive).
 # Category B (weak copyleft) licenses are compatible with each other.
 
-# Compatibility matrix for the MIT license.
+# Compatibility matrix for the BSD-3-Clause license.
 # Category: Category A (permissive)
-# SPDX: https://spdx.org/licenses/MIT.html
+# SPDX: https://spdx.org/licenses/BSD-3-Clause.html
 
 compatible:
   - Apache-2.0

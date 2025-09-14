@@ -22,40 +22,40 @@
 # Category B (weak copyleft) licenses are weak-compatible with Category A (permissive).
 # Category B (weak copyleft) licenses are compatible with each other.
 
-# Compatibility matrix for the MIT license.
+# Compatibility matrix for the BSL-1.0 license.
 # Category: Category A (permissive)
-# SPDX: https://spdx.org/licenses/MIT.html
+# SPDX: https://spdx.org/licenses/BSL-1.0.html
 
 compatible:
-  - Apache-2.0
-  - PHP-3.01
   - 0BSD
-  - BSD-3-Clause
+  - AFL-3.0
+  - Apache-2.0
   - BSD-2-Clause
   - BSD-2-Clause-Views
-  - PostgreSQL
-  - EDL-1.0
-  - ISC
-  - SMLNJ
-  - ICU
-  - NCSA
-  - W3C
-  - Xnet
-  - Zlib
-  - Libpng
-  - AFL-3.0
-  - MS-PL
-  - Python-2.0
+  - BSD-3-Clause
   - BSL-1.0
-  - WTFPL
-  - Unicode-DFS-2016
-  - Unicode-DFS-2015
-  - ZPL-2.0
-  - Unlicense
+  - EDL-1.0
   - HPND
-  - MulanPSL-2.0
+  - ICU
+  - ISC
+  - Libpng
   - MIT
   - MIT-0
+  - MS-PL
+  - MulanPSL-2.0
+  - NCSA
+  - PHP-3.01
+  - PostgreSQL
+  - Python-2.0
+  - SMLNJ
+  - Unicode-DFS-2015
+  - Unicode-DFS-2016
+  - Unlicense
+  - W3C
+  - WTFPL
+  - Xnet
+  - Zlib
+  - ZPL-2.0
 
 incompatible:
   - Unknown

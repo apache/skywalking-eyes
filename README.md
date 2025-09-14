@@ -809,6 +809,8 @@ dependency: # <16>
       version: dependency-version # <20>
       license: Apache-2.0 # <21>
   threshold: 75 # <22>
+  require_fsf_free: false # <26>
+  require_osi_approved: false # <27>
   excludes: # <23>
     - name: dependency-name # the same format as <19>
       version: dependency-version # the same format as <20>
@@ -849,6 +851,8 @@ header:
 23. The dependencies that should be excluded when analyzing the licenses, this is useful when you declare the dependencies in `pom.xml` with `compile` scope but don't distribute them in package. (Note that non-`compile` scope dependencies are automatically excluded so you don't need to put them here).
 24. The transitive dependencies brought by <23> should be recursively excluded when analyzing the licenses, currently only maven project supports this.
 25. The copyright year of the work, if it's empty, it will be set to the current year. If you don't want to update the license year anually, you can set this to the year of the first publication of your work, such as `1994`, or `1994-2023`.
+26. When `require_fsf_free` is true, only dependency licenses marked as FSF Free/Libre in the built-in compatibility matrices are considered compatible. Licenses not marked FSF-free will be treated as incompatible even if otherwise listed as compatible. This can also be enabled via the CLI flag `--fsf-free` (`-f`).
+27. When `require_osi_approved` is true, only dependency licenses marked as OSI-approved in the built-in compatibility matrices are considered compatible. Licenses not marked OSI-approved will be treated as incompatible even if otherwise listed as compatible. This can also be enabled via the CLI flag `--osi-approved` (`-o`).
 
 **NOTE**: When the `SPDX-ID` is Apache-2.0 and the owner is Apache Software foundation, the content would be [a dedicated license](https://www.apache.org/legal/src-headers.html#headers) specified by the ASF, otherwise, the license would be [the standard one](https://www.apache.org/foundation/license-faq.html#Apply-My-Software).
 

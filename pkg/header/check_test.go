@@ -239,7 +239,7 @@ func TestListFilesWithWorktreeDetachedHEAD(t *testing.T) {
 	}
 
 	t.Logf("Found %d files: %v", len(fileList2), fileList2)
-	
+
 	// Verify we can find our test file
 	found := false
 	for _, file := range fileList2 {

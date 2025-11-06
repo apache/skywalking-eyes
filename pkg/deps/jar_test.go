@@ -19,7 +19,6 @@ package deps_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -48,7 +47,7 @@ func TestCanResolveJarFile(t *testing.T) {
 	}
 }
 
-func copyJars(t *testing.T, pomFile, content string) ([]string, error) {
+func copyJars(_ *testing.T, pomFile, content string) ([]string, error) {
 	dir := filepath.Dir(pomFile)
 
 	if err := os.Chdir(dir); err != nil {
@@ -64,7 +63,7 @@ func copyJars(t *testing.T, pomFile, content string) ([]string, error) {
 	}
 
 	jars := []string{}
-	files, err := ioutil.ReadDir(filepath.Join(dir, "lib"))
+	files, err := os.ReadDir(filepath.Join(dir, "lib"))
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +97,8 @@ func TestResolveJar(t *testing.T) {
 	}{
 		{`<?xml version="1.0" encoding="UTF-8"?>
 	<project xmlns="http://maven.apache.org/POM/4.0.0"
-		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 		<modelVersion>4.0.0</modelVersion>
 
 		<groupId>apache</groupId>
@@ -140,11 +140,13 @@ func TestResolveJar(t *testing.T) {
 					t.Error(err)
 					return
 				}
-
 			}
 		}
 		if len(report.Resolved)+len(report.Skipped) != test.cnt {
-			t.Errorf("the expected number of jar packages is: %d, but actually: %d. result:\n%v", test.cnt, len(report.Resolved)+len(report.Skipped), report.String())
+			t.Errorf(
+				"the expected number of jar packages is: %d, but actually: %d. result:\n%v",
+				test.cnt, len(report.Resolved)+len(report.Skipped), report.String(),
+			)
 		}
 		fmt.Println(report.String())
 	}

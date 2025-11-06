@@ -49,7 +49,7 @@ func TestCanResolvePomFile(t *testing.T) {
 }
 
 func writeFile(fileName, content string) error {
-	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0777)
+	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0o777)
 	if err != nil {
 		return err
 	}
@@ -66,13 +66,13 @@ func writeFile(fileName, content string) error {
 }
 
 func ensureDir(dirName string) error {
-	return os.MkdirAll(dirName, 0777)
+	return os.MkdirAll(dirName, 0o777)
 }
 
 //go:embed testdata/maven/**/*
 var testAssets embed.FS
 
-func copy(assetDir, destination string) error {
+func copyAssets(assetDir, destination string) error {
 	return fs.WalkDir(testAssets, assetDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -81,15 +81,17 @@ func copy(assetDir, destination string) error {
 			return nil
 		}
 		filename := filepath.Join(destination, strings.Replace(path, assetDir, "", 1))
-		if err := ensureDir(filepath.Dir(filename)); err != nil {
-			return err
+		if dirErr := ensureDir(filepath.Dir(filename)); dirErr != nil {
+			return dirErr
 		}
 
 		content, err := testAssets.ReadFile(path)
 		if err != nil {
 			return err
 		}
-		writeFile(filename, string(content))
+		if err := writeFile(filename, string(content)); err != nil {
+			return err
+		}
 
 		return nil
 	})
@@ -97,6 +99,8 @@ func copy(assetDir, destination string) error {
 
 func TestResolveMaven(t *testing.T) {
 	resolver := new(deps.MavenPomResolver)
+
+	const mavenCasesDir = "testdata/maven/cases"
 
 	for _, test := range []struct {
 		workingDir string
@@ -107,14 +111,14 @@ func TestResolveMaven(t *testing.T) {
 		{t.TempDir(), "exclude", 109},
 		{t.TempDir(), "exclude-recursive", 7},
 	} {
-		if err := copy("testdata/maven/base", test.workingDir); err != nil {
+		if err := copyAssets("testdata/maven/base", test.workingDir); err != nil {
 			t.Error(err)
 		}
-		if err := copy(filepath.Join("testdata/maven/cases", test.testCase), test.workingDir); err != nil {
+		if err := copyAssets(filepath.Join(mavenCasesDir, test.testCase), test.workingDir); err != nil {
 			t.Error(err)
 		}
 
-		config, err := config.NewConfigFromFile(filepath.Join(test.workingDir, "licenserc.yaml"))
+		cfg, err := config.NewConfigFromFile(filepath.Join(test.workingDir, "licenserc.yaml"))
 		if err != nil {
 			t.Error(err)
 		}
@@ -122,13 +126,16 @@ func TestResolveMaven(t *testing.T) {
 		pomFile := filepath.Join(test.workingDir, "pom.xml")
 		if resolver.CanResolve(pomFile) {
 			report := deps.Report{}
-			if err := resolver.Resolve(pomFile, config.Dependencies(), &report); err != nil {
+			if err := resolver.Resolve(pomFile, cfg.Dependencies(), &report); err != nil {
 				t.Error(err)
 				return
 			}
 
 			if len(report.Resolved)+len(report.Skipped) != test.cnt {
-				t.Errorf("the expected number of jar packages is: %d, but actually: %d. result:\n%v", test.cnt, len(report.Resolved)+len(report.Skipped), report.String())
+				t.Errorf(
+					"the expected number of jar packages is: %d, but actually: %d. result:\n%v",
+					test.cnt, len(report.Resolved)+len(report.Skipped), report.String(),
+				)
 			}
 		}
 	}

@@ -27,6 +27,18 @@ import (
 	"github.com/apache/skywalking-eyes/pkg/deps"
 )
 
+const (
+	testCargoToml = `
+[package]
+name = "foo"
+version = "0.0.0"
+publish = false
+edition = "2021"
+license = "Apache-2.0"
+`
+	licenseMIT = "MIT"
+)
+
 func TestCanResolveCargo(t *testing.T) {
 	resolver := new(deps.CargoTomlResolver)
 	if !resolver.CanResolve("Cargo.toml") {
@@ -45,14 +57,7 @@ func TestResolveCargos(t *testing.T) {
 	}
 
 	{
-		cargoToml := `
-[package]
-name = "foo"
-version = "0.0.0"
-publish = false
-edition = "2021"
-license = "Apache-2.0"
-`
+		cargoToml := testCargoToml
 
 		config := deps.ConfigDeps{
 			Threshold: 0,
@@ -71,14 +76,7 @@ license = "Apache-2.0"
 	}
 
 	{
-		cargoToml := `
-[package]
-name = "foo"
-version = "0.0.0"
-publish = false
-edition = "2021"
-license = "Apache-2.0"
-`
+		cargoToml := testCargoToml
 
 		config := deps.ConfigDeps{
 			Threshold: 0,
@@ -94,14 +92,7 @@ license = "Apache-2.0"
 	}
 
 	{
-		cargoToml := `
-[package]
-name = "foo"
-version = "0.0.0"
-publish = false
-edition = "2021"
-license = "Apache-2.0"
-`
+		cargoToml := testCargoToml
 
 		config := deps.ConfigDeps{
 			Threshold: 0,
@@ -110,7 +101,7 @@ license = "Apache-2.0"
 				{
 					Name:    "foo",
 					Version: "0.0.0",
-					License: "MIT",
+					License: licenseMIT,
 				},
 			},
 			Excludes: []deps.Exclude{},
@@ -120,7 +111,7 @@ license = "Apache-2.0"
 		if len(report.Resolved) != 1 {
 			t.Error("len(report.Resolved) != 1")
 		}
-		if report.Resolved[0].LicenseSpdxID != "MIT" {
+		if report.Resolved[0].LicenseSpdxID != licenseMIT {
 			t.Error("Package foo license isn't modified to  MIT")
 		}
 	}
@@ -194,7 +185,7 @@ checksum = "349d5a591cd28b49e1d1037471617a32ddcda5731b99419008085f72d5a53836"
 	}
 }
 
-func resolveTmpCargo(t *testing.T, cargoTomlContent string, cargoLockContent string, config *deps.ConfigDeps) *deps.Report {
+func resolveTmpCargo(t *testing.T, cargoTomlContent, cargoLockContent string, config *deps.ConfigDeps) *deps.Report {
 	dir, err := os.MkdirTemp("", "skywalking-eyes-test-cargo-")
 	if err != nil {
 		t.Error("Make temp dir failed", err)
@@ -218,14 +209,14 @@ func resolveTmpCargo(t *testing.T, cargoTomlContent string, cargoLockContent str
 	}
 
 	cargoFile := filepath.Join(dir, "Cargo.toml")
-	if err := os.WriteFile(cargoFile, []byte(cargoTomlContent), 0644); err != nil {
+	if err := os.WriteFile(cargoFile, []byte(cargoTomlContent), 0o600); err != nil {
 		t.Error("Write Cargo.toml failed", err)
 		return nil
 	}
 
 	if cargoLockContent != "" {
 		cargoLockFile := filepath.Join(dir, "Cargo.lock")
-		if err := os.WriteFile(cargoLockFile, []byte(cargoLockContent), 0644); err != nil {
+		if err := os.WriteFile(cargoLockFile, []byte(cargoLockContent), 0o600); err != nil {
 			t.Error("Write Cargo.lock failed", err)
 			return nil
 		}

@@ -18,7 +18,7 @@
 package deps_test
 
 import (
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/apache/skywalking-eyes/pkg/deps"
@@ -87,7 +87,7 @@ func TestResolvePkgFile(t *testing.T) {
 	resolver := new(deps.NpmResolver)
 	for _, data := range TestData {
 		result := &deps.Result{}
-		f, err := ioutil.TempFile(dir, "*.json")
+		f, err := os.CreateTemp(dir, "*.json")
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -40,12 +40,12 @@ inputs:
       Extra flags appended to the command, for example, --summary=path/to/template.tmpl
     required: false
 runs:
-  using: "composite"
+  using: composite
   steps:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: 1.23
+        go-version: 1.25
         cache-dependency-path: ${{ github.action_path }}/go.sum
     - shell: bash
       run: make -C $GITHUB_ACTION_PATH/.. install

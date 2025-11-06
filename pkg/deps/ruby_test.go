@@ -30,7 +30,7 @@ import (
 )
 
 func writeFileRuby(fileName, content string) error {
-	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0777)
+	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0o777)
 	if err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func writeFileRuby(fileName, content string) error {
 }
 
 func ensureDirRuby(dirName string) error {
-	return os.MkdirAll(dirName, 0777)
+	return os.MkdirAll(dirName, 0o777)
 }
 
 //go:embed testdata/ruby/**/*
@@ -61,8 +61,8 @@ func copyRuby(assetDir, destination string) error {
 			return nil
 		}
 		filename := filepath.Join(destination, strings.Replace(path, assetDir, "", 1))
-		if err := ensureDirRuby(filepath.Dir(filename)); err != nil {
-			return err
+		if dirErr := ensureDirRuby(filepath.Dir(filename)); dirErr != nil {
+			return dirErr
 		}
 		content, err := rubyTestAssets.ReadFile(path)
 		if err != nil {
@@ -127,7 +127,7 @@ func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) { re
 func TestRubyMissingSpecIsSkippedGracefully(t *testing.T) {
 	// Mock HTTP client to avoid real network: always return 404 Not Found
 	saved := httpClientRuby
-	httpClientRuby = &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+	httpClientRuby = &http.Client{Transport: roundTripFunc(func(_ *http.Request) (*http.Response, error) {
 		return &http.Response{
 			StatusCode: http.StatusNotFound,
 			Status:     "404 Not Found",

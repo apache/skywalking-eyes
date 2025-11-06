@@ -18,13 +18,14 @@
 package test
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/apache/skywalking-eyes/pkg/header"
 	"gopkg.in/yaml.v3"
+
+	"github.com/apache/skywalking-eyes/pkg/header"
 )
 
 var c struct {
@@ -32,7 +33,7 @@ var c struct {
 }
 
 func init() {
-	content, err := ioutil.ReadFile("testdata/test-spdx-content.yaml")
+	content, err := os.ReadFile("testdata/test-spdx-content.yaml")
 
 	if err != nil {
 		panic(err)

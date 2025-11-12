@@ -113,10 +113,12 @@ func TestListFilesWithEmptyRepo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Chdir(originalDir)
+	defer func() {
+		_ = os.Chdir(originalDir)
+	}()
 
-	if err := os.Chdir(tempDir); err != nil {
-		t.Fatal(err)
+	if chErr := os.Chdir(tempDir); chErr != nil {
+		t.Fatal(chErr)
 	}
 
 	// Initialize an empty git repository
@@ -127,7 +129,7 @@ func TestListFilesWithEmptyRepo(t *testing.T) {
 
 	// Create a test file
 	testFile := filepath.Join(tempDir, "test.go")
-	err = os.WriteFile(testFile, []byte("package main"), 0644)
+	err = os.WriteFile(testFile, []byte("package main"), 0o600)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -162,10 +164,12 @@ func TestListFilesWithWorktreeDetachedHEAD(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Chdir(originalDir)
+	defer func() {
+		_ = os.Chdir(originalDir)
+	}()
 
-	if err := os.Chdir(tempDir); err != nil {
-		t.Fatal(err)
+	if chErr := os.Chdir(tempDir); chErr != nil {
+		t.Fatal(chErr)
 	}
 
 	// Initialize a git repository with a commit
@@ -176,7 +180,7 @@ func TestListFilesWithWorktreeDetachedHEAD(t *testing.T) {
 
 	// Create and commit a file
 	testFile := "test.go"
-	err = os.WriteFile(testFile, []byte("package main"), 0644)
+	err = os.WriteFile(testFile, []byte("package main"), 0o600)
 	if err != nil {
 		t.Fatal(err)
 	}

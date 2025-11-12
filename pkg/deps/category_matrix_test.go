@@ -33,6 +33,7 @@ import (
 func TestCategoryACompatAndWeakCompat(t *testing.T) {
 	// Main license: MIT (Category A)
 	// 1) A with A should be compatible without weak flag
+	//nolint:revive,staticcheck // empty block is intentional - just checking no error is returned
 	if err := deps.Check("MIT", &deps.ConfigDeps{}, false); err == nil {
 		// We didn't pass any dependencies; we need to assert behavior through CheckWithMatrix using a crafted report.
 	}

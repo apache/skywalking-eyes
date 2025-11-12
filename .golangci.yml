@@ -15,112 +15,116 @@
 # specific language governing permissions and limitations
 # under the License.
 
-run:
-  tests: false
-
-linters-settings:
-  govet:
-    enable:
-      - shadow
-  revive:
-    min-confidence: 0
-  gocyclo:
-    min-complexity: 20
-  maligned:
-    suggest-new: true
-  dupl:
-    threshold: 200
-  goconst:
-    min-len: 2
-    min-occurrences: 2
-  depguard:
-    rules:
-      main:
-        deny:
-          - pkg: "fmt"
-            desc: "logging is allowed only by logutils.Log"
-  misspell:
-    locale: US
-    ignore-words:
-      - analogue
-      - analyse
-      - artefact
-      - authorised
-      - calibre
-      - cancelled
-      - catalogue
-      - categorise
-      - centre
-      - emphasised
-      - favour
-      - favourite
-      - fulfil
-      - fulfilment
-      - initialise
-      - labelling
-      - labour
-      - licence
-      - maximise
-      - modelled
-      - modelling
-      - offence
-      - optimise
-      - organisation
-      - organise
-      - practise
-      - programme
-      - realise
-      - recognise
-      - signalling
-      - utilisation
-  lll:
-    line-length: 150
-  goimports:
-    local-prefixes: github.com/apache/skywalking-eyes
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-    disabled-checks:
-      - ifElseChain
-  funlen:
-    lines: 100
-    statements: 50
-  whitespace:
-    multi-if: false
-    multi-func: false
-
+version: "2"
 linters:
   enable:
     - bodyclose
-    - errcheck
     - dogsled
     - dupl
     - funlen
     - goconst
     - gocritic
     - gocyclo
-    - gofmt
-    - goimports
-    - revive
     - gosec
-    - gosimple
-    - govet
-    - ineffassign
     - lll
     - misspell
     - nakedret
-    - staticcheck
-    - typecheck
+    - revive
     - unconvert
     - unparam
-    - unused
     - whitespace
-
-service:
-  golangci-lint-version: 1.63.4
-  prepare:
-    - echo "here I can run custom commands, but no preparation needed for this repo"
+  settings:
+    depguard:
+      rules:
+        main:
+          deny:
+            - pkg: fmt
+              desc: logging is allowed only by logutils.Log
+    dupl:
+      threshold: 200
+    funlen:
+      lines: 200
+      statements: 50
+    goconst:
+      min-len: 2
+      min-occurrences: 2
+    gocritic:
+      disabled-checks:
+        - ifElseChain
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+    govet:
+      enable:
+        - shadow
+    lll:
+      line-length: 150
+    misspell:
+      locale: US
+      ignore-rules:
+        - analogue
+        - analyse
+        - artefact
+        - authorised
+        - calibre
+        - cancelled
+        - catalogue
+        - categorise
+        - centre
+        - emphasised
+        - favour
+        - favourite
+        - fulfil
+        - fulfilment
+        - initialise
+        - labelling
+        - labour
+        - licence
+        - maximise
+        - modelled
+        - modelling
+        - offence
+        - optimise
+        - organisation
+        - organise
+        - practise
+        - programme
+        - realise
+        - recognise
+        - signalling
+        - utilisation
+    whitespace:
+      multi-if: false
+      multi-func: false
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+    rules:
+      - linters:
+          - funlen
+        path: _test\.go
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/apache/skywalking-eyes
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

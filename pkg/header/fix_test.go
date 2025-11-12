@@ -22,8 +22,9 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/apache/skywalking-eyes/pkg/comments"
 	"github.com/stretchr/testify/require"
+
+	"github.com/apache/skywalking-eyes/pkg/comments"
 )
 
 var config = &ConfigHeader{
@@ -365,7 +366,7 @@ namespace test\test2;
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var r *regexp.Regexp
-			if len(test.licensePattern) > 0 {
+			if test.licensePattern != "" {
 				r = regexp.MustCompile(test.licensePattern)
 			}
 			content := rewriteContent(test.style, []byte(test.content), test.licenseHeader, r)

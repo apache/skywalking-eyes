@@ -17,7 +17,7 @@
 
 FROM apache/skywalking-eyes:latest
 
-ARG GO_VERSION=1.23.1
+ARG GO_VERSION=1.25.3
 ARG TARGETARCH
 
 # Install Go

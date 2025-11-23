@@ -38,7 +38,7 @@ type Result struct {
 	LicenseSpdxID   string
 	ResolveErrors   []error
 	Version         string
-	SkippedReason   string
+	IsCrossPlatform bool
 }
 
 // Report is a collection of resolved Result.

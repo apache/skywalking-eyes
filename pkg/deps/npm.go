@@ -35,7 +35,14 @@ import (
 	"github.com/apache/skywalking-eyes/pkg/license"
 )
 
-// Cross-platform package pattern recognition (more precise matching)
+// Cross-platform package pattern recognition (for precise matching)
+// These patterns work for both scoped (@scope/package-platform-arch) and
+// non-scoped (package-platform-arch) npm packages, as the platform/arch
+// suffix always appears at the end of the package name.
+// Examples:
+//   - Scoped:    @scope/foo-linux-x64
+//   - Non-scoped: foo-linux-x64
+//
 // regex: matches package names ending with a specific string (e.g., "-linux-x64")
 // os: target operating system (e.g., "linux", "darwin", "windows")
 // arch: target CPU architecture (e.g., "x64", "arm64")
@@ -127,7 +134,7 @@ func (resolver *NpmResolver) Resolve(pkgFile string, config *ConfigDeps, report 
 	for _, pkg := range pkgs {
 		if result := resolver.ResolvePackageLicense(pkg.Name, pkg.Path, config); result.LicenseSpdxID != "" {
 			report.Resolve(result)
-		} else if result.SkippedReason != "" {
+		} else if result.IsCrossPlatform == true {
 			logger.Log.Warnf("Skipping cross-platform package %s (not for current platform %s %s)", pkg.Name, runtime.GOOS, runtime.GOARCH)
 		} else {
 			result.LicenseSpdxID = Unknown
@@ -243,7 +250,7 @@ func (resolver *NpmResolver) ResolvePackageLicense(pkgName, pkgPath string, conf
 
 	// 在开始解析前检查是否为跨平台包且非当前平台
 	if !resolver.isForCurrentPlatform(pkgName) {
-		result.SkippedReason = fmt.Sprintf("package is platform-specific and not for current platform (%s)", runtime.GOOS)
+		result.IsCrossPlatform = true
 		return result
 	}
 
@@ -392,7 +399,7 @@ func normalizeArch(arch string) string {
 }
 
 // analyzePackagePlatform extracts the target OS and architecture from a package name.
-func (resolver *NpmResolver) analyzePackagePlatform(pkgName string) (string, string) {
+func (resolver *NpmResolver) analyzePackagePlatform(pkgName string) (os string, arch string) {
 	for _, pattern := range platformPatterns {
 		if pattern.regex.MatchString(pkgName) {
 			return pattern.os, pattern.arch

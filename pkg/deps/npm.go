@@ -1,4 +1,4 @@
-// Licensed to the Apache Software Foundation (ASF) under one
+不用回复我：// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -35,25 +35,25 @@ import (
 	"github.com/apache/skywalking-eyes/pkg/license"
 )
 
-// Cross-platform package pattern recognition (for precise matching)
+// Cross-platform package pattern recognition (more precise matching)
+// regex: matches package names ending with a specific string (e.g., "-linux-x64")
+// os: target operating system (e.g., "linux", "darwin", "windows")
+// arch: target CPU architecture (e.g., "x64", "arm64")
 var platformPatterns = []struct {
 	regex *regexp.Regexp
 	os    string
 	arch  string
 }{
-	// Android — matches packages ending with -android-*,
-	// e.g., "pkg-android-arm64", "libfoo-android-arm"
+	// Android
 	{regexp.MustCompile(`-android-arm64$`), "android", "arm64"},
 	{regexp.MustCompile(`-android-arm$`), "android", "arm"},
 	{regexp.MustCompile(`-android-x64$`), "android", "x64"},
 
-	// Darwin (macOS) — matches packages ending with -darwin-*,
-	// e.g., "foo-darwin-arm64", "bar-darwin-x64"
+	// Darwin (macOS)
 	{regexp.MustCompile(`-darwin-arm64$`), "darwin", "arm64"},
 	{regexp.MustCompile(`-darwin-x64$`), "darwin", "x64"},
 
-	// Linux — matches packages for multiple glibc/musl architectures,
-	// e.g., "lib-linux-arm64-glibc", "pkg-linux-x64-musl", "tool-linux-x64"
+	// Linux
 	{regexp.MustCompile(`-linux-arm64-glibc$`), "linux", "arm64"},
 	{regexp.MustCompile(`-linux-arm64-musl$`), "linux", "arm64"},
 	{regexp.MustCompile(`-linux-arm-glibc$`), "linux", "arm"},
@@ -64,14 +64,12 @@ var platformPatterns = []struct {
 	{regexp.MustCompile(`-linux-arm64$`), "linux", "arm64"},
 	{regexp.MustCompile(`-linux-arm$`), "linux", "arm"},
 
-	// Windows — matches packages ending with -win32-*,
-	// e.g., "lib-win32-x64", "dll-win32-arm64"
+	// Windows
 	{regexp.MustCompile(`-win32-arm64$`), "windows", "arm64"},
 	{regexp.MustCompile(`-win32-ia32$`), "windows", "ia32"},
 	{regexp.MustCompile(`-win32-x64$`), "windows", "x64"},
 
-	// FreeBSD — matches packages ending with -freebsd-*,
-	// e.g., "lib-freebsd-x64"
+	// FreeBSD
 	{regexp.MustCompile(`-freebsd-x64$`), "freebsd", "x64"},
 }
 
@@ -130,7 +128,7 @@ func (resolver *NpmResolver) Resolve(pkgFile string, config *ConfigDeps, report 
 		if result := resolver.ResolvePackageLicense(pkg.Name, pkg.Path, config); result.LicenseSpdxID != "" {
 			report.Resolve(result)
 		} else if result.SkippedReason != "" {
-			logger.Log.Warnf("Skipping cross-platform package %s (not for current platform %s)", pkg.Name, runtime.GOOS)
+			logger.Log.Warnf("Skipping cross-platform package %s (not for current platform %s %s)", pkg.Name, runtime.GOOS, runtime.GOARCH)
 		} else {
 			result.LicenseSpdxID = Unknown
 			report.Skip(result)
@@ -243,7 +241,7 @@ func (resolver *NpmResolver) ResolvePackageLicense(pkgName, pkgPath string, conf
 		Dependency: pkgName,
 	}
 
-	// Check whether the package is a cross-platform package and not for the current platform before starting parsing.
+	// 在开始解析前检查是否为跨平台包且非当前平台
 	if !resolver.isForCurrentPlatform(pkgName) {
 		result.SkippedReason = fmt.Sprintf("package is platform-specific and not for current platform (%s)", runtime.GOOS)
 		return result
@@ -370,25 +368,30 @@ func (resolver *NpmResolver) ParsePkgFile(pkgFile string) (*Package, error) {
 	return &packageInfo, nil
 }
 
-// isForCurrentPlatform checks whether the given package name targets
-// the current platform. This method should be called before parsing
-// to determine if a package is cross-platform and not for the current
-// OS/architecture, so it can be safely skipped.
-func (resolver *NpmResolver) isForCurrentPlatform(pkgName string) bool {
-	pkgPlatform, pkgArch := resolver.analyzePackagePlatform(pkgName)
-	if pkgPlatform == "" && pkgArch == "" {
-		return true
+// normalizeArch converts various architecture aliases into Go's canonical naming.
+func normalizeArch(arch string) string {
+	// Convert to lowercase to handle case variations (e.g., "AMD64").
+	arch = strings.ToLower(arch)
+	switch arch {
+	// x86-64 family (64-bit Intel/AMD)
+	case "x64", "x86_64", "amd64", "x86-64":
+		return "amd64"
+	// x86 32-bit family (legacy)
+	case "ia32", "x86", "386", "i386", "i686":
+		return "386"
+	// ARM 64-bit
+	case "arm64", "aarch64":
+		return "arm64"
+	// ARM 32-bit
+	case "arm", "armv7", "armhf", "armv7l", "armel":
+		return "arm"
+	// Unknown architecture: return as-is (alternatively, could return empty to indicate incompatibility).
+	default:
+		return arch
 	}
-
-	currentOS := runtime.GOOS
-	currentArch := runtime.GOARCH
-
-	return pkgPlatform == currentOS && resolver.isArchCompatible(pkgArch, currentArch)
 }
 
-// analyzePackagePlatform extracts the target operating system and architecture
-// from a package name by matching it against predefined regex patterns
-// (platformPatterns). Returns empty strings if no match is found.
+// analyzePackagePlatform extracts the target OS and architecture from a package name.
 func (resolver *NpmResolver) analyzePackagePlatform(pkgName string) (string, string) {
 	for _, pattern := range platformPatterns {
 		if pattern.regex.MatchString(pkgName) {
@@ -398,38 +401,22 @@ func (resolver *NpmResolver) analyzePackagePlatform(pkgName string) (string, str
 	return "", ""
 }
 
-// isArchCompatible determines whether two architectures are considered compatible.
-// For example, "x64" is compatible with "amd64", and "arm" is compatible with "armv7".
-// Returns true if the architectures match or belong to the same compatibility group.
-func (resolver *NpmResolver) isArchCompatible(pkgArch, currentArch string) bool {
-	archCompatibility := map[string][]string{
-		"x64":    {"x64", "x86_64", "amd64"},
-		"ia32":   {"ia32", "x86", "386", "i386"},
-		"arm64":  {"arm64", "aarch64"},
-		"arm":    {"arm", "armv7", "armhf", "armv7l"},
-		"x86_64": {"x86_64", "x64", "amd64"},
-		"amd64":  {"amd64", "x64", "x86_64"},
-	}
-
-	if pkgArch == currentArch {
+// isForCurrentPlatform checks whether the package is intended for the current OS and architecture.
+func (resolver *NpmResolver) isForCurrentPlatform(pkgName string) bool {
+	pkgPlatform, pkgArch := resolver.analyzePackagePlatform(pkgName)
+	// If no platform/arch info is embedded in the package name, assume it's universal.
+	if pkgPlatform == "" && pkgArch == "" {
 		return true
 	}
 
-	if compatibleArches, exists := archCompatibility[pkgArch]; exists {
-		for _, arch := range compatibleArches {
-			if arch == currentArch {
-				return true
-			}
-		}
-	}
+	currentOS := runtime.GOOS
+	currentArch := runtime.GOARCH
 
-	if compatibleArches, exists := archCompatibility[currentArch]; exists {
-		for _, arch := range compatibleArches {
-			if arch == pkgArch {
-				return true
-			}
-		}
-	}
+	// The package matches only if both OS and architecture are compatible.
+	return pkgPlatform == currentOS && resolver.isArchCompatible(pkgArch, currentArch)
+}
 
-	return false
+// isArchCompatible determines whether the package's architecture is compatible with the current machine's architecture.
+func (resolver *NpmResolver) isArchCompatible(pkgArch, currentArch string) bool {
+	return normalizeArch(pkgArch) == normalizeArch(currentArch)
 }

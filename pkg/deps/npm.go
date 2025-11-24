@@ -35,6 +35,13 @@ import (
 	"github.com/apache/skywalking-eyes/pkg/license"
 )
 
+// Constants for architecture names to avoid string duplication
+const (
+	archAMD64 = "amd64"
+	archARM64 = "arm64"
+	archARM   = "arm"
+)
+
 // Cross-platform package pattern recognition (for precise matching)
 // These patterns work for both scoped (@scope/package-platform-arch) and
 // non-scoped (package-platform-arch) npm packages, as the platform/arch
@@ -52,27 +59,27 @@ var platformPatterns = []struct {
 	arch  string
 }{
 	// Android
-	{regexp.MustCompile(`-android-arm64$`), "android", "arm64"},
-	{regexp.MustCompile(`-android-arm$`), "android", "arm"},
+	{regexp.MustCompile(`-android-arm64$`), "android", archARM64},
+	{regexp.MustCompile(`-android-arm$`), "android", archARM},
 	{regexp.MustCompile(`-android-x64$`), "android", "x64"},
 
 	// Darwin (macOS)
-	{regexp.MustCompile(`-darwin-arm64$`), "darwin", "arm64"},
+	{regexp.MustCompile(`-darwin-arm64$`), "darwin", archARM64},
 	{regexp.MustCompile(`-darwin-x64$`), "darwin", "x64"},
 
 	// Linux
-	{regexp.MustCompile(`-linux-arm64-glibc$`), "linux", "arm64"},
-	{regexp.MustCompile(`-linux-arm64-musl$`), "linux", "arm64"},
-	{regexp.MustCompile(`-linux-arm-glibc$`), "linux", "arm"},
-	{regexp.MustCompile(`-linux-arm-musl$`), "linux", "arm"},
+	{regexp.MustCompile(`-linux-arm64-glibc$`), "linux", archARM64},
+	{regexp.MustCompile(`-linux-arm64-musl$`), "linux", archARM64},
+	{regexp.MustCompile(`-linux-arm-glibc$`), "linux", archARM},
+	{regexp.MustCompile(`-linux-arm-musl$`), "linux", archARM},
 	{regexp.MustCompile(`-linux-x64-glibc$`), "linux", "x64"},
 	{regexp.MustCompile(`-linux-x64-musl$`), "linux", "x64"},
 	{regexp.MustCompile(`-linux-x64$`), "linux", "x64"},
-	{regexp.MustCompile(`-linux-arm64$`), "linux", "arm64"},
-	{regexp.MustCompile(`-linux-arm$`), "linux", "arm"},
+	{regexp.MustCompile(`-linux-arm64$`), "linux", archARM64},
+	{regexp.MustCompile(`-linux-arm$`), "linux", archARM},
 
 	// Windows
-	{regexp.MustCompile(`-win32-arm64$`), "windows", "arm64"},
+	{regexp.MustCompile(`-win32-arm64$`), "windows", archARM64},
 	{regexp.MustCompile(`-win32-ia32$`), "windows", "ia32"},
 	{regexp.MustCompile(`-win32-x64$`), "windows", "x64"},
 
@@ -134,7 +141,7 @@ func (resolver *NpmResolver) Resolve(pkgFile string, config *ConfigDeps, report 
 	for _, pkg := range pkgs {
 		if result := resolver.ResolvePackageLicense(pkg.Name, pkg.Path, config); result.LicenseSpdxID != "" {
 			report.Resolve(result)
-		} else if result.IsCrossPlatform == true {
+		} else if result.IsCrossPlatform {
 			logger.Log.Warnf("Skipping cross-platform package %s (not for current platform %s %s)", pkg.Name, runtime.GOOS, runtime.GOARCH)
 		} else {
 			result.LicenseSpdxID = Unknown
@@ -382,16 +389,16 @@ func normalizeArch(arch string) string {
 	switch arch {
 	// x86-64 family (64-bit Intel/AMD)
 	case "x64", "x86_64", "amd64", "x86-64":
-		return "amd64"
+		return archAMD64
 	// x86 32-bit family (legacy)
 	case "ia32", "x86", "386", "i386", "i686":
 		return "386"
 	// ARM 64-bit
 	case "arm64", "aarch64":
-		return "arm64"
+		return archARM64
 	// ARM 32-bit
 	case "arm", "armv7", "armhf", "armv7l", "armel":
-		return "arm"
+		return archARM
 	// Unknown architecture: return as-is (alternatively, could return empty to indicate incompatibility).
 	default:
 		return arch
@@ -399,7 +406,7 @@ func normalizeArch(arch string) string {
 }
 
 // analyzePackagePlatform extracts the target OS and architecture from a package name.
-func (resolver *NpmResolver) analyzePackagePlatform(pkgName string) (os string, arch string) {
+func (resolver *NpmResolver) analyzePackagePlatform(pkgName string) (pkgOS, pkgArch string) {
 	for _, pattern := range platformPatterns {
 		if pattern.regex.MatchString(pkgName) {
 			return pattern.os, pattern.arch

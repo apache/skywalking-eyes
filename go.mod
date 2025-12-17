@@ -9,7 +9,7 @@ require (
 	github.com/go-git/go-git/v5 v5.13.0
 	github.com/google/go-github/v33 v33.0.0
 	github.com/google/licensecheck v0.3.1
-	github.com/sirupsen/logrus v1.9.0
+	github.com/sirupsen/logrus v1.9.1
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/net v0.47.0

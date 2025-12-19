@@ -366,6 +366,7 @@ func hasGemspec(dir string) bool {
 var gemspecRuntimeRe = regexp.MustCompile(`\badd_(?:runtime_)?dependency\s*\(?\s*["']([^"']+)["']`)
 var gemspecLicenseRe = regexp.MustCompile(`\.licenses?\s*=\s*(?:\[\s*)?['"]([^'"]+)['"]`)
 var gemspecNameRe = regexp.MustCompile(`\.name\s*=\s*['"]([^'"]+)['"]`)
+var rubyVersionRe = regexp.MustCompile(`^[0-9]+(\.[0-9a-zA-Z]+)*(-[0-9a-zA-Z]+)?$`)
 
 func runtimeDepsFromGemspecs(dir string) ([]string, error) {
 	entries, err := os.ReadDir(dir)
@@ -419,7 +420,7 @@ func findInstalledGemspec(name, version string) (string, error) {
 	gemPaths := getGemPaths()
 	for _, dir := range gemPaths {
 		specsDir := filepath.Join(dir, "specifications")
-		if version != "" && !strings.ContainsAny(version, "<>~=") {
+		if version != "" && rubyVersionRe.MatchString(version) {
 			path := filepath.Join(specsDir, name+"-"+version+".gemspec")
 			if _, err := os.Stat(path); err == nil {
 				return path, nil
@@ -470,7 +471,7 @@ func fetchInstalledLicense(name, version string) string {
 	for _, dir := range gemPaths {
 		specsDir := filepath.Join(dir, "specifications")
 		// If version is specific
-		if version != "" && !strings.ContainsAny(version, "<>~=") { // simple check if it's a version number
+		if version != "" && rubyVersionRe.MatchString(version) {
 			path := filepath.Join(specsDir, name+"-"+version+".gemspec")
 			if _, license, err := parseGemspecInfo(path); err == nil && license != "" {
 				return license

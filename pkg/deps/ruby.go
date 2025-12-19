@@ -115,7 +115,10 @@ func (r *GemfileLockResolver) Resolve(lockfile string, config *ConfigDeps, repor
 			}
 		}
 
-		licenseID, err := fetchRubyGemsLicense(name, version)
+		licenseID, err := fetchInstalledLicense(name, version)
+		if err != nil || licenseID == "" {
+			licenseID, err = fetchRubyGemsLicense(name, version)
+		}
 		if err != nil || licenseID == "" {
 			// Gracefully treat as unresolved license and record in report
 			report.Skip(&Result{Dependency: name, LicenseSpdxID: Unknown, Version: version})
@@ -124,6 +127,93 @@ func (r *GemfileLockResolver) Resolve(lockfile string, config *ConfigDeps, repor
 		report.Resolve(&Result{Dependency: name, LicenseSpdxID: licenseID, Version: version})
 	}
 
+	return nil
+}
+
+// GemspecResolver resolves dependencies from a .gemspec file.
+type GemspecResolver struct {
+	Resolver
+}
+
+func (r *GemspecResolver) CanResolve(file string) bool {
+	return strings.HasSuffix(file, ".gemspec")
+}
+
+func (r *GemspecResolver) Resolve(file string, config *ConfigDeps, report *Report) error {
+	f, err := os.Open(file)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	deps := make(map[string]string) // name -> version constraint
+	for scanner.Scan() {
+		line := scanner.Text()
+		trimLeft := strings.TrimLeft(line, " \t")
+		if strings.HasPrefix(trimLeft, "#") {
+			continue
+		}
+		if m := gemspecRuntimeRe.FindStringSubmatch(line); len(m) == 2 {
+			deps[m[1]] = "" // We don't extract version constraint yet, or we could improve regex
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+
+	// Recursive resolution
+	queue := make([]string, 0, len(deps))
+	for name := range deps {
+		queue = append(queue, name)
+	}
+
+	visited := make(map[string]struct{})
+	for name := range deps {
+		visited[name] = struct{}{}
+	}
+
+	for i := 0; i < len(queue); i++ {
+		name := queue[i]
+		// Find installed gemspec for 'name'
+		path, err := findInstalledGemspec(name, "")
+		if err == nil && path != "" {
+			// Parse dependencies of this gemspec
+			newDeps, err := parseGemspecDependencies(path)
+			if err == nil {
+				for _, dep := range newDeps {
+					if _, ok := visited[dep]; !ok {
+						visited[dep] = struct{}{}
+						queue = append(queue, dep)
+						if _, ok := deps[dep]; !ok {
+							deps[dep] = ""
+						}
+					}
+				}
+			}
+		}
+	}
+
+	for name, version := range deps {
+		if exclude, _ := config.IsExcluded(name, version); exclude {
+			continue
+		}
+		if l, ok := config.GetUserConfiguredLicense(name, version); ok {
+			report.Resolve(&Result{Dependency: name, LicenseSpdxID: l, Version: version})
+			continue
+		}
+
+		// Assume remote dependency
+		licenseID, err := fetchInstalledLicense(name, version)
+		if err != nil || licenseID == "" {
+			licenseID, err = fetchRubyGemsLicense(name, version)
+		}
+		if err != nil || licenseID == "" {
+			report.Skip(&Result{Dependency: name, LicenseSpdxID: Unknown, Version: version})
+			continue
+		}
+		report.Resolve(&Result{Dependency: name, LicenseSpdxID: licenseID, Version: version})
+	}
 	return nil
 }
 
@@ -262,24 +352,12 @@ func runtimeDepsFromGemspecs(dir string) ([]string, error) {
 			continue
 		}
 		path := filepath.Join(dir, e.Name())
-		f, err := os.Open(path)
+		deps, err := parseGemspecDependencies(path)
 		if err != nil {
 			return nil, err
 		}
-		scanner := bufio.NewScanner(f)
-		for scanner.Scan() {
-			line := scanner.Text()
-			trimLeft := strings.TrimLeft(line, " \t")
-			if strings.HasPrefix(trimLeft, "#") {
-				continue // ignore commented-out lines
-			}
-			if m := gemspecRuntimeRe.FindStringSubmatch(line); len(m) == 2 {
-				runtime[m[1]] = struct{}{}
-			}
-		}
-		_ = f.Close()
-		if err := scanner.Err(); err != nil {
-			return nil, err
+		for _, d := range deps {
+			runtime[d] = struct{}{}
 		}
 	}
 	res := make([]string, 0, len(runtime))
@@ -287,6 +365,57 @@ func runtimeDepsFromGemspecs(dir string) ([]string, error) {
 		res = append(res, k)
 	}
 	return res, nil
+}
+
+func parseGemspecDependencies(path string) ([]string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	var deps []string
+	for scanner.Scan() {
+		line := scanner.Text()
+		trimLeft := strings.TrimLeft(line, " \t")
+		if strings.HasPrefix(trimLeft, "#") {
+			continue
+		}
+		if m := gemspecRuntimeRe.FindStringSubmatch(line); len(m) == 2 {
+			deps = append(deps, m[1])
+		}
+	}
+	return deps, scanner.Err()
+}
+
+func findInstalledGemspec(name, version string) (string, error) {
+	gemPaths := getGemPaths()
+	for _, dir := range gemPaths {
+		specsDir := filepath.Join(dir, "specifications")
+		if version != "" && !strings.ContainsAny(version, "<>~=") {
+			path := filepath.Join(specsDir, name+"-"+version+".gemspec")
+			if _, err := os.Stat(path); err == nil {
+				return path, nil
+			}
+		} else {
+			entries, err := os.ReadDir(specsDir)
+			if err != nil {
+				continue
+			}
+			for _, e := range entries {
+				if !e.IsDir() && strings.HasPrefix(e.Name(), name+"-") && strings.HasSuffix(e.Name(), ".gemspec") {
+					stem := strings.TrimSuffix(e.Name(), ".gemspec")
+					ver := strings.TrimPrefix(stem, name+"-")
+					if ver == stem {
+						continue
+					}
+					return filepath.Join(specsDir, e.Name()), nil
+				}
+			}
+		}
+	}
+	return "", os.ErrNotExist
 }
 
 func fetchLocalLicense(dir, name string) (string, error) {
@@ -299,29 +428,79 @@ func fetchLocalLicense(dir, name string) (string, error) {
 			continue
 		}
 		path := filepath.Join(dir, e.Name())
-		f, err := os.Open(path)
-		if err != nil {
-			return "", err
-		}
-		scanner := bufio.NewScanner(f)
-		var license string
-		for scanner.Scan() {
-			line := scanner.Text()
-			trimLeft := strings.TrimLeft(line, " \t")
-			if strings.HasPrefix(trimLeft, "#") {
-				continue
-			}
-			if m := gemspecLicenseRe.FindStringSubmatch(line); len(m) == 2 {
-				license = m[1]
-				break
-			}
-		}
-		_ = f.Close()
-		if license != "" {
+		license, err := parseGemspecLicense(path)
+		if err == nil && license != "" {
 			return license, nil
 		}
 	}
 	return "", nil
+}
+
+func fetchInstalledLicense(name, version string) (string, error) {
+	gemPaths := getGemPaths()
+	for _, dir := range gemPaths {
+		specsDir := filepath.Join(dir, "specifications")
+		// If version is specific
+		if version != "" && !strings.ContainsAny(version, "<>~=") { // simple check if it's a version number
+			path := filepath.Join(specsDir, name+"-"+version+".gemspec")
+			if license, err := parseGemspecLicense(path); err == nil && license != "" {
+				return license, nil
+			}
+		} else {
+			// Scan for any version
+			entries, err := os.ReadDir(specsDir)
+			if err != nil {
+				continue
+			}
+			for _, e := range entries {
+				if !e.IsDir() && strings.HasPrefix(e.Name(), name+"-") && strings.HasSuffix(e.Name(), ".gemspec") {
+					stem := strings.TrimSuffix(e.Name(), ".gemspec")
+					ver := strings.TrimPrefix(stem, name+"-")
+					if ver == stem { // didn't have prefix
+						continue
+					}
+					path := filepath.Join(specsDir, e.Name())
+					if license, err := parseGemspecLicense(path); err == nil && license != "" {
+						return license, nil
+					}
+				}
+			}
+		}
+	}
+	return "", nil
+}
+
+func getGemPaths() []string {
+	env := os.Getenv("GEM_PATH")
+	if env == "" {
+		env = os.Getenv("GEM_HOME")
+	}
+	if env == "" {
+		return nil
+	}
+	return strings.Split(env, string(os.PathListSeparator))
+}
+
+func parseGemspecLicense(path string) (string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	scanner := bufio.NewScanner(f)
+	var license string
+	for scanner.Scan() {
+		line := scanner.Text()
+		trimLeft := strings.TrimLeft(line, " \t")
+		if strings.HasPrefix(trimLeft, "#") {
+			continue
+		}
+		if m := gemspecLicenseRe.FindStringSubmatch(line); len(m) == 2 {
+			license = m[1]
+			break
+		}
+	}
+	return license, nil
 }
 
 func reachable(graph gemGraph, roots []string) map[string]struct{} {

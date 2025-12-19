@@ -272,13 +272,13 @@ func parseGemfileLock(s string) (graph gemGraph, roots []string, err error) {
 }
 
 type lockParserState struct {
-	inSpecs           bool
-	inDeps            bool
-	inPath            bool
-	current           *gemSpec
-	currentRemotePath string
-	graph             gemGraph
-	roots             []string
+	inSpecs          bool
+	inDeps           bool
+	inPath           bool
+	current          *gemSpec
+	currentLocalPath string
+	graph            gemGraph
+	roots            []string
 }
 
 func (s *lockParserState) processLine(line string) {
@@ -286,7 +286,7 @@ func (s *lockParserState) processLine(line string) {
 		s.inSpecs = true
 		s.inDeps = false
 		s.inPath = false
-		s.currentRemotePath = ""
+		s.currentLocalPath = ""
 		s.current = nil
 		return
 	}
@@ -294,7 +294,7 @@ func (s *lockParserState) processLine(line string) {
 		s.inSpecs = true
 		s.inDeps = false
 		s.inPath = true
-		s.currentRemotePath = ""
+		s.currentLocalPath = ""
 		s.current = nil
 		return
 	}
@@ -328,7 +328,7 @@ func (s *lockParserState) processSpecs(line string) {
 		// not GEM block remote URLs (like rubygems.org).
 		// This distinction is important for proper local dependency resolution.
 		if s.inPath {
-			s.currentRemotePath = strings.TrimSpace(strings.TrimPrefix(trim, "remote:"))
+			s.currentLocalPath = strings.TrimSpace(strings.TrimPrefix(trim, "remote:"))
 		}
 		return
 	}
@@ -338,7 +338,7 @@ func (s *lockParserState) processSpecs(line string) {
 		version := m[2]
 		s.current = &gemSpec{Name: name, Version: version}
 		if s.inPath {
-			s.current.LocalPath = s.currentRemotePath
+			s.current.LocalPath = s.currentLocalPath
 		}
 		s.graph[name] = s.current
 		return

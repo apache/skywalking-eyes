@@ -199,6 +199,9 @@ func (r *GemspecResolver) Resolve(file string, config *ConfigDeps, report *Repor
 			if err == nil {
 				for _, dep := range newDeps {
 					if _, ok := visited[dep]; !ok {
+						if len(queue) > 10000 {
+							return fmt.Errorf("dependency graph too large")
+						}
 						visited[dep] = struct{}{}
 						queue = append(queue, dep)
 						if _, ok := deps[dep]; !ok {

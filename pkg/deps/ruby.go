@@ -367,7 +367,7 @@ func hasGemspec(dir string) bool {
 }
 
 var gemspecRuntimeRe = regexp.MustCompile(`\badd_(?:runtime_)?dependency\s*\(?\s*["']([^"']+)["']`)
-var gemspecLicenseRe = regexp.MustCompile(`\.licenses?\s*=\s*(.*)`)
+var gemspecLicenseRe = regexp.MustCompile(`\.licenses?\s*=\s*([^#]*)`)
 var gemspecStringRe = regexp.MustCompile(`['"]([^'"]+)['"]`)
 var gemspecNameRe = regexp.MustCompile(`\.name\s*=\s*['"]([^'"]+)['"]`)
 var rubyVersionRe = regexp.MustCompile(`^\d+(\.[0-9a-zA-Z]+)*(-[0-9a-zA-Z]+)?$`)

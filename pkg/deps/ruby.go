@@ -543,11 +543,6 @@ func parseGemspecInfo(path string) (string, string, error) {
 	return name, license, nil
 }
 
-func parseGemspecLicense(path string) (string, error) {
-	_, license, err := parseGemspecInfo(path)
-	return license, err
-}
-
 func reachable(graph gemGraph, roots []string) map[string]struct{} {
 	vis := make(map[string]struct{})
 	var dfs func(string)

@@ -115,8 +115,9 @@ func (r *GemfileLockResolver) Resolve(lockfile string, config *ConfigDeps, repor
 			}
 		}
 
-		licenseID, err := fetchInstalledLicense(name, version)
-		if err != nil || licenseID == "" {
+		licenseID := fetchInstalledLicense(name, version)
+		var err error
+		if licenseID == "" {
 			licenseID, err = fetchRubyGemsLicense(name, version)
 		}
 		if err != nil || licenseID == "" {
@@ -204,8 +205,9 @@ func (r *GemspecResolver) Resolve(file string, config *ConfigDeps, report *Repor
 		}
 
 		// Assume remote dependency
-		licenseID, err := fetchInstalledLicense(name, version)
-		if err != nil || licenseID == "" {
+		licenseID := fetchInstalledLicense(name, version)
+		var err error
+		if licenseID == "" {
 			licenseID, err = fetchRubyGemsLicense(name, version)
 		}
 		if err != nil || licenseID == "" {
@@ -238,92 +240,111 @@ func parseGemfileLock(s string) (graph gemGraph, roots []string, err error) {
 	scanner.Split(bufio.ScanLines)
 	graph = make(gemGraph)
 
-	inSpecs := false
-	inDeps := false
-	inPath := false
-	var current *gemSpec
-	var currentRemotePath string
+	state := &lockParserState{
+		graph: graph,
+	}
 
 	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.HasPrefix(line, "GEM") {
-			inSpecs = true
-			inDeps = false
-			inPath = false
-			currentRemotePath = ""
-			current = nil
-			continue
-		}
-		if strings.HasPrefix(line, "PATH") {
-			inSpecs = true
-			inDeps = false
-			inPath = true
-			current = nil
-			continue
-		}
-		if strings.HasPrefix(line, "DEPENDENCIES") {
-			inSpecs = false
-			inDeps = true
-			inPath = false
-			current = nil
-			continue
-		}
-		if strings.TrimSpace(line) == "specs:" && inSpecs {
-			// just a marker
-			continue
-		}
-
-		if inSpecs {
-			trim := strings.TrimSpace(line)
-			if strings.HasPrefix(trim, "remote:") {
-				if inPath {
-					currentRemotePath = strings.TrimSpace(strings.TrimPrefix(trim, "remote:"))
-				}
-				continue
-			}
-
-			if m := lockSpecHeader.FindStringSubmatch(line); len(m) == 3 {
-				name := m[1]
-				version := m[2]
-				current = &gemSpec{Name: name, Version: version}
-				if inPath {
-					current.LocalPath = currentRemotePath
-				}
-				graph[name] = current
-				continue
-			}
-			if current != nil {
-				if m := lockDepLine.FindStringSubmatch(line); len(m) == 2 {
-					depName := m[1]
-					current.Deps = append(current.Deps, depName)
-				}
-			}
-			continue
-		}
-
-		if inDeps {
-			trim := strings.TrimSpace(line)
-			if trim == "" || strings.HasPrefix(trim, "BUNDLED WITH") {
-				inDeps = false
-				continue
-			}
-			// dependency line: byebug (~> 11.1)
-			root := trim
-			if i := strings.Index(root, " "); i >= 0 {
-				root = root[:i]
-			}
-			root = strings.TrimSuffix(root, "!")
-			// ignore comments and platforms
-			if root != "" && !strings.HasPrefix(root, "#") {
-				roots = append(roots, root)
-			}
-			continue
-		}
+		state.processLine(scanner.Text())
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, nil, err
 	}
-	return graph, roots, nil
+	return graph, state.roots, nil
+}
+
+type lockParserState struct {
+	inSpecs           bool
+	inDeps            bool
+	inPath            bool
+	current           *gemSpec
+	currentRemotePath string
+	graph             gemGraph
+	roots             []string
+}
+
+func (s *lockParserState) processLine(line string) {
+	if strings.HasPrefix(line, "GEM") {
+		s.inSpecs = true
+		s.inDeps = false
+		s.inPath = false
+		s.currentRemotePath = ""
+		s.current = nil
+		return
+	}
+	if strings.HasPrefix(line, "PATH") {
+		s.inSpecs = true
+		s.inDeps = false
+		s.inPath = true
+		s.current = nil
+		return
+	}
+	if strings.HasPrefix(line, "DEPENDENCIES") {
+		s.inSpecs = false
+		s.inDeps = true
+		s.inPath = false
+		s.current = nil
+		return
+	}
+	if strings.TrimSpace(line) == "specs:" && s.inSpecs {
+		// just a marker
+		return
+	}
+
+	if s.inSpecs {
+		s.processSpecs(line)
+		return
+	}
+
+	if s.inDeps {
+		s.processDeps(line)
+		return
+	}
+}
+
+func (s *lockParserState) processSpecs(line string) {
+	trim := strings.TrimSpace(line)
+	if strings.HasPrefix(trim, "remote:") {
+		if s.inPath {
+			s.currentRemotePath = strings.TrimSpace(strings.TrimPrefix(trim, "remote:"))
+		}
+		return
+	}
+
+	if m := lockSpecHeader.FindStringSubmatch(line); len(m) == 3 {
+		name := m[1]
+		version := m[2]
+		s.current = &gemSpec{Name: name, Version: version}
+		if s.inPath {
+			s.current.LocalPath = s.currentRemotePath
+		}
+		s.graph[name] = s.current
+		return
+	}
+	if s.current != nil {
+		if m := lockDepLine.FindStringSubmatch(line); len(m) == 2 {
+			depName := m[1]
+			s.current.Deps = append(s.current.Deps, depName)
+		}
+	}
+}
+
+func (s *lockParserState) processDeps(line string) {
+	trim := strings.TrimSpace(line)
+	if trim == "" || strings.HasPrefix(trim, "BUNDLED WITH") {
+		s.inDeps = false
+		return
+	}
+	// dependency line: byebug (~> 11.1)
+	root := trim
+	if i := strings.Index(root, " "); i >= 0 {
+		root = root[:i]
+	}
+	root = strings.TrimSuffix(root, "!")
+	// ignore comments and platforms
+	if root != "" && !strings.HasPrefix(root, "#") {
+		s.roots = append(s.roots, root)
+	}
 }
 
 func hasGemspec(dir string) bool {
@@ -420,7 +441,7 @@ func findInstalledGemspec(name, version string) (string, error) {
 	return "", os.ErrNotExist
 }
 
-func fetchLocalLicense(dir, name string) (string, error) {
+func fetchLocalLicense(dir, targetName string) (string, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return "", err
@@ -431,14 +452,14 @@ func fetchLocalLicense(dir, name string) (string, error) {
 		}
 		path := filepath.Join(dir, e.Name())
 		specName, license, err := parseGemspecInfo(path)
-		if err == nil && specName == name && license != "" {
+		if err == nil && specName == targetName && license != "" {
 			return license, nil
 		}
 	}
 	return "", nil
 }
 
-func fetchInstalledLicense(name, version string) (string, error) {
+func fetchInstalledLicense(name, version string) string {
 	gemPaths := getGemPaths()
 	for _, dir := range gemPaths {
 		specsDir := filepath.Join(dir, "specifications")
@@ -446,7 +467,7 @@ func fetchInstalledLicense(name, version string) (string, error) {
 		if version != "" && !strings.ContainsAny(version, "<>~=") { // simple check if it's a version number
 			path := filepath.Join(specsDir, name+"-"+version+".gemspec")
 			if _, license, err := parseGemspecInfo(path); err == nil && license != "" {
-				return license, nil
+				return license
 			}
 		} else {
 			// Scan for any version
@@ -455,21 +476,22 @@ func fetchInstalledLicense(name, version string) (string, error) {
 				continue
 			}
 			for _, e := range entries {
-				if !e.IsDir() && strings.HasPrefix(e.Name(), name+"-") && strings.HasSuffix(e.Name(), ".gemspec") {
-					stem := strings.TrimSuffix(e.Name(), ".gemspec")
-					ver := strings.TrimPrefix(stem, name+"-")
-					if ver == stem { // didn't have prefix
-						continue
-					}
-					path := filepath.Join(specsDir, e.Name())
-					if _, license, err := parseGemspecInfo(path); err == nil && license != "" {
-						return license, nil
-					}
+				if e.IsDir() || !strings.HasPrefix(e.Name(), name+"-") || !strings.HasSuffix(e.Name(), ".gemspec") {
+					continue
+				}
+				stem := strings.TrimSuffix(e.Name(), ".gemspec")
+				ver := strings.TrimPrefix(stem, name+"-")
+				if ver == stem { // didn't have prefix
+					continue
+				}
+				path := filepath.Join(specsDir, e.Name())
+				if _, license, err := parseGemspecInfo(path); err == nil && license != "" {
+					return license
 				}
 			}
 		}
 	}
-	return "", nil
+	return ""
 }
 
 func getGemPaths() []string {

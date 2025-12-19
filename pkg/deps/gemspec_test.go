@@ -6,6 +6,12 @@ import (
 	"testing"
 )
 
+const (
+	tomlRb = "toml-rb"
+	citrus = "citrus"
+	mit    = "MIT"
+)
+
 func TestRubyGemspecResolver(t *testing.T) {
 	resolver := new(GemspecResolver)
 
@@ -28,13 +34,13 @@ func TestRubyGemspecResolver(t *testing.T) {
 		// Expect toml-rb dependency.
 		found := false
 		for _, r := range report.Resolved {
-			if r.Dependency == "toml-rb" {
+			if r.Dependency == tomlRb {
 				found = true
 				break
 			}
 		}
 		for _, r := range report.Skipped {
-			if r.Dependency == "toml-rb" {
+			if r.Dependency == tomlRb {
 				found = true
 				break
 			}
@@ -49,7 +55,7 @@ func TestRubyGemspecResolver(t *testing.T) {
 		tmp := t.TempDir()
 		gemHome := filepath.Join(tmp, "gemhome")
 		specsDir := filepath.Join(gemHome, "specifications")
-		if err := os.MkdirAll(specsDir, 0755); err != nil {
+		if err := os.MkdirAll(specsDir, 0o755); err != nil {
 			t.Fatal(err)
 		}
 		t.Setenv("GEM_HOME", gemHome)
@@ -101,7 +107,7 @@ end
 		found := false
 		var license string
 		for _, r := range report.Resolved {
-			if r.Dependency == "citrus" {
+			if r.Dependency == citrus {
 				found = true
 				license = r.LicenseSpdxID
 				break
@@ -110,7 +116,7 @@ end
 		if !found {
 			// Check skipped
 			for _, r := range report.Skipped {
-				if r.Dependency == "citrus" {
+				if r.Dependency == citrus {
 					found = true
 					license = r.LicenseSpdxID
 					break
@@ -122,7 +128,7 @@ end
 			t.Error("expected citrus dependency (transitive)")
 		} else {
 			t.Logf("citrus license: %s", license)
-			if license != "MIT" {
+			if license != mit {
 				t.Errorf("expected citrus license MIT, got %s", license)
 			}
 		}

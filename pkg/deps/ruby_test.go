@@ -169,7 +169,7 @@ func TestRubyGemfileLockResolver(t *testing.T) {
 		// Also check Skipped if it failed
 		for _, r := range report.Skipped {
 			if strings.HasPrefix(r.Dependency, "citrus") {
-				// This is where it currently lands
+				// Historically citrus landed here; keep this check to ensure it no longer appears in Skipped with Unknown license.
 				t.Logf("citrus found in Skipped with license %s", r.LicenseSpdxID)
 				if r.LicenseSpdxID == "Unknown" {
 					t.Errorf("citrus license is Unknown")

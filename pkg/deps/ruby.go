@@ -545,6 +545,9 @@ func parseGemspecInfo(path string) (gemName, gemLicense string, err error) {
 					}
 				}
 				if len(licenses) > 0 {
+					// NOTE: When multiple licenses are declared in the gemspec, we assume they are
+					// alternatives and represent them with SPDX-style "OR". Some gems may instead
+					// intend all listed licenses to apply ("AND"), which is not distinguished here.
 					license = strings.Join(licenses, " OR ")
 				}
 			}

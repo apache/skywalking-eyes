@@ -23,7 +23,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/apache/skywalking-eyes/internal/logger"
+	"github.com/apache/skywalking-eyes/pkg/logger"
 )
 
 type Normalizer func(string) string

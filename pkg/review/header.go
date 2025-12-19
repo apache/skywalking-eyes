@@ -31,9 +31,9 @@ import (
 	"github.com/google/go-github/v33/github"
 	"golang.org/x/oauth2"
 
-	"github.com/apache/skywalking-eyes/internal/logger"
 	comments2 "github.com/apache/skywalking-eyes/pkg/comments"
 	header2 "github.com/apache/skywalking-eyes/pkg/header"
+	"github.com/apache/skywalking-eyes/pkg/logger"
 )
 
 var (

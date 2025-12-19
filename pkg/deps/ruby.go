@@ -30,7 +30,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
+	"github.com/apache/skywalking-eyes/pkg/logger"
 )
 
 // GemfileLockResolver resolves Ruby dependencies from Gemfile.lock
@@ -111,7 +111,7 @@ func (r *GemfileLockResolver) Resolve(lockfile string, config *ConfigDeps, repor
 		if localPath != "" {
 			baseDir, err := filepath.Abs(dir)
 			if err != nil {
-				logrus.WithError(err).Warn("failed to resolve base directory for local gem path")
+				logger.Log.WithError(err).Warn("failed to resolve base directory for local gem path")
 			} else {
 				candidatePath := filepath.Clean(filepath.Join(baseDir, localPath))
 				if candidatePath == baseDir || strings.HasPrefix(candidatePath, baseDir+string(os.PathSeparator)) {
@@ -122,7 +122,7 @@ func (r *GemfileLockResolver) Resolve(lockfile string, config *ConfigDeps, repor
 						continue
 					}
 				} else {
-					logrus.WithField("path", localPath).Warn("ignoring potentially unsafe local gem path outside project directory")
+					logger.Log.WithField("path", localPath).Warn("ignoring potentially unsafe local gem path outside project directory")
 				}
 			}
 		}
@@ -587,7 +587,7 @@ func parseGemspecInfo(path string) (gemName, gemLicense string, err error) {
 						if gemRef == "" {
 							gemRef = path
 						}
-						logrus.Warnf("Multiple licenses found for gem %s: %v. Assuming 'OR' relationship.", gemRef, licenses)
+						logger.Log.Warnf("Multiple licenses found for gem %s: %v. Assuming 'OR' relationship.", gemRef, licenses)
 					}
 					license = strings.Join(licenses, " OR ")
 				}

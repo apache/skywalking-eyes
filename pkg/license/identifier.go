@@ -27,7 +27,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/apache/skywalking-eyes/assets"
-	"github.com/apache/skywalking-eyes/internal/logger"
+	"github.com/apache/skywalking-eyes/pkg/logger"
 )
 
 const licenseTemplatesDir = "lcs-templates"

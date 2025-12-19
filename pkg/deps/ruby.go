@@ -364,7 +364,8 @@ func hasGemspec(dir string) bool {
 }
 
 var gemspecRuntimeRe = regexp.MustCompile(`\badd_(?:runtime_)?dependency\s*\(?\s*["']([^"']+)["']`)
-var gemspecLicenseRe = regexp.MustCompile(`\.licenses?\s*=\s*(?:\[\s*)?['"]([^'"]+)['"]`)
+var gemspecLicenseRe = regexp.MustCompile(`\.licenses?\s*=\s*(.*)`)
+var gemspecStringRe = regexp.MustCompile(`['"]([^'"]+)['"]`)
 var gemspecNameRe = regexp.MustCompile(`\.name\s*=\s*['"]([^'"]+)['"]`)
 var rubyVersionRe = regexp.MustCompile(`^[0-9]+(\.[0-9a-zA-Z]+)*(-[0-9a-zA-Z]+)?$`)
 
@@ -533,7 +534,16 @@ func parseGemspecInfo(path string) (string, string, error) {
 		}
 		if license == "" {
 			if m := gemspecLicenseRe.FindStringSubmatch(line); len(m) == 2 {
-				license = m[1]
+				matches := gemspecStringRe.FindAllStringSubmatch(m[1], -1)
+				var licenses []string
+				for _, match := range matches {
+					if len(match) == 2 {
+						licenses = append(licenses, match[1])
+					}
+				}
+				if len(licenses) > 0 {
+					license = strings.Join(licenses, " OR ")
+				}
 			}
 		}
 		if name != "" && license != "" {

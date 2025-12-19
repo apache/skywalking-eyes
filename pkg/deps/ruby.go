@@ -522,9 +522,6 @@ func fetchInstalledLicense(name, version string) string {
 				}
 				stem := strings.TrimSuffix(e.Name(), ".gemspec")
 				ver := strings.TrimPrefix(stem, name+"-")
-				if ver == stem { // didn't have prefix
-					continue
-				}
 				// Ensure the character after the gem name corresponds to the start of a version
 				if ver == "" || ver[0] < '0' || ver[0] > '9' {
 					continue

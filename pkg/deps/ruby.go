@@ -171,12 +171,9 @@ func (r *GemspecResolver) Resolve(file string, config *ConfigDeps, report *Repor
 
 	// Recursive resolution
 	queue := make([]string, 0, len(deps))
+	visited := make(map[string]struct{}, len(deps))
 	for name := range deps {
 		queue = append(queue, name)
-	}
-
-	visited := make(map[string]struct{})
-	for name := range deps {
 		visited[name] = struct{}{}
 	}
 

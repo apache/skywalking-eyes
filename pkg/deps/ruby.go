@@ -29,6 +29,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 // GemfileLockResolver resolves Ruby dependencies from Gemfile.lock
@@ -564,6 +566,13 @@ func parseGemspecInfo(path string) (gemName, gemLicense string, err error) {
 					// NOTE: When multiple licenses are declared in the gemspec, we assume they are
 					// alternatives and represent them with SPDX-style "OR". Some gems may instead
 					// intend all listed licenses to apply ("AND"), which is not distinguished here.
+					if len(licenses) > 1 {
+						gemRef := name
+						if gemRef == "" {
+							gemRef = path
+						}
+						logrus.Warnf("Multiple licenses found for gem %s: %v. Assuming 'OR' relationship.", gemRef, licenses)
+					}
 					license = strings.Join(licenses, " OR ")
 				}
 			}

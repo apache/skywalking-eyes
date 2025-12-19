@@ -370,14 +370,13 @@ var gemspecRuntimeRe = regexp.MustCompile(`\badd_(?:runtime_)?dependency\s*\(?\s
 var gemspecLicenseRe = regexp.MustCompile(`\.licenses?\s*=\s*(.*)`)
 var gemspecStringRe = regexp.MustCompile(`['"]([^'"]+)['"]`)
 var gemspecNameRe = regexp.MustCompile(`\.name\s*=\s*['"]([^'"]+)['"]`)
-var rubyVersionRe = regexp.MustCompile(`^[0-9]+(\.[0-9a-zA-Z]+)*(-[0-9a-zA-Z]+)?$`)
+var rubyVersionRe = regexp.MustCompile(`^\d+(\.[0-9a-zA-Z]+)*(-[0-9a-zA-Z]+)?$`)
 
 func runtimeDepsFromGemspecs(dir string) ([]string, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
-	}
-	runtime := make(map[string]struct{})
+	}	runtime := make(map[string]struct{})
 	for _, e := range entries {
 		if e.IsDir() || !strings.HasSuffix(e.Name(), ".gemspec") {
 			continue
@@ -435,16 +434,17 @@ func findInstalledGemspec(name, version string) (string, error) {
 				continue
 			}
 			for _, e := range entries {
-				if !e.IsDir() && strings.HasPrefix(e.Name(), name+"-") && strings.HasSuffix(e.Name(), ".gemspec") {
-					stem := strings.TrimSuffix(e.Name(), ".gemspec")
-					ver := strings.TrimPrefix(stem, name+"-")
-					if ver == stem {
-						continue
-					}
-					path := filepath.Join(specsDir, e.Name())
-					if specName, _, err := parseGemspecInfo(path); err == nil && specName == name {
-						return path, nil
-					}
+				if e.IsDir() || !strings.HasPrefix(e.Name(), name+"-") || !strings.HasSuffix(e.Name(), ".gemspec") {
+					continue
+				}
+				stem := strings.TrimSuffix(e.Name(), ".gemspec")
+				ver := strings.TrimPrefix(stem, name+"-")
+				if ver == stem {
+					continue
+				}
+				path := filepath.Join(specsDir, e.Name())
+				if specName, _, err := parseGemspecInfo(path); err == nil && specName == name {
+					return path, nil
 				}
 			}
 		}
@@ -516,7 +516,7 @@ func getGemPaths() []string {
 	return strings.Split(env, string(os.PathListSeparator))
 }
 
-func parseGemspecInfo(path string) (string, string, error) {
+func parseGemspecInfo(path string) (gemName, gemLicense string, err error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return "", "", err

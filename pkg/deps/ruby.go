@@ -281,6 +281,7 @@ func (s *lockParserState) processLine(line string) {
 		s.inSpecs = true
 		s.inDeps = false
 		s.inPath = true
+		s.currentRemotePath = ""
 		s.current = nil
 		return
 	}

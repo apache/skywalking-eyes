@@ -376,9 +376,9 @@ func runtimeDepsFromGemspecs(dir string) ([]string, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
-	}	runtime := make(map[string]struct{})
+	}
+	runtime := make(map[string]struct{})
 	for _, e := range entries {
-		if e.IsDir() || !strings.HasSuffix(e.Name(), ".gemspec") {
 			continue
 		}
 		path := filepath.Join(dir, e.Name())

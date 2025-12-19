@@ -166,29 +166,15 @@ func TestRubyGemfileLockResolver(t *testing.T) {
 				}
 			}
 		}
-		// Also check Skipped if it failed
-		for _, r := range report.Skipped {
-			if strings.HasPrefix(r.Dependency, "citrus") {
-				// Historically citrus landed here; keep this check to ensure it no longer appears in Skipped with Unknown license.
-				t.Logf("citrus found in Skipped with license %s", r.LicenseSpdxID)
-				if r.LicenseSpdxID == "Unknown" {
-					t.Errorf("citrus license is Unknown")
-				}
-			}
-		}
 
 		if !found {
-			// If it's in Skipped, found is false.
-			// We want it to be in Resolved.
-			// But for now, let's just assert it is present in either.
-			inSkipped := false
-			for _, r := range report.Skipped {
-				if strings.HasPrefix(r.Dependency, "citrus") {
-					inSkipped = true
-				}
-			}
-			if !inSkipped {
-				t.Fatal("expected citrus to be in the report")
+			t.Fatal("expected citrus to be in Resolved dependencies")
+		}
+
+		// Ensure it is not in Skipped
+		for _, r := range report.Skipped {
+			if r.Dependency == "citrus" {
+				t.Errorf("citrus found in Skipped dependencies, expected it to be Resolved")
 			}
 		}
 	}

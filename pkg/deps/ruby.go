@@ -109,11 +109,21 @@ func (r *GemfileLockResolver) Resolve(lockfile string, config *ConfigDeps, repor
 		}
 
 		if localPath != "" {
-			fullPath := filepath.Join(dir, localPath)
-			license, err := fetchLocalLicense(fullPath, name)
-			if err == nil && license != "" {
-				report.Resolve(&Result{Dependency: name, LicenseSpdxID: license, Version: version})
-				continue
+			baseDir, err := filepath.Abs(dir)
+			if err != nil {
+				logrus.WithError(err).Warn("failed to resolve base directory for local gem path")
+			} else {
+				candidatePath := filepath.Clean(filepath.Join(baseDir, localPath))
+				if candidatePath == baseDir || strings.HasPrefix(candidatePath, baseDir+string(os.PathSeparator)) {
+					fullPath := candidatePath
+					license, err := fetchLocalLicense(fullPath, name)
+					if err == nil && license != "" {
+						report.Resolve(&Result{Dependency: name, LicenseSpdxID: license, Version: version})
+						continue
+					}
+				} else {
+					logrus.WithField("path", localPath).Warn("ignoring potentially unsafe local gem path outside project directory")
+				}
 			}
 		}
 

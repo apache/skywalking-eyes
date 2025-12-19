@@ -572,6 +572,9 @@ func parseGemspecInfo(path string) (gemName, gemLicense string, err error) {
 			break
 		}
 	}
+	if err := scanner.Err(); err != nil {
+		return "", "", err
+	}
 	return name, license, nil
 }
 

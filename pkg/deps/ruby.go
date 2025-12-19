@@ -250,6 +250,7 @@ func parseGemfileLock(s string) (graph gemGraph, roots []string, err error) {
 			inSpecs = true
 			inDeps = false
 			inPath = false
+			currentRemotePath = ""
 			current = nil
 			continue
 		}

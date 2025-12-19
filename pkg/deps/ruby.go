@@ -436,7 +436,10 @@ func findInstalledGemspec(name, version string) (string, error) {
 					if ver == stem {
 						continue
 					}
-					return filepath.Join(specsDir, e.Name()), nil
+					path := filepath.Join(specsDir, e.Name())
+					if specName, _, err := parseGemspecInfo(path); err == nil && specName == name {
+						return path, nil
+					}
 				}
 			}
 		}
@@ -488,7 +491,7 @@ func fetchInstalledLicense(name, version string) string {
 					continue
 				}
 				path := filepath.Join(specsDir, e.Name())
-				if _, license, err := parseGemspecInfo(path); err == nil && license != "" {
+				if specName, license, err := parseGemspecInfo(path); err == nil && specName == name && license != "" {
 					return license
 				}
 			}

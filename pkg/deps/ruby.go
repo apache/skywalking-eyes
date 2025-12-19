@@ -379,6 +379,7 @@ func runtimeDepsFromGemspecs(dir string) ([]string, error) {
 	}
 	runtime := make(map[string]struct{})
 	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".gemspec") {
 			continue
 		}
 		path := filepath.Join(dir, e.Name())
@@ -507,7 +508,7 @@ func fetchInstalledLicense(name, version string) string {
 					continue
 				}
 				// Ensure the character after the gem name corresponds to the start of a version
-				if len(ver) == 0 || ver[0] < '0' || ver[0] > '9' {
+				if ver == "" || ver[0] < '0' || ver[0] > '9' {
 					continue
 				}
 				path := filepath.Join(specsDir, e.Name())

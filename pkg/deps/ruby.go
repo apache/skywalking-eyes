@@ -224,7 +224,7 @@ func (r *GemspecResolver) Resolve(file string, config *ConfigDeps, report *Repor
 			continue
 		}
 
-		// Assume remote dependency
+		// Check installed gems first, then fallback to RubyGems API
 		licenseID := fetchInstalledLicense(name, version)
 		var err error
 		if licenseID == "" {

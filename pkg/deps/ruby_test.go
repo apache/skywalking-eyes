@@ -156,7 +156,7 @@ func TestRubyGemfileLockResolver(t *testing.T) {
 		}
 
 		// We expect citrus to be resolved with MIT license.
-		// Currently it fails (Unknown) because of missing PATH support and ! handling.
+		// This validates that local path dependencies are correctly resolved.
 		found := false
 		for _, r := range report.Resolved {
 			if r.Dependency == "citrus" {

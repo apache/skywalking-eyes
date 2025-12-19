@@ -132,14 +132,20 @@ func (r *GemfileLockResolver) Resolve(lockfile string, config *ConfigDeps, repor
 }
 
 // GemspecResolver resolves dependencies from a .gemspec file.
+// It extracts runtime dependencies defined in the gemspec and recursively resolves
+// their transitive dependencies by looking up installed gems in the local environment.
 type GemspecResolver struct {
 	Resolver
 }
 
+// CanResolve checks if the given file is a .gemspec file.
 func (r *GemspecResolver) CanResolve(file string) bool {
 	return strings.HasSuffix(file, ".gemspec")
 }
 
+// Resolve parses the gemspec file, identifies runtime dependencies, and resolves
+// them along with their transitive dependencies. It reports the found dependencies
+// and their licenses.
 func (r *GemspecResolver) Resolve(file string, config *ConfigDeps, report *Report) error {
 	f, err := os.Open(file)
 	if err != nil {

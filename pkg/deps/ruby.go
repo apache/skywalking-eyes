@@ -506,6 +506,10 @@ func fetchInstalledLicense(name, version string) string {
 				if ver == stem { // didn't have prefix
 					continue
 				}
+				// Ensure the character after the gem name corresponds to the start of a version
+				if len(ver) == 0 || ver[0] < '0' || ver[0] > '9' {
+					continue
+				}
 				path := filepath.Join(specsDir, e.Name())
 				if specName, license, err := parseGemspecInfo(path); err == nil && specName == name && license != "" {
 					return license

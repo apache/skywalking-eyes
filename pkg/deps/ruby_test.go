@@ -159,7 +159,7 @@ func TestRubyGemfileLockResolver(t *testing.T) {
 		// This validates that local path dependencies are correctly resolved.
 		found := false
 		for _, r := range report.Resolved {
-			if r.Dependency == "citrus" {
+			if r.Dependency == citrus {
 				found = true
 				if r.LicenseSpdxID != "MIT" {
 					t.Errorf("expected MIT license for citrus, got %s", r.LicenseSpdxID)
@@ -173,7 +173,7 @@ func TestRubyGemfileLockResolver(t *testing.T) {
 
 		// Ensure it is not in Skipped
 		for _, r := range report.Skipped {
-			if r.Dependency == "citrus" {
+			if r.Dependency == citrus {
 				t.Errorf("citrus found in Skipped dependencies, expected it to be Resolved")
 			}
 		}

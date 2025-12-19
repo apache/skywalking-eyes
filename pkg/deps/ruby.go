@@ -174,7 +174,9 @@ func (r *GemspecResolver) Resolve(file string, config *ConfigDeps, report *Repor
 			continue
 		}
 		if m := gemspecRuntimeRe.FindStringSubmatch(line); len(m) == 2 {
-			deps[m[1]] = "" // We don't extract version constraint yet, or we could improve regex
+			// NOTE: Version constraints are currently ignored. We resolve to the first found installed version of the gem.
+			// This may lead to incorrect resolution if multiple versions are installed and the first one doesn't satisfy the constraint.
+			deps[m[1]] = ""
 		}
 	}
 	if err := scanner.Err(); err != nil {

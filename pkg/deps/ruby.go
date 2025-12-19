@@ -305,6 +305,9 @@ func (s *lockParserState) processLine(line string) {
 func (s *lockParserState) processSpecs(line string) {
 	trim := strings.TrimSpace(line)
 	if strings.HasPrefix(trim, "remote:") {
+		// The inPath check ensures that only PATH block remote paths are captured,
+		// not GEM block remote URLs (like rubygems.org).
+		// This distinction is important for proper local dependency resolution.
 		if s.inPath {
 			s.currentRemotePath = strings.TrimSpace(strings.TrimPrefix(trim, "remote:"))
 		}

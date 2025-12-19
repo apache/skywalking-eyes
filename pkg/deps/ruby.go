@@ -341,6 +341,7 @@ func hasGemspec(dir string) bool {
 
 var gemspecRuntimeRe = regexp.MustCompile(`\badd_(?:runtime_)?dependency\s*\(?\s*["']([^"']+)["']`)
 var gemspecLicenseRe = regexp.MustCompile(`\.licenses?\s*=\s*(?:\[\s*)?['"]([^'"]+)['"]`)
+var gemspecNameRe = regexp.MustCompile(`\.name\s*=\s*['"]([^'"]+)['"]`)
 
 func runtimeDepsFromGemspecs(dir string) ([]string, error) {
 	entries, err := os.ReadDir(dir)
@@ -429,8 +430,8 @@ func fetchLocalLicense(dir, name string) (string, error) {
 			continue
 		}
 		path := filepath.Join(dir, e.Name())
-		license, err := parseGemspecLicense(path)
-		if err == nil && license != "" {
+		specName, license, err := parseGemspecInfo(path)
+		if err == nil && specName == name && license != "" {
 			return license, nil
 		}
 	}
@@ -444,7 +445,7 @@ func fetchInstalledLicense(name, version string) (string, error) {
 		// If version is specific
 		if version != "" && !strings.ContainsAny(version, "<>~=") { // simple check if it's a version number
 			path := filepath.Join(specsDir, name+"-"+version+".gemspec")
-			if license, err := parseGemspecLicense(path); err == nil && license != "" {
+			if _, license, err := parseGemspecInfo(path); err == nil && license != "" {
 				return license, nil
 			}
 		} else {
@@ -461,7 +462,7 @@ func fetchInstalledLicense(name, version string) (string, error) {
 						continue
 					}
 					path := filepath.Join(specsDir, e.Name())
-					if license, err := parseGemspecLicense(path); err == nil && license != "" {
+					if _, license, err := parseGemspecInfo(path); err == nil && license != "" {
 						return license, nil
 					}
 				}
@@ -482,26 +483,40 @@ func getGemPaths() []string {
 	return strings.Split(env, string(os.PathListSeparator))
 }
 
-func parseGemspecLicense(path string) (string, error) {
+func parseGemspecInfo(path string) (string, string, error) {
 	f, err := os.Open(path)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	defer f.Close()
 	scanner := bufio.NewScanner(f)
-	var license string
+	var name, license string
 	for scanner.Scan() {
 		line := scanner.Text()
 		trimLeft := strings.TrimLeft(line, " \t")
 		if strings.HasPrefix(trimLeft, "#") {
 			continue
 		}
-		if m := gemspecLicenseRe.FindStringSubmatch(line); len(m) == 2 {
-			license = m[1]
+		if name == "" {
+			if m := gemspecNameRe.FindStringSubmatch(line); len(m) == 2 {
+				name = m[1]
+			}
+		}
+		if license == "" {
+			if m := gemspecLicenseRe.FindStringSubmatch(line); len(m) == 2 {
+				license = m[1]
+			}
+		}
+		if name != "" && license != "" {
 			break
 		}
 	}
-	return license, nil
+	return name, license, nil
+}
+
+func parseGemspecLicense(path string) (string, error) {
+	_, license, err := parseGemspecInfo(path)
+	return license, err
 }
 
 func reachable(graph gemGraph, roots []string) map[string]struct{} {

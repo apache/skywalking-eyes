@@ -438,6 +438,17 @@ func findInstalledGemspec(name, version string) (string, error) {
 					continue
 				}
 				stem := strings.TrimSuffix(e.Name(), ".gemspec")
+				// Ensure that the character immediately after the "name-" prefix
+				// is a digit, so we only consider filenames where the suffix is
+				// a version component (e.g., "foo-1.0.0.gemspec") and avoid
+				// similar names like "foo-bar-1.0.0.gemspec" when searching for "foo".
+				if len(stem) <= len(name)+1 {
+					continue
+				}
+				versionStart := stem[len(name)+1]
+				if versionStart < '0' || versionStart > '9' {
+					continue
+				}
 				ver := strings.TrimPrefix(stem, name+"-")
 				if ver == stem {
 					continue

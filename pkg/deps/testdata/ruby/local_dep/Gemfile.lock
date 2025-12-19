@@ -1,0 +1,22 @@
+PATH
+  remote: citrus
+  specs:
+    citrus (3.0.2)
+      rake
+      test-unit
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    rake (13.0.6)
+    test-unit (3.4.4)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  citrus!
+
+BUNDLED WITH
+   2.2.15
+

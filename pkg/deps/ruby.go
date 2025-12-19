@@ -93,8 +93,10 @@ func (r *GemfileLockResolver) Resolve(lockfile string, config *ConfigDeps, repor
 	for name := range include {
 		// Some roots may not exist in the specs graph (e.g., git-sourced gems)
 		var version string
+		var localPath string
 		if spec, ok := specs[name]; ok && spec != nil {
 			version = spec.Version
+			localPath = spec.LocalPath
 		}
 		if exclude, _ := config.IsExcluded(name, version); exclude {
 			continue
@@ -102,6 +104,15 @@ func (r *GemfileLockResolver) Resolve(lockfile string, config *ConfigDeps, repor
 		if l, ok := config.GetUserConfiguredLicense(name, version); ok {
 			report.Resolve(&Result{Dependency: name, LicenseSpdxID: l, Version: version})
 			continue
+		}
+
+		if localPath != "" {
+			fullPath := filepath.Join(dir, localPath)
+			license, err := fetchLocalLicense(fullPath, name)
+			if err == nil && license != "" {
+				report.Resolve(&Result{Dependency: name, LicenseSpdxID: license, Version: version})
+				continue
+			}
 		}
 
 		licenseID, err := fetchRubyGemsLicense(name, version)
@@ -119,9 +130,10 @@ func (r *GemfileLockResolver) Resolve(lockfile string, config *ConfigDeps, repor
 // -------- Parsing Gemfile.lock --------
 
 type gemSpec struct {
-	Name    string
-	Version string
-	Deps    []string
+	Name      string
+	Version   string
+	Deps      []string
+	LocalPath string
 }
 
 type gemGraph map[string]*gemSpec
@@ -138,19 +150,30 @@ func parseGemfileLock(s string) (graph gemGraph, roots []string, err error) {
 
 	inSpecs := false
 	inDeps := false
+	inPath := false
 	var current *gemSpec
+	var currentRemotePath string
 
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.HasPrefix(line, "GEM") {
 			inSpecs = true
 			inDeps = false
+			inPath = false
+			current = nil
+			continue
+		}
+		if strings.HasPrefix(line, "PATH") {
+			inSpecs = true
+			inDeps = false
+			inPath = true
 			current = nil
 			continue
 		}
 		if strings.HasPrefix(line, "DEPENDENCIES") {
 			inSpecs = false
 			inDeps = true
+			inPath = false
 			current = nil
 			continue
 		}
@@ -160,10 +183,21 @@ func parseGemfileLock(s string) (graph gemGraph, roots []string, err error) {
 		}
 
 		if inSpecs {
+			trim := strings.TrimSpace(line)
+			if strings.HasPrefix(trim, "remote:") {
+				if inPath {
+					currentRemotePath = strings.TrimSpace(strings.TrimPrefix(trim, "remote:"))
+				}
+				continue
+			}
+
 			if m := lockSpecHeader.FindStringSubmatch(line); len(m) == 3 {
 				name := m[1]
 				version := m[2]
 				current = &gemSpec{Name: name, Version: version}
+				if inPath {
+					current.LocalPath = currentRemotePath
+				}
 				graph[name] = current
 				continue
 			}
@@ -187,6 +221,7 @@ func parseGemfileLock(s string) (graph gemGraph, roots []string, err error) {
 			if i := strings.Index(root, " "); i >= 0 {
 				root = root[:i]
 			}
+			root = strings.TrimSuffix(root, "!")
 			// ignore comments and platforms
 			if root != "" && !strings.HasPrefix(root, "#") {
 				roots = append(roots, root)
@@ -214,6 +249,7 @@ func hasGemspec(dir string) bool {
 }
 
 var gemspecRuntimeRe = regexp.MustCompile(`\badd_(?:runtime_)?dependency\s*\(?\s*["']([^"']+)["']`)
+var gemspecLicenseRe = regexp.MustCompile(`\.licenses?\s*=\s*(?:\[\s*)?['"]([^'"]+)['"]`)
 
 func runtimeDepsFromGemspecs(dir string) ([]string, error) {
 	entries, err := os.ReadDir(dir)
@@ -251,6 +287,41 @@ func runtimeDepsFromGemspecs(dir string) ([]string, error) {
 		res = append(res, k)
 	}
 	return res, nil
+}
+
+func fetchLocalLicense(dir, name string) (string, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return "", err
+	}
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".gemspec") {
+			continue
+		}
+		path := filepath.Join(dir, e.Name())
+		f, err := os.Open(path)
+		if err != nil {
+			return "", err
+		}
+		scanner := bufio.NewScanner(f)
+		var license string
+		for scanner.Scan() {
+			line := scanner.Text()
+			trimLeft := strings.TrimLeft(line, " \t")
+			if strings.HasPrefix(trimLeft, "#") {
+				continue
+			}
+			if m := gemspecLicenseRe.FindStringSubmatch(line); len(m) == 2 {
+				license = m[1]
+				break
+			}
+		}
+		_ = f.Close()
+		if license != "" {
+			return license, nil
+		}
+	}
+	return "", nil
 }
 
 func reachable(graph gemGraph, roots []string) map[string]struct{} {

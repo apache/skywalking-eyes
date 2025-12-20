@@ -20,6 +20,7 @@ package deps
 import (
 	"bufio"
 	"embed"
+	"fmt"
 	"io"
 	"io/fs"
 	"net/http"
@@ -351,5 +352,134 @@ func TestGemspecIgnoresCommentedRuntimeDependencies(t *testing.T) {
 	// There are no runtime dependencies in gemspec; the commented one must be ignored
 	if got := len(report.Resolved) + len(report.Skipped); got != 0 {
 		t.Fatalf("expected 0 dependencies when runtime deps are only commented, got %d", got)
+	}
+}
+
+func TestFetchInstalledLicense(t *testing.T) {
+	gemHome := t.TempDir()
+	specsDir := filepath.Join(gemHome, "specifications")
+	if err := os.MkdirAll(specsDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	createGemspec := func(filename, name, version, license string) {
+		content := fmt.Sprintf(`
+Gem::Specification.new do |s|
+  s.name = "%s"
+  s.version = "%s"
+  s.licenses = ["%s"]
+end
+`, name, version, license)
+		if err := os.WriteFile(filepath.Join(specsDir, filename), []byte(content), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	createGemspec("foo-1.0.0.gemspec", "foo", "1.0.0", "MIT")
+	createGemspec("foo-2.0.0.gemspec", "foo", "2.0.0", "GPL-3.0")
+	createGemspec("foo-bar-1.0.0.gemspec", "foo-bar", "1.0.0", "Apache-2.0")
+	createGemspec("bar-1.0.0.gemspec", "bar", "1.0.0", "BSD-3-Clause")
+	// Invalid version string in filename
+	createGemspec("foo-invalid.gemspec", "foo", "invalid", "WTFPL")
+
+	t.Setenv("GEM_HOME", gemHome)
+
+	tests := []struct {
+		name    string
+		version string
+		want    string
+	}{
+		{"foo", "1.0.0", "MIT"},
+		{"foo", "2.0.0", "GPL-3.0"},
+		{"foo-bar", "1.0.0", "Apache-2.0"},
+		{"bar", "1.0.0", "BSD-3-Clause"},
+		{"foo", "", "MIT"},   // Should find first available version (1.0.0 comes before 2.0.0)
+		{"foo", "3.0.0", ""}, // Not found
+		{"unknown", "1.0.0", ""},
+		{"foo", "invalid", ""}, // Invalid version requested, regex won't match
+	}
+
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("%s-%s", tt.name, tt.version), func(t *testing.T) {
+			got := fetchInstalledLicense(tt.name, tt.version)
+			if got != tt.want {
+				t.Errorf("fetchInstalledLicense(%q, %q) = %q, want %q", tt.name, tt.version, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRubyGemfileLockResolver_PathTraversal(t *testing.T) {
+	resolver := new(GemfileLockResolver)
+	dir := t.TempDir()
+
+	// Create a directory outside the project
+	outsideDir := t.TempDir()
+	// Create a gemspec in outsideDir
+	outsideGemspec := filepath.Join(outsideDir, "evil.gemspec")
+	if err := os.WriteFile(outsideGemspec, []byte(`
+Gem::Specification.new do |s|
+  s.name = "evil"
+  s.version = "1.0.0"
+  s.licenses = ["Evil-License"]
+end
+`), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Calculate relative path from dir to outsideDir
+	relPath, err := filepath.Rel(dir, outsideDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	lockContent := fmt.Sprintf(`
+PATH
+  remote: %s
+  specs:
+    evil (1.0.0)
+
+GEM
+  remote: https://gem.coop/
+  specs:
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  evil!
+
+BUNDLED WITH
+   2.4.10
+`, relPath)
+
+	lock := filepath.Join(dir, "Gemfile.lock")
+	if err := writeFileRuby(lock, lockContent); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg := &ConfigDeps{Files: []string{lock}}
+	report := Report{}
+	if err := resolver.Resolve(lock, cfg, &report); err != nil {
+		t.Fatal(err)
+	}
+
+	found := false
+	for _, r := range report.Resolved {
+		if r.Dependency == "evil" {
+			found = true
+			if r.LicenseSpdxID == "Evil-License" {
+				t.Errorf("Path traversal succeeded! Found license from outside directory.")
+			}
+		}
+	}
+	// If it's skipped, that's also fine (means it didn't resolve license)
+	for _, r := range report.Skipped {
+		if r.Dependency == "evil" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("Dependency 'evil' was not found in report")
 	}
 }

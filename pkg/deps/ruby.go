@@ -540,6 +540,9 @@ func fetchLocalLicense(dir, targetName string) (string, error) {
 }
 
 func fetchInstalledLicense(name, version string) string {
+	if version != "" && !rubyVersionRe.MatchString(version) {
+		return ""
+	}
 	gems := getAllGemspecs()
 	for _, path := range gems {
 		filename := filepath.Base(path)

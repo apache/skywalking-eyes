@@ -29,8 +29,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apache/skywalking-eyes/internal/logger"
 	"github.com/apache/skywalking-eyes/pkg/license"
+	"github.com/apache/skywalking-eyes/pkg/logger"
 )
 
 type NpmResolver struct {

@@ -26,9 +26,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/apache/skywalking-eyes/internal/logger"
 	eyeignore "github.com/apache/skywalking-eyes/pkg/gitignore"
 	lcs "github.com/apache/skywalking-eyes/pkg/license"
+	"github.com/apache/skywalking-eyes/pkg/logger"
 
 	"github.com/bmatcuk/doublestar/v2"
 	"github.com/go-git/go-billy/v5/osfs"

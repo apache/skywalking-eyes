@@ -21,7 +21,7 @@ import (
 	"os"
 
 	"github.com/apache/skywalking-eyes/commands"
-	"github.com/apache/skywalking-eyes/internal/logger"
+	"github.com/apache/skywalking-eyes/pkg/logger"
 )
 
 func main() {

@@ -29,8 +29,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/apache/skywalking-eyes/internal/logger"
 	"github.com/apache/skywalking-eyes/pkg/deps"
+	"github.com/apache/skywalking-eyes/pkg/logger"
 )
 
 var (

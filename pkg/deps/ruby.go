@@ -195,21 +195,30 @@ func (r *GemspecResolver) Resolve(file string, config *ConfigDeps, report *Repor
 		name := queue[i]
 		// Find installed gemspec for 'name'
 		path, err := findInstalledGemspec(name, "")
-		if err == nil && path != "" {
-			// Parse dependencies of this gemspec
-			newDeps, err := parseGemspecDependencies(path)
-			if err == nil {
-				for _, dep := range newDeps {
-					if _, ok := visited[dep]; !ok {
-						if len(queue) > 10000 {
-							return fmt.Errorf("dependency graph too large")
-						}
-						visited[dep] = struct{}{}
-						queue = append(queue, dep)
-						if _, ok := deps[dep]; !ok {
-							deps[dep] = ""
-						}
-					}
+		if err != nil {
+			logger.Log.Debugf("failed to find installed gemspec for %s: %v", name, err)
+			continue
+		}
+		if path == "" {
+			continue
+		}
+
+		// Parse dependencies of this gemspec
+		newDeps, err := parseGemspecDependencies(path)
+		if err != nil {
+			logger.Log.Debugf("failed to parse gemspec dependencies for %s at %s: %v", name, path, err)
+			continue
+		}
+
+		for _, dep := range newDeps {
+			if _, ok := visited[dep]; !ok {
+				if len(queue) >= 10000 {
+					return fmt.Errorf("dependency graph exceeded maximum size of 10000 nodes (current: %d). This may indicate a circular dependency or an unusually large dependency tree.", len(queue))
+				}
+				visited[dep] = struct{}{}
+				queue = append(queue, dep)
+				if _, ok := deps[dep]; !ok {
+					deps[dep] = ""
 				}
 			}
 		}
@@ -327,7 +336,7 @@ func (s *lockParserState) processSpecs(line string) {
 	trim := strings.TrimSpace(line)
 	if strings.HasPrefix(trim, "remote:") {
 		// The inPath check ensures that only PATH block remote paths are captured,
-		// not GEM block remote URLs (like rubygems.org).
+		// not GEM block remote URLs (like gem.coop).
 		// This distinction is important for proper local dependency resolution.
 		if s.inPath {
 			s.currentLocalPath = strings.TrimSpace(strings.TrimPrefix(trim, "remote:"))
@@ -633,17 +642,17 @@ type rubyGemsVersionInfo struct {
 func fetchRubyGemsLicense(name, version string) (string, error) {
 	// If version is unknown (e.g., git-sourced), query latest gem info endpoint
 	if strings.TrimSpace(version) == "" {
-		url := fmt.Sprintf("https://rubygems.org/api/v1/gems/%s.json", name)
+		url := fmt.Sprintf("https://gem.coop/api/v1/gems/%s.json", name)
 		return fetchRubyGemsLicenseFrom(url)
 	}
 	// Prefer version-specific API
-	url := fmt.Sprintf("https://rubygems.org/api/v2/rubygems/%s/versions/%s.json", name, version)
+	url := fmt.Sprintf("https://gem.coop/api/v2/rubygems/%s/versions/%s.json", name, version)
 	licenseID, err := fetchRubyGemsLicenseFrom(url)
 	if err == nil && licenseID != "" {
 		return licenseID, nil
 	}
 	// Fallback to latest info
-	url = fmt.Sprintf("https://rubygems.org/api/v1/gems/%s.json", name)
+	url = fmt.Sprintf("https://gem.coop/api/v1/gems/%s.json", name)
 	return fetchRubyGemsLicenseFrom(url)
 }
 

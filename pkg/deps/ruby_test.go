@@ -201,7 +201,7 @@ func TestRubyMissingSpecIsSkippedGracefully(t *testing.T) {
 	// Create a Gemfile.lock where a dependency is not present in specs
 	content := "" +
 		"GEM\n" +
-		"  remote: https://rubygems.org/\n" +
+		"  remote: https://gem.coop/\n" +
 		"  specs:\n" +
 		"    rake (13.0.6)\n" +
 		"\n" +
@@ -256,7 +256,7 @@ func TestRubyLibraryWithNoRuntimeDependenciesIncludesNone(t *testing.T) {
 	dir := t.TempDir()
 	lockContent := "" +
 		"GEM\n" +
-		"  remote: https://rubygems.org/\n" +
+		"  remote: https://gem.coop/\n" +
 		"  specs:\n" +
 		"    rake (13.0.6)\n" +
 		"    rspec (3.10.0)\n" +
@@ -311,7 +311,7 @@ func TestGemspecIgnoresCommentedRuntimeDependencies(t *testing.T) {
 	dir := t.TempDir()
 	lockContent := "" +
 		"GEM\n" +
-		"  remote: https://rubygems.org/\n" +
+		"  remote: https://gem.coop/\n" +
 		"  specs:\n" +
 		"    rake (13.0.6)\n" +
 		"\n" +

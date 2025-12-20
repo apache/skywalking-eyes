@@ -6,7 +6,7 @@ PATH
       test-unit
 
 GEM
-  remote: https://rubygems.org/
+  remote: https://gem.coop/
   specs:
     rake (13.0.6)
     test-unit (3.4.4)

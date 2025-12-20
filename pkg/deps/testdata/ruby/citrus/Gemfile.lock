@@ -6,7 +6,7 @@ PATH
       test-unit
 
 GEM
-  remote: https://rubygems.org/
+  remote: https://gem.coop/
   specs:
     power_assert (2.0.1)
     rake (13.0.6)

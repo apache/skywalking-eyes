@@ -18,6 +18,7 @@
 package deps
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -32,8 +33,7 @@ const (
 func TestRubyGemspecResolver(t *testing.T) {
 	resolver := new(GemspecResolver)
 
-	// toml-merge case: parse gemspec, detect license and dependencies
-	{
+	t.Run("toml-merge case", func(t *testing.T) {
 		tmp := t.TempDir()
 		if err := copyRuby("testdata/ruby/toml-merge", tmp); err != nil {
 			t.Fatal(err)
@@ -65,10 +65,9 @@ func TestRubyGemspecResolver(t *testing.T) {
 		if !found {
 			t.Errorf("expected toml-rb dependency, got %v", report.Resolved)
 		}
-	}
+	})
 
-	// citrus case: transitive dependency resolution via installed gems
-	{
+	t.Run("citrus case", func(t *testing.T) {
 		tmp := t.TempDir()
 		gemHome := filepath.Join(tmp, "gemhome")
 		specsDir := filepath.Join(gemHome, "specifications")
@@ -149,5 +148,68 @@ end
 				t.Errorf("expected citrus license MIT, got %s", license)
 			}
 		}
+	})
+
+	t.Run("multiple licenses case (non-conflicting)", func(t *testing.T) {
+		testMultiLicense(t, resolver, "multi-license", "['MIT', 'Apache-2.0']", "MIT AND Apache-2.0")
+	})
+
+	t.Run("multiple licenses case (conflicting/incompatible)", func(t *testing.T) {
+		testMultiLicense(t, resolver, "conflicting-license", "['GPL-2.0', 'Apache-2.0']", "GPL-2.0 AND Apache-2.0")
+	})
+}
+
+func testMultiLicense(t *testing.T, resolver *GemspecResolver, gemName, licensesStr, expectedLicense string) {
+	tmp := t.TempDir()
+	gemHome := filepath.Join(tmp, "gemhome")
+	specsDir := filepath.Join(gemHome, "specifications")
+	if err := os.MkdirAll(specsDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("GEM_HOME", gemHome)
+
+	// Create multi-license gem
+	gemContent := fmt.Sprintf(`
+Gem::Specification.new do |s|
+  s.name = '%s'
+  s.version = '1.0.0'
+  s.licenses = %s
+end
+`, gemName, licensesStr)
+	if err := writeFileRuby(filepath.Join(specsDir, fmt.Sprintf("%s-1.0.0.gemspec", gemName)), gemContent); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create project gemspec
+	projectContent := fmt.Sprintf(`
+Gem::Specification.new do |s|
+  s.name = 'project'
+  s.version = '0.0.1'
+  s.add_dependency '%s', '~> 1.0'
+end
+`, gemName)
+	gemspec := filepath.Join(tmp, "project.gemspec")
+	if err := writeFileRuby(gemspec, projectContent); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg := &ConfigDeps{Files: []string{gemspec}}
+	report := Report{}
+	if err := resolver.Resolve(gemspec, cfg, &report); err != nil {
+		t.Fatal(err)
+	}
+
+	found := false
+	for _, r := range report.Resolved {
+		if r.Dependency == gemName {
+			found = true
+			if r.LicenseSpdxID != expectedLicense {
+				t.Errorf("expected %s license '%s', got '%s'", gemName, expectedLicense, r.LicenseSpdxID)
+			}
+			break
+		}
+	}
+	if !found {
+		t.Errorf("expected %s dependency", gemName)
 	}
 }

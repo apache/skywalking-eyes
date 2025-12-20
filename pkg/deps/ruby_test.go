@@ -358,7 +358,7 @@ func TestGemspecIgnoresCommentedRuntimeDependencies(t *testing.T) {
 func TestFetchInstalledLicense(t *testing.T) {
 	gemHome := t.TempDir()
 	specsDir := filepath.Join(gemHome, "specifications")
-	if err := os.MkdirAll(specsDir, 0755); err != nil {
+	if err := os.MkdirAll(specsDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
 
@@ -370,7 +370,7 @@ Gem::Specification.new do |s|
   s.licenses = ["%s"]
 end
 `, name, version, license)
-		if err := os.WriteFile(filepath.Join(specsDir, filename), []byte(content), 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(specsDir, filename), []byte(content), 0o600); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -410,6 +410,7 @@ end
 }
 
 func TestRubyGemfileLockResolver_PathTraversal(t *testing.T) {
+	const evil = "evil"
 	resolver := new(GemfileLockResolver)
 	dir := t.TempDir()
 
@@ -423,7 +424,7 @@ Gem::Specification.new do |s|
   s.version = "1.0.0"
   s.licenses = ["Evil-License"]
 end
-`), 0644); err != nil {
+`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -466,7 +467,7 @@ BUNDLED WITH
 
 	found := false
 	for _, r := range report.Resolved {
-		if r.Dependency == "evil" {
+		if r.Dependency == evil {
 			found = true
 			if r.LicenseSpdxID == "Evil-License" {
 				t.Errorf("Path traversal succeeded! Found license from outside directory.")
@@ -475,7 +476,7 @@ BUNDLED WITH
 	}
 	// If it's skipped, that's also fine (means it didn't resolve license)
 	for _, r := range report.Skipped {
-		if r.Dependency == "evil" {
+		if r.Dependency == evil {
 			found = true
 		}
 	}

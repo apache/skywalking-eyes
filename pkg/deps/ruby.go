@@ -160,9 +160,42 @@ func (r *GemspecResolver) CanResolve(file string) bool {
 // them along with their transitive dependencies. It reports the found dependencies
 // and their licenses.
 func (r *GemspecResolver) Resolve(file string, config *ConfigDeps, report *Report) error {
-	f, err := os.Open(file)
+	deps, err := parseInitialDependencies(file)
 	if err != nil {
 		return err
+	}
+
+	if errResolve := resolveTransitiveDependencies(deps); errResolve != nil {
+		return errResolve
+	}
+
+	for name, version := range deps {
+		if exclude, _ := config.IsExcluded(name, version); exclude {
+			continue
+		}
+		if l, ok := config.GetUserConfiguredLicense(name, version); ok {
+			report.Resolve(&Result{Dependency: name, LicenseSpdxID: l, Version: version})
+			continue
+		}
+
+		// Check installed gems first, then fallback to RubyGems API
+		licenseID := fetchInstalledLicense(name, version)
+		if licenseID == "" {
+			licenseID, err = fetchRubyGemsLicense(name, version)
+		}
+		if err != nil || licenseID == "" {
+			report.Skip(&Result{Dependency: name, LicenseSpdxID: Unknown, Version: version})
+			continue
+		}
+		report.Resolve(&Result{Dependency: name, LicenseSpdxID: licenseID, Version: version})
+	}
+	return nil
+}
+
+func parseInitialDependencies(file string) (map[string]string, error) {
+	f, err := os.Open(file)
+	if err != nil {
+		return nil, err
 	}
 	defer f.Close()
 
@@ -181,10 +214,12 @@ func (r *GemspecResolver) Resolve(file string, config *ConfigDeps, report *Repor
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		return err
+		return nil, err
 	}
+	return deps, nil
+}
 
-	// Recursive resolution
+func resolveTransitiveDependencies(deps map[string]string) error {
 	queue := make([]string, 0, len(deps))
 	visited := make(map[string]struct{}, len(deps))
 	for name := range deps {
@@ -214,7 +249,8 @@ func (r *GemspecResolver) Resolve(file string, config *ConfigDeps, report *Repor
 		for _, dep := range newDeps {
 			if _, ok := visited[dep]; !ok {
 				if len(queue) >= 10000 {
-					return fmt.Errorf("dependency graph exceeded maximum size of 10000 nodes (current: %d). This may indicate a circular dependency or an unusually large dependency tree.", len(queue))
+					return fmt.Errorf("dependency graph exceeded maximum size of 10000 nodes (current: %d). "+
+						"This may indicate a circular dependency or an unusually large dependency tree", len(queue))
 				}
 				visited[dep] = struct{}{}
 				queue = append(queue, dep)
@@ -223,28 +259,6 @@ func (r *GemspecResolver) Resolve(file string, config *ConfigDeps, report *Repor
 				}
 			}
 		}
-	}
-
-	for name, version := range deps {
-		if exclude, _ := config.IsExcluded(name, version); exclude {
-			continue
-		}
-		if l, ok := config.GetUserConfiguredLicense(name, version); ok {
-			report.Resolve(&Result{Dependency: name, LicenseSpdxID: l, Version: version})
-			continue
-		}
-
-		// Check installed gems first, then fallback to RubyGems API
-		licenseID := fetchInstalledLicense(name, version)
-		var err error
-		if licenseID == "" {
-			licenseID, err = fetchRubyGemsLicense(name, version)
-		}
-		if err != nil || licenseID == "" {
-			report.Skip(&Result{Dependency: name, LicenseSpdxID: Unknown, Version: version})
-			continue
-		}
-		report.Resolve(&Result{Dependency: name, LicenseSpdxID: licenseID, Version: version})
 	}
 	return nil
 }
@@ -613,16 +627,16 @@ func parseGemspecInfo(path string) (gemName, gemLicense string, err error) {
 				}
 				if len(licenses) > 0 {
 					// NOTE: When multiple licenses are declared in the gemspec, we assume they are
-					// alternatives and represent them with SPDX-style "OR". Some gems may instead
-					// intend all listed licenses to apply ("AND"), which is not distinguished here.
+					// all required ("AND") to be conservative. If the author intended "OR",
+					// the user can override this in the configuration.
 					if len(licenses) > 1 {
 						gemRef := name
 						if gemRef == "" {
 							gemRef = path
 						}
-						logger.Log.Warnf("Multiple licenses found for gem %s: %v. Assuming 'OR' relationship.", gemRef, licenses)
+						logger.Log.Warnf("Multiple licenses found for gem %s: %v. Assuming 'AND' relationship for safety.", gemRef, licenses)
 					}
-					license = strings.Join(licenses, " OR ")
+					license = strings.Join(licenses, " AND ")
 				}
 			}
 		}

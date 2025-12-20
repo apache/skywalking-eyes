@@ -406,28 +406,54 @@ func normalizeArch(arch string) string {
 }
 
 // analyzePackagePlatform extracts the target OS and architecture from a package name.
-func (resolver *NpmResolver) analyzePackagePlatform(pkgName string) (pkgOS, pkgArch string) {
+func (resolver *NpmResolver) analyzePackagePlatform(pkgName string) (pkgOS, pkgArch string, partial bool) {
 	for _, pattern := range platformPatterns {
 		if pattern.regex.MatchString(pkgName) {
-			return pattern.os, pattern.arch
+			return pattern.os, pattern.arch, false
 		}
 	}
-	return "", ""
+
+	// Detect OS-only suffixes like "-linux", "-darwin", "-win32"
+	osOnlyPatterns := []string{
+		"-linux",
+		"-darwin",
+		"-win32",
+		"-windows",
+		"-android",
+		"-freebsd",
+	}
+	for _, osSuffix := range osOnlyPatterns {
+		if strings.HasSuffix(pkgName, osSuffix) {
+			return strings.TrimPrefix(osSuffix, "-"), "", true
+		}
+	}
+
+	return "", "", false
 }
 
 // isForCurrentPlatform checks whether the package is intended for the current OS and architecture.
 func (resolver *NpmResolver) isForCurrentPlatform(pkgName string) bool {
-	pkgPlatform, pkgArch := resolver.analyzePackagePlatform(pkgName)
-	// If no platform/arch info is embedded in the package name, assume it's universal.
-	if pkgPlatform == "" && pkgArch == "" {
+	pkgOS, pkgArch, partial := resolver.analyzePackagePlatform(pkgName)
+
+	// OS-only package: explicitly reject with friendly error
+	if partial {
+		logger.Log.Warnf(
+			"Package %q declares a platform without architecture. "+
+				"Please use a full platform-arch suffix (e.g. -linux-x64, -darwin-arm64).",
+			pkgName,
+		)
+		return false
+	}
+
+	// Universal package
+	if pkgOS == "" && pkgArch == "" {
 		return true
 	}
 
 	currentOS := runtime.GOOS
 	currentArch := runtime.GOARCH
 
-	// The package matches only if both OS and architecture are compatible.
-	return pkgPlatform == currentOS && resolver.isArchCompatible(pkgArch, currentArch)
+	return pkgOS == currentOS && resolver.isArchCompatible(pkgArch, currentArch)
 }
 
 // isArchCompatible determines whether the package's architecture is compatible with the current machine's architecture.

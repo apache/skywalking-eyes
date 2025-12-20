@@ -13,7 +13,7 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License.  
+// under the License.
 
 package deps_test
 
@@ -21,79 +21,146 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/apache/skywalking-eyes/pkg/deps"
 )
 
-// -----------------------------
-// ResolvePackageLicense
-// -----------------------------
-
-func TestResolvePackageLicense_SkipCrossPlatform(t *testing.T) {
+//
+// TC-NEW-001
+// Regression test: cross-platform npm binary packages must be skipped safely
+//
+func TestResolvePackageLicense_SkipCrossPlatformPackages(t *testing.T) {
 	resolver := &deps.NpmResolver{}
 	cfg := &deps.ConfigDeps{}
 
-	var pkg string
+	var crossPlatformPkgs []string
 	switch runtime.GOOS {
 	case "linux":
-		pkg = "@parcel/watcher-darwin-arm64"
+		crossPlatformPkgs = []string{"@parcel/watcher-darwin-arm64", "@parcel/watcher-win32-x64"}
 	case "darwin":
-		pkg = "@parcel/watcher-linux-x64"
+		crossPlatformPkgs = []string{"@parcel/watcher-linux-x64", "@parcel/watcher-win32-x64"}
 	default:
-		pkg = "@parcel/watcher-linux-x64"
+		crossPlatformPkgs = []string{"@parcel/watcher-linux-x64"}
 	}
 
-	result := resolver.ResolvePackageLicense(
-		pkg,
-		"/non/existent/path",
-		cfg,
-	)
+	for _, pkg := range crossPlatformPkgs {
+		t.Run(pkg+"/path-not-exist", func(t *testing.T) {
+			// 001-A: cross-platform + path not exist
+			result := resolver.ResolvePackageLicense(pkg, "/non/existent/path", cfg)
+			if result.LicenseSpdxID != "" {
+				t.Fatalf("expected empty license for cross-platform package %q, got %q", pkg, result.LicenseSpdxID)
+			}
+		})
 
-	if result.LicenseSpdxID != "" {
-		t.Fatalf(
-			"expected empty license for cross-platform package %q, got %q",
-			pkg, result.LicenseSpdxID,
-		)
+		t.Run(pkg+"/package-json-exists", func(t *testing.T) {
+			// 001-B: cross-platform + package.json exists
+			tmp := t.TempDir()
+			err := os.WriteFile(filepath.Join(tmp, "package.json"),
+				[]byte(`{"name":"fake-cross-platform","license":"MIT"}`), 0644)
+			if err != nil {
+				t.Fatal(err)
+			}
+			result := resolver.ResolvePackageLicense(pkg, tmp, cfg)
+			if result.LicenseSpdxID != "MIT" {
+				t.Fatalf("expected license MIT for package %q, got %q", pkg, result.LicenseSpdxID)
+			}
+		})
+
+		t.Run(pkg+"/valid-license", func(t *testing.T) {
+			// 001-C: cross-platform + valid SPDX license
+			tmp := t.TempDir()
+			err := os.WriteFile(filepath.Join(tmp, "package.json"),
+				[]byte(`{"name":"fake-cross-platform","license":"Apache-2.0"}`), 0644)
+			if err != nil {
+				t.Fatal(err)
+			}
+			result := resolver.ResolvePackageLicense(pkg, tmp, cfg)
+			if result.LicenseSpdxID != "Apache-2.0" {
+				t.Fatalf("expected license Apache-2.0 for package %q, got %q", pkg, result.LicenseSpdxID)
+			}
+		})
 	}
 }
 
-func TestResolvePackageLicense_CurrentPlatform(t *testing.T) {
+//
+// TC-NEW-002
+// Functional test: current-platform packages should be resolved normally
+//
+func TestResolvePackageLicense_CurrentPlatformPackages(t *testing.T) {
 	resolver := &deps.NpmResolver{}
 	cfg := &deps.ConfigDeps{}
 
-	tmp := t.TempDir()
-	pkgFile := filepath.Join(tmp, deps.PkgFileName)
+	t.Run("normal package with license field", func(t *testing.T) {
+		tmp := t.TempDir()
+		err := os.WriteFile(filepath.Join(tmp, "package.json"),
+			[]byte(`{"name":"normal-pkg","license":"Apache-2.0"}`), 0644)
+		if err != nil {
+			t.Fatal(err)
+		}
+		result := resolver.ResolvePackageLicense("normal-pkg", tmp, cfg)
+		if result.LicenseSpdxID != "Apache-2.0" {
+			t.Fatalf("expected license Apache-2.0, got %q", result.LicenseSpdxID)
+		}
+	})
 
-	err := os.WriteFile(pkgFile, []byte(`{
-		"name": "normal-pkg",
-		"license": "Apache-2.0"
-	}`), 0o644)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	result := resolver.ResolvePackageLicense(
-		"normal-pkg",
-		tmp,
-		cfg,
-	)
-
-	if result.LicenseSpdxID != "Apache-2.0" {
-		t.Fatalf(
-			"expected license Apache-2.0, got %q",
-			result.LicenseSpdxID,
-		)
-	}
+	t.Run("package without license field", func(t *testing.T) {
+		tmp := t.TempDir()
+		err := os.WriteFile(filepath.Join(tmp, "package.json"),
+			[]byte(`{"name":"no-license-pkg"}`), 0644)
+		if err != nil {
+			t.Fatal(err)
+		}
+		result := resolver.ResolvePackageLicense("no-license-pkg", tmp, cfg)
+		if result.LicenseSpdxID != "" {
+			t.Fatalf("expected empty license, got %q", result.LicenseSpdxID)
+		}
+	})
 }
 
-func TestResolvePackageLicense_InvalidPath(t *testing.T) {
+//
+// TC-NEW-003
+// Stability & defensive tests: malformed inputs must never cause panic
+//
+func TestResolvePackageLicense_DefensiveScenarios(t *testing.T) {
 	resolver := &deps.NpmResolver{}
 	cfg := &deps.ConfigDeps{}
 
-	_ = resolver.ResolvePackageLicense(
-		"some-random-package",
-		"/definitely/not/exist",
-		cfg,
-	)
-}
+	t.Run("non-existent path", func(t *testing.T) {
+		_ = resolver.ResolvePackageLicense("some-pkg", "/definitely/not/exist", cfg)
+	})
+
+	t.Run("malformed package.json", func(t *testing.T) {
+		tmp := t.TempDir()
+		err := os.WriteFile(filepath.Join(tmp, "package.json"),
+			[]byte(`{ "name": "bad-json", "license": `), 0644)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = resolver.ResolvePackageLicense("bad-json", tmp, cfg)
+	})
+
+	t.Run("invalid license field type", func(t *testing.T) {
+		tmp := t.TempDir()
+		err := os.WriteFile(filepath.Join(tmp, "package.json"),
+			[]byte(`{"name":"weird-pkg","license":123}`), 0644)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = resolver.ResolvePackageLicense("weird-pkg", tmp, cfg)
+	})
+
+	t.Run("empty package name", func(t *testing.T) {
+		_ = resolver.ResolvePackageLicense("", "/not/exist", cfg)
+	})
+
+	t.Run("overly long package name", func(t *testing.T) {
+		longName := strings.Repeat("a", 10_000)
+		_ = resolver.ResolvePackageLicense(longName, "/not/exist", cfg)
+	})
+
+	t.Run("path traversal-like package name", func(t *testing.T) {
+		_ = resolver.ResolvePackageLicense("../../../../etc/passwd", "/not/exist", cfg)
+	})
+} 

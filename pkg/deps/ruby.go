@@ -28,6 +28,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/apache/skywalking-eyes/pkg/logger"
@@ -447,44 +448,73 @@ func parseGemspecDependencies(path string) ([]string, error) {
 	return deps, scanner.Err()
 }
 
-func findInstalledGemspec(name, version string) (string, error) {
+var (
+	gemspecsCache     map[string][]string
+	gemspecsCacheLock sync.Mutex
+)
+
+func getAllGemspecs() []string {
+	env := os.Getenv("GEM_PATH")
+	if env == "" {
+		env = os.Getenv("GEM_HOME")
+	}
+
+	gemspecsCacheLock.Lock()
+	defer gemspecsCacheLock.Unlock()
+
+	if gemspecsCache == nil {
+		gemspecsCache = make(map[string][]string)
+	}
+
+	if cached, ok := gemspecsCache[env]; ok {
+		return cached
+	}
+
+	var allGemspecs []string
 	gemPaths := getGemPaths()
 	for _, dir := range gemPaths {
 		specsDir := filepath.Join(dir, "specifications")
+		entries, err := os.ReadDir(specsDir)
+		if err != nil {
+			continue
+		}
+		for _, e := range entries {
+			if !e.IsDir() && strings.HasSuffix(e.Name(), ".gemspec") {
+				allGemspecs = append(allGemspecs, filepath.Join(specsDir, e.Name()))
+			}
+		}
+	}
+	gemspecsCache[env] = allGemspecs
+	return allGemspecs
+}
+
+func findInstalledGemspec(name, version string) (string, error) {
+	gems := getAllGemspecs()
+	for _, path := range gems {
+		filename := filepath.Base(path)
 		if version != "" && rubyVersionRe.MatchString(version) {
-			path := filepath.Join(specsDir, name+"-"+version+".gemspec")
-			if _, err := os.Stat(path); err == nil {
+			if filename == name+"-"+version+".gemspec" {
 				return path, nil
 			}
 		} else {
-			entries, err := os.ReadDir(specsDir)
-			if err != nil {
+			if !strings.HasPrefix(filename, name+"-") {
 				continue
 			}
-			for _, e := range entries {
-				if e.IsDir() || !strings.HasPrefix(e.Name(), name+"-") || !strings.HasSuffix(e.Name(), ".gemspec") {
-					continue
-				}
-				stem := strings.TrimSuffix(e.Name(), ".gemspec")
-				// Ensure that the character immediately after the "name-" prefix
-				// is a digit, so we only consider filenames where the suffix is
-				// a version component (e.g., "foo-1.0.0.gemspec") and avoid
-				// similar names like "foo-bar-1.0.0.gemspec" when searching for "foo".
-				if len(stem) <= len(name)+1 {
-					continue
-				}
-				versionStart := stem[len(name)+1]
-				if versionStart < '0' || versionStart > '9' {
-					continue
-				}
-				ver := strings.TrimPrefix(stem, name+"-")
-				if ver == stem {
-					continue
-				}
-				path := filepath.Join(specsDir, e.Name())
-				if specName, _, err := parseGemspecInfo(path); err == nil && specName == name {
-					return path, nil
-				}
+			stem := strings.TrimSuffix(filename, ".gemspec")
+			// Ensure that the character immediately after the "name-" prefix
+			// is a digit, so we only consider filenames where the suffix is
+			// a version component (e.g., "foo-1.0.0.gemspec") and avoid
+			// similar names like "foo-bar-1.0.0.gemspec" when searching for "foo".
+			if len(stem) <= len(name)+1 {
+				continue
+			}
+			versionStart := stem[len(name)+1]
+			if versionStart < '0' || versionStart > '9' {
+				continue
+			}
+
+			if specName, _, err := parseGemspecInfo(path); err == nil && specName == name {
+				return path, nil
 			}
 		}
 	}
@@ -510,35 +540,29 @@ func fetchLocalLicense(dir, targetName string) (string, error) {
 }
 
 func fetchInstalledLicense(name, version string) string {
-	gemPaths := getGemPaths()
-	for _, dir := range gemPaths {
-		specsDir := filepath.Join(dir, "specifications")
+	gems := getAllGemspecs()
+	for _, path := range gems {
+		filename := filepath.Base(path)
 		// If version is specific
 		if version != "" && rubyVersionRe.MatchString(version) {
-			path := filepath.Join(specsDir, name+"-"+version+".gemspec")
-			if _, license, err := parseGemspecInfo(path); err == nil && license != "" {
-				return license
+			if filename == name+"-"+version+".gemspec" {
+				if _, license, err := parseGemspecInfo(path); err == nil && license != "" {
+					return license
+				}
 			}
 		} else {
 			// Scan for any version
-			entries, err := os.ReadDir(specsDir)
-			if err != nil {
+			if !strings.HasPrefix(filename, name+"-") {
 				continue
 			}
-			for _, e := range entries {
-				if e.IsDir() || !strings.HasPrefix(e.Name(), name+"-") || !strings.HasSuffix(e.Name(), ".gemspec") {
-					continue
-				}
-				stem := strings.TrimSuffix(e.Name(), ".gemspec")
-				ver := strings.TrimPrefix(stem, name+"-")
-				// Ensure the character after the gem name corresponds to the start of a version
-				if ver == "" || ver[0] < '0' || ver[0] > '9' {
-					continue
-				}
-				path := filepath.Join(specsDir, e.Name())
-				if specName, license, err := parseGemspecInfo(path); err == nil && specName == name && license != "" {
-					return license
-				}
+			stem := strings.TrimSuffix(filename, ".gemspec")
+			ver := strings.TrimPrefix(stem, name+"-")
+			// Ensure the character after the gem name corresponds to the start of a version
+			if ver == "" || ver[0] < '0' || ver[0] > '9' {
+				continue
+			}
+			if specName, license, err := parseGemspecInfo(path); err == nil && specName == name && license != "" {
+				return license
 			}
 		}
 	}

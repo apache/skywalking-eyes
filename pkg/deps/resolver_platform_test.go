@@ -32,10 +32,8 @@ const (
 	npmLicenseApache20 = "Apache-2.0"
 )
 
-//
 // TC-NEW-001
 // Regression test: cross-platform npm binary packages must be skipped safely.
-//
 func TestResolvePackageLicense_SkipCrossPlatformPackages(t *testing.T) {
 	resolver := &deps.NpmResolver{}
 	cfg := &deps.ConfigDeps{}
@@ -121,10 +119,8 @@ func TestResolvePackageLicense_SkipCrossPlatformPackages(t *testing.T) {
 	}
 }
 
-//
 // TC-NEW-002
 // Functional test: current-platform packages should be resolved normally.
-//
 func TestResolvePackageLicense_CurrentPlatformPackages(t *testing.T) {
 	resolver := &deps.NpmResolver{}
 	cfg := &deps.ConfigDeps{}
@@ -171,10 +167,8 @@ func TestResolvePackageLicense_CurrentPlatformPackages(t *testing.T) {
 	})
 }
 
-//
 // TC-NEW-003
 // Stability & defensive tests: malformed inputs must never cause panic.
-//
 func TestResolvePackageLicense_DefensiveScenarios(t *testing.T) {
 	resolver := &deps.NpmResolver{}
 	cfg := &deps.ConfigDeps{}

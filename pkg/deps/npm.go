@@ -255,7 +255,6 @@ func (resolver *NpmResolver) ResolvePackageLicense(pkgName, pkgPath string, conf
 		Dependency: pkgName,
 	}
 
-	// 在开始解析前检查是否为跨平台包且非当前平台
 	if !resolver.isForCurrentPlatform(pkgName) {
 		result.IsCrossPlatform = true
 		return result

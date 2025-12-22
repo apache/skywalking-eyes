@@ -24,8 +24,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/apache/skywalking-eyes/internal/logger"
 	"github.com/apache/skywalking-eyes/pkg/deps"
+	"github.com/apache/skywalking-eyes/pkg/logger"
 )
 
 func TestCanResolveJarFile(t *testing.T) {

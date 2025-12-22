@@ -31,8 +31,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apache/skywalking-eyes/internal/logger"
 	"github.com/apache/skywalking-eyes/pkg/license"
+	"github.com/apache/skywalking-eyes/pkg/logger"
 )
 
 // Constants for architecture names to avoid string duplication

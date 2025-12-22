@@ -33,6 +33,7 @@ var Resolvers = []Resolver{
 	new(JarResolver),
 	new(CargoTomlResolver),
 	new(GemfileLockResolver),
+	new(GemspecResolver),
 }
 
 func Resolve(config *ConfigDeps, report *Report) error {

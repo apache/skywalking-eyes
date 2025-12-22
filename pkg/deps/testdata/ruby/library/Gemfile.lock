@@ -1,5 +1,5 @@
 GEM
-  remote: https://rubygems.org/
+  remote: https://gem.coop/
   specs:
     rake (13.0.6)
     rspec (3.10.0)

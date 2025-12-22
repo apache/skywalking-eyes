@@ -28,8 +28,8 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/apache/skywalking-eyes/internal/logger"
 	"github.com/apache/skywalking-eyes/pkg/license"
+	"github.com/apache/skywalking-eyes/pkg/logger"
 
 	"golang.org/x/tools/go/packages"
 )

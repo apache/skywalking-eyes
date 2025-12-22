@@ -21,9 +21,9 @@ import (
 	"os"
 
 	"github.com/apache/skywalking-eyes/assets"
-	"github.com/apache/skywalking-eyes/internal/logger"
 	"github.com/apache/skywalking-eyes/pkg/deps"
 	"github.com/apache/skywalking-eyes/pkg/header"
+	"github.com/apache/skywalking-eyes/pkg/logger"
 
 	"gopkg.in/yaml.v3"
 )

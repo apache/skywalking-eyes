@@ -50,7 +50,7 @@ func TestResolvePackageLicense_SkipCrossPlatformPackages(t *testing.T) {
 			"@parcel/watcher-linux-x64",
 			"@parcel/watcher-win32-x64",
 		}
-	default:
+	default: // windows
 		crossPlatformPkgs = []string{
 			"@parcel/watcher-linux-x64",
 		}
@@ -84,10 +84,9 @@ func TestResolvePackageLicense_SkipCrossPlatformPackages(t *testing.T) {
 			}
 
 			result := resolver.ResolvePackageLicense(pkg, tmp, cfg)
-			if result.LicenseSpdxID != npmLicenseMIT {
+			if result.LicenseSpdxID != "" {
 				t.Fatalf(
-					"expected license %s for package %q, got %q",
-					npmLicenseMIT,
+					"expected empty license for cross-platform package %q, got %q",
 					pkg,
 					result.LicenseSpdxID,
 				)
@@ -107,10 +106,9 @@ func TestResolvePackageLicense_SkipCrossPlatformPackages(t *testing.T) {
 			}
 
 			result := resolver.ResolvePackageLicense(pkg, tmp, cfg)
-			if result.LicenseSpdxID != npmLicenseApache20 {
+			if result.LicenseSpdxID != "" {
 				t.Fatalf(
-					"expected license %s for package %q, got %q",
-					npmLicenseApache20,
+					"expected empty license for cross-platform package %q, got %q",
 					pkg,
 					result.LicenseSpdxID,
 				)

@@ -26,8 +26,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/apache/skywalking-eyes/internal/logger"
 	"github.com/apache/skywalking-eyes/pkg/license"
+	"github.com/apache/skywalking-eyes/pkg/logger"
 )
 
 type CargoMetadata struct {

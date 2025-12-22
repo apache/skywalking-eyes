@@ -28,12 +28,14 @@ import (
 )
 
 const (
-	licenseMIT       = "MIT"
-	licenseApache20  = "Apache-2.0"
+	npmLicenseMIT      = "MIT"
+	npmLicenseApache20 = "Apache-2.0"
 )
 
+//
 // TC-NEW-001
 // Regression test: cross-platform npm binary packages must be skipped safely.
+//
 func TestResolvePackageLicense_SkipCrossPlatformPackages(t *testing.T) {
 	resolver := &deps.NpmResolver{}
 	cfg := &deps.ConfigDeps{}
@@ -57,7 +59,7 @@ func TestResolvePackageLicense_SkipCrossPlatformPackages(t *testing.T) {
 	}
 
 	for _, pkg := range crossPlatformPkgs {
-		pkg := pkg
+		pkg := pkg // capture loop variable
 
 		t.Run(pkg+"/path-not-exist", func(t *testing.T) {
 			// 001-A: cross-platform + path not exist
@@ -76,7 +78,7 @@ func TestResolvePackageLicense_SkipCrossPlatformPackages(t *testing.T) {
 			tmp := t.TempDir()
 			err := os.WriteFile(
 				filepath.Join(tmp, "package.json"),
-				[]byte(`{"name":"fake-cross-platform","license":"`+licenseMIT+`"}`),
+				[]byte("{\"name\":\"fake-cross-platform\",\"license\":\""+npmLicenseMIT+"\"}"),
 				0o600,
 			)
 			if err != nil {
@@ -84,10 +86,10 @@ func TestResolvePackageLicense_SkipCrossPlatformPackages(t *testing.T) {
 			}
 
 			result := resolver.ResolvePackageLicense(pkg, tmp, cfg)
-			if result.LicenseSpdxID != licenseMIT {
+			if result.LicenseSpdxID != npmLicenseMIT {
 				t.Fatalf(
 					"expected license %s for package %q, got %q",
-					licenseMIT,
+					npmLicenseMIT,
 					pkg,
 					result.LicenseSpdxID,
 				)
@@ -99,7 +101,7 @@ func TestResolvePackageLicense_SkipCrossPlatformPackages(t *testing.T) {
 			tmp := t.TempDir()
 			err := os.WriteFile(
 				filepath.Join(tmp, "package.json"),
-				[]byte(`{"name":"fake-cross-platform","license":"`+licenseApache20+`"}`),
+				[]byte("{\"name\":\"fake-cross-platform\",\"license\":\""+npmLicenseApache20+"\"}"),
 				0o600,
 			)
 			if err != nil {
@@ -107,10 +109,10 @@ func TestResolvePackageLicense_SkipCrossPlatformPackages(t *testing.T) {
 			}
 
 			result := resolver.ResolvePackageLicense(pkg, tmp, cfg)
-			if result.LicenseSpdxID != licenseApache20 {
+			if result.LicenseSpdxID != npmLicenseApache20 {
 				t.Fatalf(
 					"expected license %s for package %q, got %q",
-					licenseApache20,
+					npmLicenseApache20,
 					pkg,
 					result.LicenseSpdxID,
 				)
@@ -119,8 +121,10 @@ func TestResolvePackageLicense_SkipCrossPlatformPackages(t *testing.T) {
 	}
 }
 
+//
 // TC-NEW-002
 // Functional test: current-platform packages should be resolved normally.
+//
 func TestResolvePackageLicense_CurrentPlatformPackages(t *testing.T) {
 	resolver := &deps.NpmResolver{}
 	cfg := &deps.ConfigDeps{}
@@ -129,7 +133,7 @@ func TestResolvePackageLicense_CurrentPlatformPackages(t *testing.T) {
 		tmp := t.TempDir()
 		err := os.WriteFile(
 			filepath.Join(tmp, "package.json"),
-			[]byte(`{"name":"normal-pkg","license":"`+licenseApache20+`"}`),
+			[]byte("{\"name\":\"normal-pkg\",\"license\":\""+npmLicenseApache20+"\"}"),
 			0o600,
 		)
 		if err != nil {
@@ -137,10 +141,10 @@ func TestResolvePackageLicense_CurrentPlatformPackages(t *testing.T) {
 		}
 
 		result := resolver.ResolvePackageLicense("normal-pkg", tmp, cfg)
-		if result.LicenseSpdxID != licenseApache20 {
+		if result.LicenseSpdxID != npmLicenseApache20 {
 			t.Fatalf(
 				"expected license %s, got %q",
-				licenseApache20,
+				npmLicenseApache20,
 				result.LicenseSpdxID,
 			)
 		}
@@ -150,7 +154,7 @@ func TestResolvePackageLicense_CurrentPlatformPackages(t *testing.T) {
 		tmp := t.TempDir()
 		err := os.WriteFile(
 			filepath.Join(tmp, "package.json"),
-			[]byte(`{"name":"no-license-pkg"}`),
+			[]byte("{\"name\":\"no-license-pkg\"}"),
 			0o600,
 		)
 		if err != nil {
@@ -167,8 +171,10 @@ func TestResolvePackageLicense_CurrentPlatformPackages(t *testing.T) {
 	})
 }
 
+//
 // TC-NEW-003
 // Stability & defensive tests: malformed inputs must never cause panic.
+//
 func TestResolvePackageLicense_DefensiveScenarios(t *testing.T) {
 	resolver := &deps.NpmResolver{}
 	cfg := &deps.ConfigDeps{}
@@ -181,7 +187,7 @@ func TestResolvePackageLicense_DefensiveScenarios(t *testing.T) {
 		tmp := t.TempDir()
 		err := os.WriteFile(
 			filepath.Join(tmp, "package.json"),
-			[]byte(`{ "name": "bad-json", "license": `),
+			[]byte("{\"name\":\"bad-json\",\"license\":"),
 			0o600,
 		)
 		if err != nil {
@@ -194,7 +200,7 @@ func TestResolvePackageLicense_DefensiveScenarios(t *testing.T) {
 		tmp := t.TempDir()
 		err := os.WriteFile(
 			filepath.Join(tmp, "package.json"),
-			[]byte(`{"name":"weird-pkg","license":123}`),
+			[]byte("{\"name\":\"weird-pkg\",\"license\":123}"),
 			0o600,
 		)
 		if err != nil {

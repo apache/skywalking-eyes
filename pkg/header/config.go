@@ -208,7 +208,7 @@ func readLicenseFromSpdx(config *ConfigHeader) (string, error) {
 
 	content, err := assets.Asset(filename)
 	if err != nil {
-		return "", fmt.Errorf("failed to find a license template for spdx id %v, %w", spdxID, err)
+		return "", fmt.Errorf(`failed to find a license template for spdx id "%v", %w`, spdxID, err)
 	}
 	return string(content), nil
 }

@@ -20,9 +20,11 @@ package header
 import (
 	"fmt"
 	"strings"
+	"sync"
 )
 
 type Result struct {
+	mu      sync.Mutex
 	Success []string
 	Failure []string
 	Ignored []string
@@ -30,34 +32,49 @@ type Result struct {
 }
 
 func (result *Result) Fail(file string) {
+	result.mu.Lock()
 	result.Failure = append(result.Failure, file)
+	result.mu.Unlock()
 }
 
 func (result *Result) Succeed(file string) {
+	result.mu.Lock()
 	result.Success = append(result.Success, file)
+	result.mu.Unlock()
 }
 
 func (result *Result) Ignore(file string) {
+	result.mu.Lock()
 	result.Ignored = append(result.Ignored, file)
+	result.mu.Unlock()
 }
 
 func (result *Result) Fix(file string) {
+	result.mu.Lock()
 	result.Fixed = append(result.Fixed, file)
+	result.mu.Unlock()
 }
 
 func (result *Result) HasFailure() bool {
-	return len(result.Failure) > 0
+	result.mu.Lock()
+	has := len(result.Failure) > 0
+	result.mu.Unlock()
+	return has
 }
 
 func (result *Result) Error() error {
-	return fmt.Errorf(
+	result.mu.Lock()
+	msg := fmt.Errorf(
 		"the following files don't have a valid license header: \n%v",
 		strings.Join(result.Failure, "\n"),
 	)
+	result.mu.Unlock()
+	return msg
 }
 
 func (result *Result) String() string {
-	return fmt.Sprintf(
+	result.mu.Lock()
+	s := fmt.Sprintf(
 		"Totally checked %d files, valid: %d, invalid: %d, ignored: %d, fixed: %d",
 		len(result.Success)+len(result.Failure)+len(result.Ignored),
 		len(result.Success),
@@ -65,4 +82,6 @@ func (result *Result) String() string {
 		len(result.Ignored),
 		len(result.Fixed),
 	)
+	result.mu.Unlock()
+	return s
 }

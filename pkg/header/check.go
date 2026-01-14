@@ -24,6 +24,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 
 	eyeignore "github.com/apache/skywalking-eyes/pkg/gitignore"
@@ -35,6 +36,7 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"golang.org/x/sync/errgroup"
 )
 
 // Check checks the license headers of the specified paths/globs.
@@ -44,10 +46,18 @@ func Check(config *ConfigHeader, result *Result) error {
 		return err
 	}
 
+	g := new(errgroup.Group)
+	g.SetLimit(runtime.GOMAXPROCS(0))
+
 	for _, file := range fileList {
-		if err := CheckFile(file, config, result); err != nil {
-			return err
-		}
+		f := file
+		g.Go(func() error {
+			return CheckFile(f, config, result)
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return err
 	}
 
 	return nil

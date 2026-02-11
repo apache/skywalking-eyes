@@ -2414,6 +2414,10 @@ Inno Setup:
   tm_scope: source.inno
   ace_mode: text
   language_id: 167
+Inko:
+  extensions:
+    - ".inko"
+  comment_style_id: Hashtag
 Io:
   type: programming
   color: "#a9188d"

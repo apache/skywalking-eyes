@@ -34,6 +34,7 @@ import (
 	"github.com/bmatcuk/doublestar/v2"
 	"github.com/go-git/go-billy/v5/osfs"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"golang.org/x/sync/errgroup"
@@ -122,6 +123,11 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 					candidates = append(candidates, file.Name)
 					return nil
 				}); err != nil {
+					if errors.Is(err, plumbing.ErrObjectNotFound) {
+						return nil, errors.New(
+							"failed to read git repository. Run 'git fsck' to diagnose. If dangling objects are found, run: git prune && git gc --prune=now --aggressive",
+						)
+					}
 					return nil, err
 				}
 			}

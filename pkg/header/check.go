@@ -140,7 +140,7 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 				_, err := os.Stat(candidate)
 				if err == nil {
 					// Filter candidates by the paths/patterns specified in config
-					if matchPaths(candidate, config.Paths) {
+					if MatchPaths(candidate, config.Paths) {
 						fileList = append(fileList, candidate)
 					}
 				} else if !os.IsNotExist(err) {
@@ -153,7 +153,7 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 	return fileList, nil
 }
 
-func matchPaths(file string, patterns []string) bool {
+func MatchPaths(file string, patterns []string) bool {
 	for _, pattern := range patterns {
 		if pattern == "." {
 			pattern = "./"

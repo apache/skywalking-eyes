@@ -327,10 +327,10 @@ func TestMatchPaths(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := matchPaths(tt.file, tt.patterns)
+			result := MatchPaths(tt.file, tt.patterns)
 			if result != tt.expected {
 				t.Errorf(
-					"matchPaths(%q, %v) = %v, want %v",
+					"MatchPaths(%q, %v) = %v, want %v",
 					tt.file,
 					tt.patterns,
 					result,

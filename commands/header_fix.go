@@ -43,7 +43,12 @@ var FixCommand = &cobra.Command{
 			var files []string
 
 			if len(args) > 0 {
-				files = args
+				// Filter args by the paths in this header config
+				for _, arg := range args {
+					if header.MatchPaths(arg, h.Paths) {
+						files = append(files, arg)
+					}
+				}
 			} else if err := header.Check(h, &result); err != nil {
 				return err
 			} else {

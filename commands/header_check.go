@@ -42,8 +42,15 @@ var CheckCommand = &cobra.Command{
 			var result header.Result
 
 			if len(args) > 0 {
+				// Filter args by the paths in this header config
+				var filteredArgs []string
+				for _, arg := range args {
+					if header.MatchPaths(arg, h.Paths) {
+						filteredArgs = append(filteredArgs, arg)
+					}
+				}
 				logger.Log.Debugln("Overriding paths with command line args.")
-				h.Paths = args
+				h.Paths = filteredArgs
 			}
 
 			if err := header.Check(h, &result); err != nil {

@@ -28,9 +28,14 @@ import (
 )
 
 var FixCommand = &cobra.Command{
-	Use:     "fix",
+	Use:     "fix [paths...]",
 	Aliases: []string{"f"},
-	Long:    "fix command walks the specified paths recursively and fix the license header if the specified files don't have the license header.",
+	Long: "fix command walks the specified paths recursively and fixes the license " +
+		"header if the specified files don't have the license header. " +
+		"Accepts individual file paths as arguments, " +
+		"or directories and glob patterns via the config file. " +
+		"If no paths are specified, fixes the current directory " +
+		"recursively as defined in the config file.",
 	RunE: func(_ *cobra.Command, args []string) error {
 		var errors []string
 		for _, h := range Config.Headers() {
@@ -38,7 +43,12 @@ var FixCommand = &cobra.Command{
 			var files []string
 
 			if len(args) > 0 {
-				files = args
+				// Filter args by the paths in this header config
+				for _, arg := range args {
+					if header.MatchPaths(arg, h.Paths) {
+						files = append(files, arg)
+					}
+				}
 			} else if err := header.Check(h, &result); err != nil {
 				return err
 			} else {

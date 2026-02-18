@@ -40,6 +40,8 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+const currentDir = "./"
+
 // Check checks the license headers of the specified paths/globs.
 func Check(config *ConfigHeader, result *Result) error {
 	fileList, err := listFiles(config)
@@ -67,13 +69,13 @@ func Check(config *ConfigHeader, result *Result) error {
 func listFiles(config *ConfigHeader) ([]string, error) {
 	var fileList []string
 
-	repo, err := git.PlainOpen("./")
+	repo, err := git.PlainOpen(currentDir)
 
 	if err != nil { // we're not in a Git workspace, fallback to glob paths
 		var localFileList []string
 		for _, pattern := range config.Paths {
 			if pattern == "." {
-				pattern = "./"
+				pattern = currentDir
 			}
 			files, err := doublestar.Glob(pattern)
 			if err != nil {
@@ -156,11 +158,31 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 func MatchPaths(file string, patterns []string) bool {
 	for _, pattern := range patterns {
 		if pattern == "." {
-			pattern = "./"
+			pattern = currentDir
 		}
 		matched, err := doublestar.Match(pattern, file)
 		if err == nil && matched {
 			return true
+		}
+		// Fallback for directory patterns (e.g., "pkg/header/" or "pkg/header")
+		// to behave consistently with tryMatchPatten in config.go.
+		// Ensure that pattern ends with a path separator so it clearly denotes a directory.
+		if strings.HasSuffix(pattern, "/") ||
+			strings.HasSuffix(pattern, string(os.PathSeparator)) {
+			dirPattern := strings.TrimRight(pattern, "/")
+			// Match if file's directory name equals pattern (exact directory match)
+			if stat, err := os.Stat(file); err == nil {
+				if stat.Name() == dirPattern {
+					return true
+				}
+			}
+			// Match if file is under the directory (prefix match)
+			// Normalize both paths to use '/' so prefix matching is consistent across platforms.
+			normalizedDir := strings.ReplaceAll(pattern, "\\", "/")
+			normalizedFile := strings.ReplaceAll(file, "\\", "/")
+			if strings.HasPrefix(normalizedFile, normalizedDir) {
+				return true
+			}
 		}
 	}
 	return false

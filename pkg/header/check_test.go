@@ -315,6 +315,12 @@ func TestMatchPaths(t *testing.T) {
 			name:     "Directory pattern with trailing slash",
 			file:     "pkg/header/check.go",
 			patterns: []string{"pkg/header/"},
+			expected: true,
+		},
+		{
+			name:     "Directory pattern without trailing slash",
+			file:     "pkg/header/check.go",
+			patterns: []string{"pkg/header}"},
 			expected: false,
 		},
 		{

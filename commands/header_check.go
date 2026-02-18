@@ -29,9 +29,13 @@ import (
 )
 
 var CheckCommand = &cobra.Command{
-	Use:     "check",
+	Use:     "check [paths...]",
 	Aliases: []string{"c"},
-	Long:    "check command walks the specified paths recursively and checks if the specified files have the license header in the config file.",
+	Long: "check command walks the specified paths recursively and checks if the " +
+		"specified files have the license header in the config file. " +
+		"Accepts files, directories, and glob patterns. " +
+		"If no paths are specified, checks the current directory " +
+		"recursively as defined in the config file.",
 	RunE: func(_ *cobra.Command, args []string) error {
 		hasErrors := false
 		for _, h := range Config.Headers() {

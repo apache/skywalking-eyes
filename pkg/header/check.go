@@ -134,12 +134,15 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 		}
 
 		seen := make(map[string]bool)
-		for _, file := range candidates {
-			if !seen[file] {
-				seen[file] = true
-				_, err := os.Stat(file)
+		for _, candidate := range candidates {
+			if !seen[candidate] {
+				seen[candidate] = true
+				_, err := os.Stat(candidate)
 				if err == nil {
-					fileList = append(fileList, file)
+					// Filter candidates by the paths/patterns specified in config
+					if matchPaths(candidate, config.Paths) {
+						fileList = append(fileList, candidate)
+					}
 				} else if !os.IsNotExist(err) {
 					return nil, err
 				}
@@ -148,6 +151,19 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 	}
 
 	return fileList, nil
+}
+
+func matchPaths(file string, patterns []string) bool {
+	for _, pattern := range patterns {
+		if pattern == "." {
+			pattern = "./"
+		}
+		matched, err := doublestar.Match(pattern, file)
+		if err == nil && matched {
+			return true
+		}
+	}
+	return false
 }
 
 func addIgnorePatterns(t *git.Worktree) {

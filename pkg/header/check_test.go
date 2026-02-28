@@ -273,3 +273,76 @@ func TestListFilesWithWorktreeDetachedHEAD(t *testing.T) {
 		t.Error("Expected to find files with valid commit")
 	}
 }
+
+func TestMatchPaths(t *testing.T) {
+	tests := []struct {
+		name     string
+		file     string
+		patterns []string
+		expected bool
+	}{
+		{
+			name:     "Exact file match",
+			file:     "test.go",
+			patterns: []string{"test.go"},
+			expected: true,
+		},
+		{
+			name:     "Glob pattern match",
+			file:     "test.go",
+			patterns: []string{"*.go"},
+			expected: true,
+		},
+		{
+			name:     "Double-star glob pattern match",
+			file:     "pkg/header/check.go",
+			patterns: []string{"**/*.go"},
+			expected: true,
+		},
+		{
+			name:     "Multiple patterns with match",
+			file:     "test.go",
+			patterns: []string{"*.java", "*.go", "*.py"},
+			expected: true,
+		},
+		{
+			name:     "Multiple patterns without match",
+			file:     "test.go",
+			patterns: []string{"*.java", "*.py"},
+			expected: false,
+		},
+		{
+			name:     "Directory pattern with trailing slash",
+			file:     "pkg/header/check.go",
+			patterns: []string{"pkg/header/"},
+			expected: true,
+		},
+		{
+			name:     "Directory pattern without trailing slash",
+			file:     "pkg/header/check.go",
+			patterns: []string{"pkg/header}"},
+			expected: false,
+		},
+		{
+			name:     "Dot pattern",
+			file:     "test.go",
+			patterns: []string{"."},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := MatchPaths(tt.file, tt.patterns)
+			if result != tt.expected {
+				t.Errorf(
+					"MatchPaths(%q, %v) = %v, want %v",
+					tt.file,
+					tt.patterns,
+					result,
+					tt.expected,
+				)
+			}
+		})
+	}
+}

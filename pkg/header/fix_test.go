@@ -63,6 +63,17 @@ func TestFix(t *testing.T) {
 			comments: `# Apache License 2.0
 #   http://www.apache.org/licenses/LICENSE-2.0
 # Apache License 2.0
+
+`,
+		},
+		{
+			filename: "test.erb",
+			comments: `<%
+# Apache License 2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
+# Apache License 2.0
+%>
+
 `,
 		},
 	}
@@ -397,6 +408,24 @@ end
 
 class Example
 end
+`,
+		}, {
+			name:  "ERB",
+			style: comments.FileCommentStyle("test.erb"),
+			content: `<html>
+  <body><%= @content %></body>
+</html>
+`,
+			licenseHeader: getLicenseHeader("test.erb", t.Error),
+			expectedContent: `<%
+# Apache License 2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
+# Apache License 2.0
+%>
+
+<html>
+  <body><%= @content %></body>
+</html>
 `,
 		},
 	}

@@ -76,6 +76,14 @@ func TestFix(t *testing.T) {
 
 `,
 		},
+		{
+			filename: "test.slim",
+			comments: `/ Apache License 2.0
+/   http://www.apache.org/licenses/LICENSE-2.0
+/ Apache License 2.0
+
+`,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.filename, func(t *testing.T) {
@@ -426,6 +434,36 @@ end
 <html>
   <body><%= @content %></body>
 </html>
+`,
+		}, {
+			name:  "Slim with doctype",
+			style: comments.FileCommentStyle("test.slim"),
+			content: `doctype html
+html
+  body
+`,
+			licenseHeader: getLicenseHeader("test.slim", t.Error),
+			expectedContent: `/ Apache License 2.0
+/   http://www.apache.org/licenses/LICENSE-2.0
+/ Apache License 2.0
+
+doctype html
+html
+  body
+`,
+		}, {
+			name:  "Slim",
+			style: comments.FileCommentStyle("test.slim"),
+			content: `html
+  body
+`,
+			licenseHeader: getLicenseHeader("test.slim", t.Error),
+			expectedContent: `/ Apache License 2.0
+/   http://www.apache.org/licenses/LICENSE-2.0
+/ Apache License 2.0
+
+html
+  body
 `,
 		},
 	}

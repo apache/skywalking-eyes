@@ -4973,6 +4973,8 @@ Ruby:
     - ".irbrc"
     - ".pryrc"
     - ".simplecov"
+    - ".ruby-version"
+    - ".rspec"
     - Appraisals
     - Berksfile
     - Brewfile
@@ -4994,6 +4996,7 @@ Ruby:
     - Vagrantfile
     - buildfile
   language_id: 326
+  comment_style_id: Hashtag
 Rust:
   type: programming
   color: "#dea584"

@@ -120,3 +120,8 @@
   start: '"""'
   middle: ~
   end: '"""'
+
+- id: Slash
+  start: '/'
+  middle: '/'
+  end: '/'

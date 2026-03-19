@@ -122,6 +122,6 @@
   end: '"""'
 
 - id: Slash
-  start: '/'
-  middle: '/'
-  end: '/'
+  start: '^\/'
+  middle: '^\/'
+  end: '^\/'

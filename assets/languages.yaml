@@ -4975,7 +4975,6 @@ Ruby:
     - ".irbrc"
     - ".pryrc"
     - ".simplecov"
-    - ".ruby-version"
     - ".rspec"
     - Appraisals
     - Berksfile

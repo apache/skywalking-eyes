@@ -5,8 +5,8 @@ go 1.25.3
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/bmatcuk/doublestar/v2 v2.0.4
-	github.com/go-git/go-billy/v5 v5.6.2
-	github.com/go-git/go-git/v5 v5.16.5
+	github.com/go-git/go-billy/v5 v5.8.0
+	github.com/go-git/go-git/v5 v5.17.1
 	github.com/google/go-github/v33 v33.0.0
 	github.com/google/licensecheck v0.3.1
 	github.com/sirupsen/logrus v1.9.3

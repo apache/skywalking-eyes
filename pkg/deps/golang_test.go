@@ -23,9 +23,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	"golang.org/x/tools/go/packages"
+
 	"github.com/apache/skywalking-eyes/pkg/deps"
 	"github.com/apache/skywalking-eyes/pkg/logger"
-	"golang.org/x/tools/go/packages"
 )
 
 func TestMain(m *testing.M) {
@@ -116,8 +117,8 @@ func TestResolvePackageLicense(t *testing.T) {
 		if len(report.Resolved) != 1 {
 			t.Fatalf("expected 1 resolved, got %d", len(report.Resolved))
 		}
-		if report.Resolved[0].LicenseSpdxID != "Apache-2.0" {
-			t.Errorf("expected Apache-2.0, got %v", report.Resolved[0].LicenseSpdxID)
+		if report.Resolved[0].LicenseSpdxID != npmLicenseApache20 {
+			t.Errorf("expected %v, got %v", npmLicenseApache20, report.Resolved[0].LicenseSpdxID)
 		}
 	})
 

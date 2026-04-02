@@ -55,14 +55,21 @@ func (resolver *GoModResolver) CanResolve(file string) bool {
 	return strings.HasSuffix(base, ".mod")
 }
 
-// Resolve resolves licenses of all dependencies declared in the go.mod file.
-func (resolver *GoModResolver) Resolve(goModFile string, config *ConfigDeps, report *Report) error {
-	content, err := os.ReadFile(goModFile)
+func validateGoModFile(file string) error {
+	content, err := os.ReadFile(file)
 	if err != nil {
 		return err
 	}
 	if !goModuleDirective.Match(content) || !goVersionDirective.Match(content) {
-		return fmt.Errorf("%v is not a valid Go module file", goModFile)
+		return fmt.Errorf("%v is not a valid Go module file", file)
+	}
+	return nil
+}
+
+// Resolve resolves licenses of all dependencies declared in the go.mod file.
+func (resolver *GoModResolver) Resolve(goModFile string, config *ConfigDeps, report *Report) error {
+	if err := validateGoModFile(goModFile); err != nil {
+		return err
 	}
 
 	if err := os.Chdir(filepath.Dir(goModFile)); err != nil {

@@ -20,8 +20,8 @@ PROJECT ?= license-eye
 VERSION ?= latest
 INSTALL_DIR ?= /usr/local/bin
 OUT_DIR = bin
-ARCH := $(shell uname)
-OSNAME := $(if $(findstring Darwin,$(ARCH)),darwin,linux)
+UNAME := $(shell uname)
+OSNAME := $(if $(findstring Darwin,$(UNAME)),darwin,linux)
 
 GO := GO111MODULE=on go
 GO_PATH = $(shell $(GO) env GOPATH)
@@ -35,7 +35,7 @@ PLANTUML_VERSION = 1.2021.9
 
 PLATFORMS := windows linux darwin
 os = $(word 1, $@)
-ARCH = amd64
+ARCH ?= $(shell $(GO) env GOARCH)
 
 RELEASE_BIN = skywalking-$(PROJECT)-$(VERSION)-bin
 RELEASE_SRC = skywalking-$(PROJECT)-$(VERSION)-src

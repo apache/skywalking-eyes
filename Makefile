@@ -49,6 +49,7 @@ $(GO_LINT):
 
 .PHONY: lint
 lint: $(GO_LINT)
+	$(GO_LINT) config verify
 	$(GO_LINT) run -v ./...
 
 .PHONY: fix-lint

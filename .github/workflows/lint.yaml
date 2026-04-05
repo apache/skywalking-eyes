@@ -51,9 +51,13 @@ jobs:
       - name: Read golangci-lint version from Makefile
         id: lint-version
         run: |
-          version=$(sed -n 's/^GOLANGCI_LINT_VERSION\s*=\s*//p' Makefile)
+          version=$(sed -n 's/^GOLANGCI_LINT_VERSION[[:space:]]*=[[:space:]]*//p' Makefile)
+          if [ -z "${version}" ]; then
+            echo "Failed to read GOLANGCI_LINT_VERSION from Makefile" >&2
+            exit 1
+          fi
           echo "golangci-lint version: ${version}"
-          echo "version=${version}" >> $GITHUB_OUTPUT
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
 
       # https://github.com/golangci/golangci-lint-action?tab=readme-ov-file#verify
       - name: Verify linter configuration and Lint go code

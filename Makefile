@@ -27,6 +27,7 @@ GO := GO111MODULE=on go
 GO_PATH = $(shell $(GO) env GOPATH)
 GO_BUILD = $(GO) build
 GO_TEST = $(GO) test
+GOLANGCI_LINT_VERSION = v2.6.1
 GO_LINT = $(GO_PATH)/bin/golangci-lint
 GO_BUILD_LDFLAGS = -X github.com/apache/skywalking-eyes/commands.version=$(VERSION)
 GOOS ?= $(shell $(GO) env GOOS)
@@ -44,10 +45,11 @@ RELEASE_SRC = skywalking-$(PROJECT)-$(VERSION)-src
 all: clean lint license test build
 
 $(GO_LINT):
-	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GO_PATH)/bin v2.6.1
+	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GO_PATH)/bin $(GOLANGCI_LINT_VERSION)
 
 .PHONY: lint
 lint: $(GO_LINT)
+	$(GO_LINT) config verify
 	$(GO_LINT) run -v ./...
 
 .PHONY: fix-lint

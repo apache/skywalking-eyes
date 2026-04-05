@@ -21,6 +21,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"golang.org/x/tools/go/packages"
@@ -39,10 +40,8 @@ const (
 
 go 1.21
 `
-	noModuleDirective = `go 1.21
-`
-	noGoDirective = `module example.com/foo
-`
+	noModuleDirective = "go 1.21\n"
+	spdxApache20      = "Apache-2.0"
 )
 
 func TestCanResolveGoMod(t *testing.T) {
@@ -80,7 +79,6 @@ func TestResolveGoModInvalidFile(t *testing.T) {
 		content string
 	}{
 		{"missing module directive", noModuleDirective},
-		{"missing go directive", noGoDirective},
 		{"non-Go content", "worker_processes auto;\n"},
 	}
 
@@ -100,7 +98,11 @@ func TestResolvePackageLicense(t *testing.T) {
 	resolver := new(deps.GoModResolver)
 	config := &deps.ConfigDeps{Threshold: 75}
 
-	apacheLicense, err := os.ReadFile("../../LICENSE")
+	_, thisFile, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller failed")
+	}
+	apacheLicense, err := os.ReadFile(filepath.Join(filepath.Dir(thisFile), "..", "..", "LICENSE"))
 	if err != nil {
 		t.Fatalf("failed to read LICENSE fixture: %v", err)
 	}
@@ -117,8 +119,8 @@ func TestResolvePackageLicense(t *testing.T) {
 		if len(report.Resolved) != 1 {
 			t.Fatalf("expected 1 resolved, got %d", len(report.Resolved))
 		}
-		if report.Resolved[0].LicenseSpdxID != npmLicenseApache20 {
-			t.Errorf("expected %v, got %v", npmLicenseApache20, report.Resolved[0].LicenseSpdxID)
+		if report.Resolved[0].LicenseSpdxID != spdxApache20 {
+			t.Errorf("expected %v, got %v", spdxApache20, report.Resolved[0].LicenseSpdxID)
 		}
 	})
 

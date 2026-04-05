@@ -45,8 +45,7 @@ const (
 
 var (
 	goModuleDirective       = regexp.MustCompile(`(?m)^\s*module\s+\S`)
-	goVersionDirective      = regexp.MustCompile(`(?m)^\s*go\s+\d`)
-	possibleLicenseFileName = regexp.MustCompile(`(?i)^LICENSE|LICENCE(\.txt)?|COPYING(\.txt)?$`)
+	possibleLicenseFileName = regexp.MustCompile(`(?i)^(LICENSE|LICENCE|COPYING)(\.txt)?$`)
 )
 
 func (resolver *GoModResolver) CanResolve(file string) bool {
@@ -60,7 +59,7 @@ func validateGoModFile(file string) error {
 	if err != nil {
 		return err
 	}
-	if !goModuleDirective.Match(content) || !goVersionDirective.Match(content) {
+	if !goModuleDirective.Match(content) {
 		return fmt.Errorf("%v is not a valid Go module file", file)
 	}
 	return nil
@@ -154,7 +153,7 @@ func (resolver *GoModResolver) ResolvePackageLicense(config *ConfigDeps, module 
 			return err
 		}
 		for _, info := range files {
-			if !possibleLicenseFileName.MatchString(info.Name()) {
+			if info.IsDir() || !possibleLicenseFileName.MatchString(info.Name()) {
 				continue
 			}
 			licenseFilePath := filepath.Join(dir, info.Name())

@@ -30,6 +30,7 @@ GO_TEST = $(GO) test
 GO_LINT = $(GO_PATH)/bin/golangci-lint
 GO_BUILD_LDFLAGS = -X github.com/apache/skywalking-eyes/commands.version=$(VERSION)
 GOOS ?= $(shell $(GO) env GOOS)
+GO_TEST_IMAGE := $(shell sed -n '/^FROM/{ s/FROM \([^ ]*\) AS.*/\1/p; q; }' Dockerfile)
 
 PLANTUML_VERSION = 1.2021.9
 
@@ -62,6 +63,14 @@ license: clean
 test: clean
 	$(GO_TEST) ./... -coverprofile=coverage.txt -covermode=atomic
 	@>&2 echo "Great, all tests passed."
+
+.PHONY: test-docker
+test-docker:
+	docker run --rm \
+		-v $(shell pwd):/license-eye \
+		-w /license-eye \
+		$(GO_TEST_IMAGE) \
+		sh -c "apk add --no-cache git make maven && make test"
 
 windows: PROJECT_SUFFIX=.exe
 

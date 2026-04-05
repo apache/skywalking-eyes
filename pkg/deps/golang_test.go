@@ -137,7 +137,7 @@ func TestResolvePackageLicense(t *testing.T) {
 func writeTempFile(t *testing.T, dir, name, content string) string {
 	t.Helper()
 	path := filepath.Join(dir, name)
-	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil { //nolint:gosec // path is under t.TempDir()
 		t.Fatalf("failed to write %v: %v", name, err)
 	}
 	return path

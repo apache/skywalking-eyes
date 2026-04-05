@@ -67,7 +67,8 @@ var CheckCommand = &cobra.Command{
 
 func writeSummaryQuietly(result *header.Result) {
 	if summaryFileName := os.Getenv("GITHUB_STEP_SUMMARY"); summaryFileName != "" {
-		if summaryFile, err := os.OpenFile(summaryFileName, os.O_WRONLY|os.O_APPEND, 0o644); err == nil { //nolint:gosec // intentional: writing to a path from GITHUB_STEP_SUMMARY env var
+		summaryFile, err := os.OpenFile(summaryFileName, os.O_WRONLY|os.O_APPEND, 0o644) //nolint:gosec // path from GITHUB_STEP_SUMMARY env var
+		if err == nil {
 			defer summaryFile.Close()
 			_, _ = summaryFile.WriteString("# License Eye Summary\n")
 			_, _ = summaryFile.WriteString(result.String())

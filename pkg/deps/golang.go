@@ -27,6 +27,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/apache/skywalking-eyes/pkg/license"
 	"github.com/apache/skywalking-eyes/pkg/logger"
@@ -38,19 +39,51 @@ type GoModResolver struct {
 	Resolver
 }
 
+const (
+	goModFileName = "go.mod"
+)
+
+var (
+	goModuleDirective       = regexp.MustCompile(`(?m)^\s*module\s+\S`)
+	possibleLicenseFileName = regexp.MustCompile(`(?i)^(LICENSE|LICENCE|COPYING)(\.txt)?$`)
+)
+
 func (resolver *GoModResolver) CanResolve(file string) bool {
 	base := filepath.Base(file)
 	logger.Log.Debugln("Base name:", base)
-	return base == "go.mod"
+	return strings.HasSuffix(base, ".mod")
+}
+
+func validateGoModFile(file string) error {
+	content, err := os.ReadFile(file)
+	if err != nil {
+		return err
+	}
+	if !goModuleDirective.Match(content) {
+		return fmt.Errorf("%v is not a valid Go module file", file)
+	}
+	return nil
 }
 
 // Resolve resolves licenses of all dependencies declared in the go.mod file.
 func (resolver *GoModResolver) Resolve(goModFile string, config *ConfigDeps, report *Report) error {
+	if err := validateGoModFile(goModFile); err != nil {
+		return err
+	}
+
 	if err := os.Chdir(filepath.Dir(goModFile)); err != nil {
 		return err
 	}
 
-	goModDownload := exec.Command("go", "mod", "download")
+	base := filepath.Base(goModFile)
+	downloadArgs := []string{"mod", "download"}
+	jsonArgs := []string{"mod", "download", "-json"}
+	if base != goModFileName {
+		downloadArgs = append(downloadArgs, "-modfile", base)
+		jsonArgs = append(jsonArgs, "-modfile", base)
+	}
+
+	goModDownload := exec.Command("go", downloadArgs...)
 	logger.Log.Debugf("Run command: %v, please wait", goModDownload.String())
 	goModDownload.Stdout = os.Stdout
 	goModDownload.Stderr = os.Stderr
@@ -58,7 +91,7 @@ func (resolver *GoModResolver) Resolve(goModFile string, config *ConfigDeps, rep
 		return err
 	}
 
-	output, err := exec.Command("go", "mod", "download", "-json").Output()
+	output, err := exec.Command("go", jsonArgs...).Output()
 	if err != nil {
 		return err
 	}
@@ -110,8 +143,6 @@ func (resolver *GoModResolver) ResolvePackages(modules []*packages.Module, confi
 	return nil
 }
 
-var possibleLicenseFileName = regexp.MustCompile(`(?i)^LICENSE|LICENCE(\.txt)?|COPYING(\.txt)?$`)
-
 func (resolver *GoModResolver) ResolvePackageLicense(config *ConfigDeps, module *packages.Module, report *Report) error {
 	dir := module.Dir
 
@@ -122,7 +153,7 @@ func (resolver *GoModResolver) ResolvePackageLicense(config *ConfigDeps, module 
 			return err
 		}
 		for _, info := range files {
-			if !possibleLicenseFileName.MatchString(info.Name()) {
+			if info.IsDir() || !possibleLicenseFileName.MatchString(info.Name()) {
 				continue
 			}
 			licenseFilePath := filepath.Join(dir, info.Name())
@@ -135,6 +166,7 @@ func (resolver *GoModResolver) ResolvePackageLicense(config *ConfigDeps, module 
 				return err
 			}
 
+			logger.Log.Debugf("\t- Found license: %v", identifier)
 			report.Resolve(&Result{
 				Dependency:      module.Path,
 				LicenseFilePath: licenseFilePath,

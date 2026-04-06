@@ -25,7 +25,9 @@ var Header = &cobra.Command{
 	Use:     "header",
 	Aliases: []string{"h"},
 	Short:   "License header related commands; e.g. check, fix, etc.",
-	Long:    "`header` command walks the specified paths recursively and checks if the specified files have the license header in the config file.",
+	Long: "`header` command walks the specified paths and checks if the specified " +
+		"files have the license header in the config file. " +
+		"Accepts files, directories, and glob patterns.",
 }
 
 func init() {

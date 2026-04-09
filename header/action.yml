@@ -54,4 +54,7 @@ runs:
     - shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.token }}
-      run: license-eye -v ${{ inputs.log }} -c ${{ inputs.config }} header ${{ inputs.mode }}
+        INPUTS_LOG: ${{ inputs.log }}
+        INPUTS_CONFIG: ${{ inputs.config }}
+        INPUTS_MODE: ${{ inputs.mode }}
+      run: license-eye -v ${INPUTS_LOG} -c ${INPUTS_CONFIG} header ${INPUTS_MODE}

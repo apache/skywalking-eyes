@@ -32,6 +32,11 @@
   middle: '  ~'
   end: '-->'
 
+- id: AngleBracketPercentHashtag
+  start: '<%'
+  middle: '#'
+  end: '%>'
+
 # tag::SlashAsterisk[]
 - id: SlashAsterisk
   start: '/*'           # <1>
@@ -115,3 +120,8 @@
   start: '"""'
   middle: ~
   end: '"""'
+
+- id: Slash
+  start: '^\/'
+  middle: '^\/'
+  end: '^\/'

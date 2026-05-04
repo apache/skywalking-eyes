@@ -84,9 +84,11 @@ func TestRewriteContent(t *testing.T) {
 			content: `print_string "hello worlds!\n";;
 `,
 			licenseHeader: getLicenseHeader("test.ml", t.Error),
-			expectedContent: `(* Apache License 2.0
-(*   http://www.apache.org/licenses/LICENSE-2.0
-(* Apache License 2.0
+			expectedContent: `(*
+ * Apache License 2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * Apache License 2.0
+ *)
 
 print_string "hello worlds!\n";;
 `},

@@ -41,8 +41,8 @@
 
 - id: RoundBracketAsterisk
   start: '(*'
-  middle: '(*'
-  end: '(*'
+  middle: ' *'
+  end: ' *)'
 
 - id: CurlyBracketDash
   start: '{-'

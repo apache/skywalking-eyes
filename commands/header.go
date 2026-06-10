@@ -33,4 +33,5 @@ var Header = &cobra.Command{
 func init() {
 	Header.AddCommand(CheckCommand)
 	Header.AddCommand(FixCommand)
+	Header.AddCommand(DiffCommand)
 }

@@ -135,6 +135,48 @@ if __name__ == '__main__':
     print('Hello World')
 `},
 		{
+			name:  "Python with shebang-like string mid file",
+			style: comments.FileCommentStyle("test.py"),
+			content: `def some_function():
+    print(
+        """#!/usr/bin/env python3
+        print("Hello, World!")
+        """)
+`,
+			licenseHeader: getLicenseHeader("test.py", t.Error),
+			expectedContent: `# Apache License 2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
+# Apache License 2.0
+
+def some_function():
+    print(
+        """#!/usr/bin/env python3
+        print("Hello, World!")
+        """)
+`},
+		{
+			name:  "Python with shebang and shebang-like string mid file",
+			style: comments.FileCommentStyle("test.py"),
+			content: `#!/usr/bin/env python3
+def some_function():
+    print(
+        """#!/usr/bin/env python3
+        print("Hello, World!")
+        """)
+`,
+			licenseHeader: getLicenseHeader("test.py", t.Error),
+			expectedContent: `#!/usr/bin/env python3
+# Apache License 2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
+# Apache License 2.0
+
+def some_function():
+    print(
+        """#!/usr/bin/env python3
+        print("Hello, World!")
+        """)
+`},
+		{
 			name:  "Python with interpreter binary and encoding",
 			style: comments.FileCommentStyle("test.py"),
 			content: `#!/usr/bin/env python3

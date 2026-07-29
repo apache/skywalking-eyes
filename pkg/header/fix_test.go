@@ -177,6 +177,44 @@ def some_function():
         """)
 `},
 		{
+			name:  "Python with column-0 shebang-like string mid file",
+			style: comments.FileCommentStyle("test.py"),
+			content: `x = """
+#!/usr/bin/env python3
+hello
+"""
+`,
+			licenseHeader: getLicenseHeader("test.py", t.Error),
+			expectedContent: `# Apache License 2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
+# Apache License 2.0
+
+x = """
+#!/usr/bin/env python3
+hello
+"""
+`},
+		{
+			name:  "Shell with column-0 shebang-like string mid file",
+			style: comments.FileCommentStyle("test.sh"),
+			content: `foo() {
+  cat <<EOF
+#!/bin/bash is just text
+EOF
+}
+`,
+			licenseHeader: getLicenseHeader("test.sh", t.Error),
+			expectedContent: `# Apache License 2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
+# Apache License 2.0
+
+foo() {
+  cat <<EOF
+#!/bin/bash is just text
+EOF
+}
+`},
+		{
 			name:  "Python with interpreter binary and encoding",
 			style: comments.FileCommentStyle("test.py"),
 			content: `#!/usr/bin/env python3

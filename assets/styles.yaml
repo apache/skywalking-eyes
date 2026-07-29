@@ -116,7 +116,7 @@
 
 - id: PythonDocStringStyle
   # (interpreter binary and encoding comment) | (only interpreter binary) | (only encoding comment)
-  after: '(?m)(^#!.+$\n^[ \t\f]*#.*?coding[:=][ \t]*([-_.a-zA-Z0-9]+).*$)|(^#!.+$)|(^[ \t\f]*#.*?coding[:=][ \t]*([-_.a-zA-Z0-9]+).*$)'
+  after: '(?m)(\A#!.+$\n^[ \t\f]*#.*?coding[:=][ \t]*([-_.a-zA-Z0-9]+).*$)|(\A#!.+$)|(\A[ \t\f]*#.*?coding[:=][ \t]*([-_.a-zA-Z0-9]+).*$)'
   start: '"""'
   middle: ~
   end: '"""'

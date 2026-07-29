@@ -21,7 +21,7 @@
   end: '//'
 
 - id: Hashtag
-  after: '(?m)^*#!.+$'
+  after: '(?m)\A#!.+$'
   start: '#'
   middle: '#'
   end: '#'

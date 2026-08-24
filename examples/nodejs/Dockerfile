@@ -20,7 +20,8 @@ FROM apache/skywalking-eyes:latest
 ARG NODE_VERSION=22.13.1
 ARG TARGETARCH
 
-# Install Node.js
-RUN apk add --no-cache --update nodejs=${NODE_VERSION}-r0 npm
+# Install Node.js. pnpm is included so that pnpm-managed projects resolve too;
+# drop it if yours is an npm project.
+RUN apk add --no-cache --update nodejs=${NODE_VERSION}-r0 npm && npm install -g pnpm
 
 WORKDIR /github/workspace 

@@ -36,7 +36,7 @@ dependency:
   files:
     - pom.xml           # If this is a maven project.
     - Cargo.toml        # If this is a rust project.
-    - package.json      # If this is a npm project.
+    - package.json      # If this is a Node.js project (npm or pnpm).
     - go.mod            # If this is a Go project.
     - Gemfile.lock      # If this is a Ruby project (Bundler). Ensure Gemfile.lock is committed.
 ```
@@ -729,6 +729,17 @@ Example using weak-compatible mode:
 ```bash
 license-eye -c test/testdata/.licenserc_for_test_check.yaml dep check -w
 ```
+
+##### Node.js projects: npm and pnpm
+
+`package.json` is resolved with npm by default. A project is resolved with pnpm instead when either of the following says so, checked in the directory of the `package.json` and then in each directory above it, so that a workspace member is governed by its root:
+
+- the [`packageManager`](https://nodejs.org/api/corepack.html) field of a `package.json` names `pnpm`, or
+- a `pnpm-lock.yaml` is present.
+
+Both managers are used the same way: the packages installed for **production** are the ones checked, and each package's own `package.json` and `LICENSE` file are what the license is read from. In a pnpm workspace the whole workspace is resolved once, however many members the `files` configuration names.
+
+Whichever manager applies must be on `PATH`, and the packages must be installed — the tool offers to install them for you at the start of a run (`npm ci`, or `pnpm ci`, falling back to `pnpm install --frozen-lockfile` on pnpm 7 and older), which you can skip with `s` + ENTER if they are already in place.
 
 <details>
 <summary>Dependency Check Result</summary>

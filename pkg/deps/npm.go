@@ -138,6 +138,15 @@ func (resolver *NpmResolver) Resolve(pkgFile string, config *ConfigDeps, report 
 
 	// Walk through each package's root directory to resolve licenses
 	// Resolve from a package's package.json file or its license file
+	resolver.ResolvePackages(pkgs, config, report)
+	return nil
+}
+
+// ResolvePackages reads the license of every listed package and records it in
+// the report. Only the LISTING of packages differs between Node package
+// managers, so this half is shared: see PnpmResolver, which lists differently
+// and then calls into here.
+func (resolver *NpmResolver) ResolvePackages(pkgs []*Package, config *ConfigDeps, report *Report) {
 	for _, pkg := range pkgs {
 		if result := resolver.ResolvePackageLicense(pkg.Name, pkg.Path, config); result.LicenseSpdxID != "" {
 			report.Resolve(result)
@@ -149,7 +158,6 @@ func (resolver *NpmResolver) Resolve(pkgFile string, config *ConfigDeps, report 
 			logger.Log.Warnln("Failed to resolve the license of dependency:", pkg.Name, result.ResolveErrors)
 		}
 	}
-	return nil
 }
 
 // NeedSkipInstallPkgs queries whether to skip the procedure of installing or updating packages
@@ -300,6 +308,13 @@ func (resolver *NpmResolver) ResolvePkgFile(result *Result, pkgPath string, conf
 	return fmt.Errorf(`cannot parse the "license"/"licenses" field`)
 }
 
+// isLicenseFileReference reports whether an npm `license` string is the
+// "SEE LICENSE IN <file>" form, which names a file rather than stating terms.
+// https://docs.npmjs.com/cli/configuring-npm/package-json#license
+func isLicenseFileReference(value string) bool {
+	return strings.HasPrefix(strings.ToUpper(strings.TrimSpace(value)), "SEE LICENSE IN")
+}
+
 // ResolveLicenseField parses and validates the "license" field in package.json file
 func (resolver *NpmResolver) ResolveLicenseField(rawData []byte) (string, bool) {
 	if len(rawData) > 0 {
@@ -307,7 +322,10 @@ func (resolver *NpmResolver) ResolveLicenseField(rawData []byte) (string, bool) 
 		case '"':
 			var lcs string
 			_ = json.Unmarshal(rawData, &lcs)
-			if lcs != "" {
+			// Returning "SEE LICENSE IN LICENSE" verbatim reports the pointer as
+			// though it were the license, and nothing can identify it. The terms
+			// are in the file it names, so decline and let that file be read.
+			if lcs != "" && !isLicenseFileReference(lcs) {
 				return lcs, true
 			}
 		case '{':

@@ -124,6 +124,40 @@ func TestResolvePackageLicense(t *testing.T) {
 		}
 	})
 
+	t.Run("license found as LICENSE.md", func(t *testing.T) {
+		dir := t.TempDir()
+		writeTempFile(t, dir, "LICENSE.md", string(apacheLicense))
+
+		module := &packages.Module{Path: "example.com/foo", Version: "v1.0.0", Dir: dir}
+		var report deps.Report
+		if err := resolver.ResolvePackageLicense(config, module, &report); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(report.Resolved) != 1 {
+			t.Fatalf("expected 1 resolved, got %d", len(report.Resolved))
+		}
+		if report.Resolved[0].LicenseSpdxID != spdxApache20 {
+			t.Errorf("expected %v, got %v", spdxApache20, report.Resolved[0].LicenseSpdxID)
+		}
+	})
+
+	t.Run("license found as lowercase license.md", func(t *testing.T) {
+		dir := t.TempDir()
+		writeTempFile(t, dir, "license.md", string(apacheLicense))
+
+		module := &packages.Module{Path: "example.com/foo", Version: "v1.0.0", Dir: dir}
+		var report deps.Report
+		if err := resolver.ResolvePackageLicense(config, module, &report); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(report.Resolved) != 1 {
+			t.Fatalf("expected 1 resolved, got %d", len(report.Resolved))
+		}
+		if report.Resolved[0].LicenseSpdxID != spdxApache20 {
+			t.Errorf("expected %v, got %v", spdxApache20, report.Resolved[0].LicenseSpdxID)
+		}
+	})
+
 	t.Run("no license found", func(t *testing.T) {
 		dir := t.TempDir()
 		module := &packages.Module{Path: "example.com/foo", Version: "v1.0.0", Dir: dir}

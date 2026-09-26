@@ -52,6 +52,7 @@ var (
 		regexp.MustCompile(`(?m)^\s*/\*+`), // /*
 		regexp.MustCompile(`(?m)^\s*\*+/`), //  */
 		regexp.MustCompile(`(?m)^\s*\*+`),  //  *
+		regexp.MustCompile(`(?m)^\s*/`),    //  / e.g. Slim, must come after the /* and // patterns
 
 		regexp.MustCompile(`(?m)^\s*<!--+`), // <!--
 		regexp.MustCompile(`(?m)^\s*--+>`),  // -->

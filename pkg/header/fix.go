@@ -63,7 +63,7 @@ func InsertComment(file string, style *comments.CommentStyle, config *ConfigHead
 
 	content = rewriteContent(style, content, licenseHeader, config.LicensePattern(style))
 
-	if err := os.WriteFile(file, content, stat.Mode()); err != nil {
+	if err := os.WriteFile(file, content, stat.Mode()); err != nil { //nolint:gosec // path from tool's own file scanner
 		return err
 	}
 

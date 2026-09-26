@@ -37,7 +37,7 @@ inputs:
     default: ${{ github.token }}
   mode:
     description: |
-      Which mode License Eye should be run in. Choices are `check` or `fix`. The
+      Which mode License Eye should be run in. Choices are `check`, `fix` or `diff`. The
       default value is `check`.
     required: false
     default: check

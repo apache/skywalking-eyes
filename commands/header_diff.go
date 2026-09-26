@@ -19,25 +19,32 @@ package commands
 
 import (
 	"fmt"
-	"os"
+	"sort"
+	"strings"
+
+	"github.com/spf13/cobra"
 
 	"github.com/apache/skywalking-eyes/pkg/header"
 	"github.com/apache/skywalking-eyes/pkg/logger"
-	"github.com/apache/skywalking-eyes/pkg/review"
-
-	"github.com/spf13/cobra"
 )
 
-var CheckCommand = &cobra.Command{
-	Use:     "check [paths...]",
-	Aliases: []string{"c"},
-	Long: "check command walks the specified paths recursively and checks if the " +
-		"specified files have the license header in the config file. " +
+var DiffCommand = &cobra.Command{
+	Use:     "diff [paths...]",
+	Aliases: []string{"d"},
+	Long: "diff command walks the specified paths recursively and shows where the " +
+		"license headers of the invalid files differ from the license header in the " +
+		"config file, to help understand why the check command fails. " +
 		"Accepts files, directories, and glob patterns. " +
 		"If no paths are specified, checks the current directory " +
-		"recursively as defined in the config file.",
+		"recursively as defined in the config file. " +
+		"The texts are compared in the same normalized forms that the check command " +
+		"compares (comment markers stripped, whitespace flattened, case-insensitive, etc.), " +
+		"so every difference shown is a real cause of the check failure: " +
+		"[-text-] is expected by the configured license but missing in the file, " +
+		"{+text+} is in the file but not expected by the configured license.",
 	RunE: func(_ *cobra.Command, args []string) error {
 		hasErrors := false
+		var errors []string
 		for _, h := range Config.Headers() {
 			var result header.Result
 
@@ -50,38 +57,31 @@ var CheckCommand = &cobra.Command{
 				return err
 			}
 
+			sort.Strings(result.Failure)
+			for _, file := range result.Failure {
+				diff, err := header.DiffFile(file, h)
+				if err != nil {
+					errors = append(errors, err.Error())
+					continue
+				}
+				if diff == "" {
+					continue
+				}
+				fmt.Printf("%v:\n\t%v\n", file, diff)
+			}
+
 			logger.Log.Infoln(result.String())
 
-			writeSummaryQuietly(&result)
-
 			if result.HasFailure() {
-				if err := review.Header(&result, h); err != nil {
-					logger.Log.Warnln("Failed to create review comments", err)
-				}
 				hasErrors = true
-				logger.Log.Error(result.Error())
 			}
+		}
+		if len(errors) > 0 {
+			return fmt.Errorf("%s", strings.Join(errors, "\n"))
 		}
 		if hasErrors {
 			return fmt.Errorf("one or more files does not have a valid license header")
 		}
 		return nil
 	},
-}
-
-func writeSummaryQuietly(result *header.Result) {
-	if summaryFileName := os.Getenv("GITHUB_STEP_SUMMARY"); summaryFileName != "" {
-		summaryFile, err := os.OpenFile(summaryFileName, os.O_WRONLY|os.O_APPEND, 0o644) //nolint:gosec // path from GITHUB_STEP_SUMMARY env var
-		if err == nil {
-			defer summaryFile.Close()
-			_, _ = summaryFile.WriteString("# License Eye Summary\n")
-			_, _ = summaryFile.WriteString(result.String())
-			if result.HasFailure() {
-				_, _ = summaryFile.WriteString(", the following files are lack of license headers:\n")
-				for _, failure := range result.Failure {
-					_, _ = fmt.Fprintf(summaryFile, "- %s\n", failure)
-				}
-			}
-		}
-	}
 }

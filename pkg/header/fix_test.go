@@ -58,6 +58,32 @@ func TestFix(t *testing.T) {
 
 `,
 		},
+		{
+			filename: "test.rb",
+			comments: `# Apache License 2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
+# Apache License 2.0
+
+`,
+		},
+		{
+			filename: "test.erb",
+			comments: `<%
+# Apache License 2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
+# Apache License 2.0
+%>
+
+`,
+		},
+		{
+			filename: "test.slim",
+			comments: `/ Apache License 2.0
+/   http://www.apache.org/licenses/LICENSE-2.0
+/ Apache License 2.0
+
+`,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.filename, func(t *testing.T) {
@@ -84,9 +110,11 @@ func TestRewriteContent(t *testing.T) {
 			content: `print_string "hello worlds!\n";;
 `,
 			licenseHeader: getLicenseHeader("test.ml", t.Error),
-			expectedContent: `(* Apache License 2.0
-(*   http://www.apache.org/licenses/LICENSE-2.0
-(* Apache License 2.0
+			expectedContent: `(*
+ * Apache License 2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * Apache License 2.0
+ *)
 
 print_string "hello worlds!\n";;
 `},
@@ -103,6 +131,126 @@ if __name__ == '__main__':
 #   http://www.apache.org/licenses/LICENSE-2.0
 # Apache License 2.0
 
+if __name__ == '__main__':
+    print('Hello World')
+`},
+		{
+			name:  "Python with shebang-like string mid file",
+			style: comments.FileCommentStyle("test.py"),
+			content: `def some_function():
+    print(
+        """#!/usr/bin/env python3
+        print("Hello, World!")
+        """)
+`,
+			licenseHeader: getLicenseHeader("test.py", t.Error),
+			expectedContent: `# Apache License 2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
+# Apache License 2.0
+
+def some_function():
+    print(
+        """#!/usr/bin/env python3
+        print("Hello, World!")
+        """)
+`},
+		{
+			name:  "Python with shebang and shebang-like string mid file",
+			style: comments.FileCommentStyle("test.py"),
+			content: `#!/usr/bin/env python3
+def some_function():
+    print(
+        """#!/usr/bin/env python3
+        print("Hello, World!")
+        """)
+`,
+			licenseHeader: getLicenseHeader("test.py", t.Error),
+			expectedContent: `#!/usr/bin/env python3
+# Apache License 2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
+# Apache License 2.0
+
+def some_function():
+    print(
+        """#!/usr/bin/env python3
+        print("Hello, World!")
+        """)
+`},
+		{
+			name:  "Python with column-0 shebang-like string mid file",
+			style: comments.FileCommentStyle("test.py"),
+			content: `x = """
+#!/usr/bin/env python3
+hello
+"""
+`,
+			licenseHeader: getLicenseHeader("test.py", t.Error),
+			expectedContent: `# Apache License 2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
+# Apache License 2.0
+
+x = """
+#!/usr/bin/env python3
+hello
+"""
+`},
+		{
+			name:  "Shell with column-0 shebang-like string mid file",
+			style: comments.FileCommentStyle("test.sh"),
+			content: `foo() {
+  cat <<EOF
+#!/bin/bash is just text
+EOF
+}
+`,
+			licenseHeader: getLicenseHeader("test.sh", t.Error),
+			expectedContent: `# Apache License 2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
+# Apache License 2.0
+
+foo() {
+  cat <<EOF
+#!/bin/bash is just text
+EOF
+}
+`},
+		{
+			name:  "Bash with shebang-like string mid file",
+			style: comments.FileCommentStyle("test.sh"),
+			content: `generate_script() {
+  SCRIPT='#!/bin/bash
+echo "Hello, World!"'
+  echo "$SCRIPT"
+}
+`,
+			licenseHeader: getLicenseHeader("test.sh", t.Error),
+			expectedContent: `# Apache License 2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
+# Apache License 2.0
+
+generate_script() {
+  SCRIPT='#!/bin/bash
+echo "Hello, World!"'
+  echo "$SCRIPT"
+}
+`},
+		{
+			name:  "Python with encoding mid file",
+			style: comments.FileCommentStyle("test.py"),
+			content: `x = 1
+
+# -*- coding: utf-8 -*-
+if __name__ == '__main__':
+    print('Hello World')
+`,
+			licenseHeader: getLicenseHeader("test.py", t.Error),
+			expectedContent: `# Apache License 2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
+# Apache License 2.0
+
+x = 1
+
+# -*- coding: utf-8 -*-
 if __name__ == '__main__':
     print('Hello World')
 `},
@@ -360,6 +508,106 @@ namespace test\test2;
  * This is a php docblock
  */
 namespace test\test2;
+`,
+		}, {
+			name:  "Ruby with shebang",
+			style: comments.FileCommentStyle("test.rb"),
+			content: `#!/usr/bin/env ruby
+class Example
+end
+`,
+			licenseHeader: getLicenseHeader("test.rb", t.Error),
+			expectedContent: `#!/usr/bin/env ruby
+# Apache License 2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
+# Apache License 2.0
+
+class Example
+end
+`,
+		}, {
+			name:  "Ruby with shebang-like string mid file",
+			style: comments.FileCommentStyle("test.rb"),
+			content: `class Example
+  SCRIPT = <<~RUBY
+    #!/usr/bin/env ruby
+    puts "Hello, World!"
+  RUBY
+end
+`,
+			licenseHeader: getLicenseHeader("test.rb", t.Error),
+			expectedContent: `# Apache License 2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
+# Apache License 2.0
+
+class Example
+  SCRIPT = <<~RUBY
+    #!/usr/bin/env ruby
+    puts "Hello, World!"
+  RUBY
+end
+`,
+		}, {
+			name:  "Ruby",
+			style: comments.FileCommentStyle("test.rb"),
+			content: `class Example
+end
+`,
+			licenseHeader: getLicenseHeader("test.rb", t.Error),
+			expectedContent: `# Apache License 2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
+# Apache License 2.0
+
+class Example
+end
+`,
+		}, {
+			name:  "ERB",
+			style: comments.FileCommentStyle("test.erb"),
+			content: `<html>
+  <body><%= @content %></body>
+</html>
+`,
+			licenseHeader: getLicenseHeader("test.erb", t.Error),
+			expectedContent: `<%
+# Apache License 2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
+# Apache License 2.0
+%>
+
+<html>
+  <body><%= @content %></body>
+</html>
+`,
+		}, {
+			name:  "Slim with doctype",
+			style: comments.FileCommentStyle("test.slim"),
+			content: `doctype html
+html
+  body
+`,
+			licenseHeader: getLicenseHeader("test.slim", t.Error),
+			expectedContent: `/ Apache License 2.0
+/   http://www.apache.org/licenses/LICENSE-2.0
+/ Apache License 2.0
+
+doctype html
+html
+  body
+`,
+		}, {
+			name:  "Slim",
+			style: comments.FileCommentStyle("test.slim"),
+			content: `html
+  body
+`,
+			licenseHeader: getLicenseHeader("test.slim", t.Error),
+			expectedContent: `/ Apache License 2.0
+/   http://www.apache.org/licenses/LICENSE-2.0
+/ Apache License 2.0
+
+html
+  body
 `,
 		},
 	}

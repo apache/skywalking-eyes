@@ -36,7 +36,7 @@ dependency:
   files:
     - pom.xml           # If this is a maven project.
     - Cargo.toml        # If this is a rust project.
-    - package.json      # If this is a npm project.
+    - package.json      # If this is a Node.js project (npm or pnpm).
     - go.mod            # If this is a Go project.
     - Gemfile.lock      # If this is a Ruby project (Bundler). Ensure Gemfile.lock is committed.
 ```
@@ -52,7 +52,7 @@ To check license headers in GitHub Actions, add a step in your GitHub workflow.
       # log: debug # optional: set the log level. The default value is `info`.
       # config: .licenserc.yaml # optional: set the config file. The default value is `.licenserc.yaml`.
       # token: # optional: the token that license eye uses when it needs to comment on the pull request. Set to empty ("") to disable commenting on pull request. The default value is ${{ github.token }}
-      # mode: # optional: Which mode License-Eye should be run in. Choices are `check` or `fix`. The default value is `check`.
+      # mode: # optional: Which mode License-Eye should be run in. Choices are `check`, `fix` or `diff`. The default value is `check`.
 ```
 
 #### Fix License Headers
@@ -307,6 +307,34 @@ INFO Totally checked 20 files, valid: 10, invalid: 10, ignored: 0, fixed: 10
 ```
 
 </details>
+
+#### Diff License Header
+
+This command shows where the license headers of the invalid files differ from the license configured in the config file, to help understand why `header check` fails, for example, to spot a typo in an existing license header.
+
+```bash
+license-eye -c .licenserc.yaml header diff
+```
+
+<details>
+<summary>Header Diff Result</summary>
+
+For a `test.go` whose license header has a typo `wwwhttp://www.apache.org/licenses/LICENSE-2.0` in the license URL, and a `missing.py` that doesn't have a license header at all:
+
+```
+INFO Loading configuration from file: .licenserc.yaml
+missing.py:
+	[-licensed to the asf under one or more contributor license ... the specific language governing permissions and limitations under the license.-] ...
+test.go:
+	... copy of the license at [-http://www.apache.org/licenses/license-2.0-] {+wwwhttp://www.apache.org/licenses/license-2.0+} unless required by applicable law ... and limitations under the license. ...
+INFO Totally checked 3 files, valid: 0, invalid: 2, ignored: 1, fixed: 0
+ERROR one or more files does not have a valid license header
+exit status 1
+```
+
+</details>
+
+The texts are compared in their normalized forms (comment markers stripped, whitespace flattened, case-insensitive, etc., the same forms that `header check` compares), so every difference shown is a real cause of the check failure: `[-text-]` marks text that is expected by the configured license but missing in the file, `{+text+}` marks text that is in the file but not expected by the configured license, and long runs of unchanged or missing words are collapsed into `...`.
 
 #### Resolve Dependencies' licenses
 
@@ -702,6 +730,17 @@ Example using weak-compatible mode:
 license-eye -c test/testdata/.licenserc_for_test_check.yaml dep check -w
 ```
 
+##### Node.js projects: npm and pnpm
+
+`package.json` is resolved with npm by default. A project is resolved with pnpm instead when either of the following says so, checked in the directory of the `package.json` and then in each directory above it, so that a workspace member is governed by its root:
+
+- the [`packageManager`](https://nodejs.org/api/corepack.html) field of a `package.json` names `pnpm`, or
+- a `pnpm-lock.yaml` is present.
+
+Both managers are used the same way: the packages installed for **production** are the ones checked, and each package's own `package.json` and `LICENSE` file are what the license is read from. In a pnpm workspace the whole workspace is resolved once, however many members the `files` configuration names.
+
+Whichever manager applies must be on `PATH`, and the packages must be installed — the tool offers to install them for you at the start of a run (`npm ci`, or `pnpm ci`, falling back to `pnpm install --frozen-lockfile` on pnpm 7 and older), which you can skip with `s` + ENTER if they are already in place.
+
 <details>
 <summary>Dependency Check Result</summary>
 
@@ -845,7 +884,7 @@ header:
 17. The `files` are the files that declare the dependencies of a project, typically, `go.mod` in Go project, `pom.xml` in maven project, and `package.json` in NodeJS project. If it's a relative path, it's relative to the `.licenserc.yaml`.
 18. Declare the licenses which cannot be identified by this tool.
 19. The `name` of the dependency, The name is different for different projects, `PackagePath` in Go project, `GroupID:ArtifactID` in maven project, `PackageName` in NodeJS project. You can use file pattern as described in [the doc](https://pkg.go.dev/path/filepath#Match).
-20. The `version` of the dependency, comma seperated string (such as `1.0,2.0,3.0`), if this is empty, it means all versions of the dependency.
+20. The `version` of the dependency, comma separated string (such as `1.0,2.0,3.0`), if this is empty, it means all versions of the dependency.
 21. The [SPDX ID](https://spdx.org/licenses/) of the dependency license.
 22. The minimum percentage of the file that must contain license text for identifying a license, default is `75`.
 23. The dependencies that should be excluded when analyzing the licenses, this is useful when you declare the dependencies in `pom.xml` with `compile` scope but don't distribute them in package. (Note that non-`compile` scope dependencies are automatically excluded so you don't need to put them here).
@@ -858,7 +897,7 @@ header:
 
 ## Supported File Types
 
-The `header check` command theoretically supports all kinds of file types, while the supported file types of `header fix` command can be found [in this YAML file](assets/languages.yaml). In the YAML file, if the language has a non-empty property `comment_style_id`, and the comment style id is declared in [the comment styles file](assets/styles.yaml), then the language is supported by `fix` command.
+The `header check` and `header diff` commands theoretically support all kinds of file types, while the supported file types of `header fix` command can be found [in this YAML file](assets/languages.yaml). In the YAML file, if the language has a non-empty property `comment_style_id`, and the comment style id is declared in [the comment styles file](assets/styles.yaml), then the language is supported by `fix` command.
 
 - [assets/languages.yaml](assets/languages.yaml)
 

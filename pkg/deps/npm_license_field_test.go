@@ -15,23 +15,25 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package commands
+package deps
 
-import (
-	"github.com/spf13/cobra"
-)
+import "testing"
 
-var Header = &cobra.Command{
-	Use:     "header",
-	Aliases: []string{"h"},
-	Short:   "License header related commands; e.g. check, fix, etc.",
-	Long: "`header` command walks the specified paths and checks if the specified " +
-		"files have the license header in the config file. " +
-		"Accepts files, directories, and glob patterns.",
-}
-
-func init() {
-	Header.AddCommand(CheckCommand)
-	Header.AddCommand(FixCommand)
-	Header.AddCommand(DiffCommand)
+func TestIsLicenseFileReference(t *testing.T) {
+	for _, c := range []struct {
+		value string
+		want  bool
+	}{
+		{"SEE LICENSE IN LICENSE", true},
+		{"See license in LICENSE.md", true},
+		{"  SEE LICENSE IN ./legal/terms.txt", true},
+		{"MIT", false},
+		{"Apache-2.0", false},
+		{"MIT OR Apache-2.0", false},
+		{"", false},
+	} {
+		if got := isLicenseFileReference(c.value); got != c.want {
+			t.Errorf("isLicenseFileReference(%q) = %v, want %v", c.value, got, c.want)
+		}
+	}
 }

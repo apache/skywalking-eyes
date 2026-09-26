@@ -21,7 +21,7 @@
   end: '//'
 
 - id: Hashtag
-  after: '(?m)^*#!.+$'
+  after: '(?m)\A#!.+$'
   start: '#'
   middle: '#'
   end: '#'
@@ -32,6 +32,11 @@
   middle: '  ~'
   end: '-->'
 
+- id: AngleBracketPercentHashtag
+  start: '<%'
+  middle: '#'
+  end: '%>'
+
 # tag::SlashAsterisk[]
 - id: SlashAsterisk
   start: '/*'           # <1>
@@ -41,8 +46,8 @@
 
 - id: RoundBracketAsterisk
   start: '(*'
-  middle: '(*'
-  end: '(*'
+  middle: ' *'
+  end: ' *)'
 
 - id: CurlyBracketDash
   start: '{-'
@@ -104,14 +109,19 @@
 
 - id: PythonStyle
   # (interpreter binary and encoding comment) | (only interpreter binary) | (only encoding comment)
-  after: '(?m)(^*#!.+$\n^[ \t\f]*#.*?coding[:=][ \t]*([-_.a-zA-Z0-9]+).*$)|(^*#!.+$)|(^[ \t\f]*#.*?coding[:=][ \t]*([-_.a-zA-Z0-9]+).*$)'
+  after: '(?m)(\A#!.+$\n^[ \t\f]*#.*?coding[:=][ \t]*([-_.a-zA-Z0-9]+).*$)|(\A#!.+$)|(\A[ \t\f]*#.*?coding[:=][ \t]*([-_.a-zA-Z0-9]+).*$)'
   start: '#'
   middle: '#'
   end: '#'
 
 - id: PythonDocStringStyle
   # (interpreter binary and encoding comment) | (only interpreter binary) | (only encoding comment)
-  after: '(?m)(^*#!.+$\n^[ \t\f]*#.*?coding[:=][ \t]*([-_.a-zA-Z0-9]+).*$)|(^*#!.+$)|(^[ \t\f]*#.*?coding[:=][ \t]*([-_.a-zA-Z0-9]+).*$)'
+  after: '(?m)(\A#!.+$\n^[ \t\f]*#.*?coding[:=][ \t]*([-_.a-zA-Z0-9]+).*$)|(\A#!.+$)|(\A[ \t\f]*#.*?coding[:=][ \t]*([-_.a-zA-Z0-9]+).*$)'
   start: '"""'
   middle: ~
   end: '"""'
+
+- id: Slash
+  start: '/'
+  middle: '/'
+  end: '/'

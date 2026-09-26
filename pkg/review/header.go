@@ -299,7 +299,7 @@ func GetSha() (string, error) {
 	if filepath == "" {
 		return "", fmt.Errorf("failed to get event path")
 	}
-	content, err := os.ReadFile(filepath)
+	content, err := os.ReadFile(filepath) //nolint:gosec // intentional: reading from a path from GITHUB_EVENT_PATH env var
 	if err != nil {
 		return "", err
 	}

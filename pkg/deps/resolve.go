@@ -28,6 +28,10 @@ type Resolver interface {
 
 var Resolvers = []Resolver{
 	new(GoModResolver),
+	// PnpmResolver before NpmResolver: both answer to package.json, and the
+	// first match wins, so the narrower predicate has to be offered the file
+	// first. Reordering these two silently stops pnpm projects resolving.
+	new(PnpmResolver),
 	new(NpmResolver),
 	new(MavenPomResolver),
 	new(JarResolver),

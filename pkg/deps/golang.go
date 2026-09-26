@@ -45,7 +45,7 @@ const (
 
 var (
 	goModuleDirective       = regexp.MustCompile(`(?m)^\s*module\s+\S`)
-	possibleLicenseFileName = regexp.MustCompile(`(?i)^(LICENSE|LICENCE|COPYING)(\.txt)?$`)
+	possibleLicenseFileName = regexp.MustCompile(`(?i)^(LICENSE|LICENCE|COPYING)(\.md|\.txt)?$`)
 )
 
 func (resolver *GoModResolver) CanResolve(file string) bool {

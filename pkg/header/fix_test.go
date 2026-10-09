@@ -84,6 +84,16 @@ func TestFix(t *testing.T) {
 
 `,
 		},
+		{
+			filename: "test.ps1",
+			comments: `<#
+ Apache License 2.0
+   http://www.apache.org/licenses/LICENSE-2.0
+ Apache License 2.0
+#>
+
+`,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.filename, func(t *testing.T) {
@@ -133,6 +143,42 @@ if __name__ == '__main__':
 
 if __name__ == '__main__':
     print('Hello World')
+`},
+		{
+			name:  "PowerShell with interpreter binary",
+			style: comments.FileCommentStyle("test.ps1"),
+			content: `#!/usr/bin/env pwsh
+Write-Host 'Hello World'
+`,
+			licenseHeader: getLicenseHeader("test.ps1", t.Error),
+			expectedContent: `#!/usr/bin/env pwsh
+<#
+ Apache License 2.0
+   http://www.apache.org/licenses/LICENSE-2.0
+ Apache License 2.0
+#>
+
+Write-Host 'Hello World'
+`},
+		{
+			name:  "PowerShell with shebang-like string mid file",
+			style: comments.FileCommentStyle("test.ps1"),
+			content: `function Invoke-Native {
+    $script = '#!/usr/bin/env pwsh'
+    Write-Host 'Hello World'
+}
+`,
+			licenseHeader: getLicenseHeader("test.ps1", t.Error),
+			expectedContent: `<#
+ Apache License 2.0
+   http://www.apache.org/licenses/LICENSE-2.0
+ Apache License 2.0
+#>
+
+function Invoke-Native {
+    $script = '#!/usr/bin/env pwsh'
+    Write-Host 'Hello World'
+}
 `},
 		{
 			name:  "Python with shebang-like string mid file",

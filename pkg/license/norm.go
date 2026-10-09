@@ -43,6 +43,8 @@ var (
 
 	// 6. Code Comment Indicators (https://spdx.dev/license-list/matching-guidelines.)
 	commentIndicators = []*regexp.Regexp{
+		regexp.MustCompile(`(?m)^\s*<#+`),   // <#
+		regexp.MustCompile(`(?m)^\s*#+>`),   // #>, must come before the # pattern
 		regexp.MustCompile(`(?m)^\s*#+`),    // #
 		regexp.MustCompile(`(?m)^\s*//+`),   // //
 		regexp.MustCompile(`(?m)^\s*"""+`),  // """

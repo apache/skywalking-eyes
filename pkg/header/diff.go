@@ -48,11 +48,20 @@ func DiffFile(file string, config *ConfigHeader) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if t := http.DetectContentType(bs); !strings.HasPrefix(t, "text/") {
-		return "", fmt.Errorf("not a text file: %v (%v)", file, t)
+
+	decoded, encoding, err := decodeContent(bs)
+	if err != nil {
+		return "", fmt.Errorf("failed to decode %v: %w", file, err)
+	}
+	// A BOM already implies textual content, so only files without one need
+	// the MIME sniffing.
+	if encoding == encodingRaw {
+		if t := http.DetectContentType(bs); !strings.HasPrefix(t, "text/") {
+			return "", fmt.Errorf("not a text file: %v (%v)", file, t)
+		}
 	}
 
-	content := lcs.NormalizeHeader(string(bs))
+	content := lcs.NormalizeHeader(string(decoded))
 	if satisfy(content, config, expected, config.NormalizedPattern()) {
 		return "", nil
 	}

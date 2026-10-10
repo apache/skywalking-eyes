@@ -19,7 +19,6 @@ package header
 
 import (
 	"errors"
-	"fmt"
 	"io/fs"
 	"net/http"
 	"os"
@@ -259,7 +258,11 @@ func CheckFile(file string, config *ConfigHeader, result *Result) error {
 
 	content, encoding, err := decodeContent(bs)
 	if err != nil {
-		return fmt.Errorf("failed to decode %s: %w", file, err)
+		// Report the file instead of aborting the whole check. Fixing it is
+		// rejected later by InsertComment, which leaves the file untouched.
+		logger.Log.Warnln("Failed to decode file:", file, "; error:", err)
+		result.Fail(file)
+		return nil
 	}
 	// A BOM already implies textual content, so only files without one need
 	// the MIME sniffing.

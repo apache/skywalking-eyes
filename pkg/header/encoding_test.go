@@ -129,19 +129,22 @@ func TestHeaderOperationsRejectUTF32(t *testing.T) {
 		{name: "UTF-32LE", bom: []byte{0xFF, 0xFE, 0x00, 0x00}, order: binary.LittleEndian},
 		{name: "UTF-32BE", bom: []byte{0x00, 0x00, 0xFE, 0xFF}, order: binary.BigEndian},
 	}
+	// The check reports the file as invalid without aborting the whole run,
+	// while the operations that would rewrite it fail and leave it untouched.
 	operations := []struct {
-		name string
-		run  func(string, *ConfigHeader, *Result) error
+		name    string
+		run     func(string, *ConfigHeader, *Result) error
+		wantErr bool
 	}{
 		{name: "check", run: CheckFile},
 		{name: "diff", run: func(file string, config *ConfigHeader, _ *Result) error {
 			_, err := DiffFile(file, config)
 			return err
-		}},
-		{name: "fix", run: Fix},
+		}, wantErr: true},
+		{name: "fix", run: Fix, wantErr: true},
 		{name: "insert", run: func(file string, config *ConfigHeader, result *Result) error {
 			return InsertComment(file, comments.FileCommentStyle(file), config, result)
-		}},
+		}, wantErr: true},
 	}
 
 	for _, encoding := range encodings {
@@ -164,7 +167,13 @@ func TestHeaderOperationsRejectUTF32(t *testing.T) {
 					require.NoError(t, config.Finalize())
 
 					var result Result
-					require.ErrorContains(t, operation.run(file, config, &result), "unsupported encoding: UTF-32")
+					err := operation.run(file, config, &result)
+					if operation.wantErr {
+						require.ErrorContains(t, err, "unsupported encoding: UTF-32")
+					} else {
+						require.NoError(t, err)
+						require.Equal(t, []string{file}, result.Failure)
+					}
 					require.Empty(t, result.Success)
 					require.Empty(t, result.Fixed)
 					after, err := os.ReadFile(file)

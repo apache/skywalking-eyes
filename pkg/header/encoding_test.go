@@ -184,3 +184,55 @@ func TestHeaderOperationsRejectUTF32(t *testing.T) {
 		})
 	}
 }
+
+// TestFixRejectsMalformedUTF16 ensures that fixing a UTF-16 file the decoder
+// cannot convert losslessly leaves it untouched instead of replacing the
+// malformed bytes with U+FFFD.
+func TestFixRejectsMalformedUTF16(t *testing.T) {
+	const source = "Write-Host 'Hello'\n"
+	orders := []struct {
+		name  string
+		bom   []byte
+		order binary.ByteOrder
+	}{
+		{name: "UTF-16LE", bom: []byte{0xFF, 0xFE}, order: binary.LittleEndian},
+		{name: "UTF-16BE", bom: []byte{0xFE, 0xFF}, order: binary.BigEndian},
+	}
+	malformations := []struct {
+		name string
+		tail func(binary.ByteOrder) []byte
+	}{
+		{name: "odd trailing byte", tail: func(binary.ByteOrder) []byte { return []byte{0x41} }},
+		{name: "unpaired surrogate", tail: func(order binary.ByteOrder) []byte {
+			var buf [2]byte
+			order.PutUint16(buf[:], 0xD800)
+			return append(buf[:], encodeUTF16("x\n", order, nil)...)
+		}},
+	}
+
+	for _, order := range orders {
+		for _, malformation := range malformations {
+			t.Run(order.name+" with "+malformation.name, func(t *testing.T) {
+				content := append(encodeUTF16(source, order.order, order.bom), malformation.tail(order.order)...)
+				file := filepath.Join(t.TempDir(), "test.ps1")
+				require.NoError(t, os.WriteFile(file, content, 0o600))
+				config := &ConfigHeader{
+					License: LicenseConfig{Content: "Apache License 2.0"},
+					Paths:   []string{"**"},
+				}
+				require.NoError(t, config.Finalize())
+
+				var checked Result
+				require.NoError(t, CheckFile(file, config, &checked))
+				require.Equal(t, []string{file}, checked.Failure)
+
+				var fixed Result
+				require.ErrorContains(t, Fix(file, config, &fixed), "malformed UTF-16 content")
+				require.Empty(t, fixed.Fixed)
+				after, err := os.ReadFile(file)
+				require.NoError(t, err)
+				require.Equal(t, content, after, "malformed files must remain unchanged")
+			})
+		}
+	}
+}

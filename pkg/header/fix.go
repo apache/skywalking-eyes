@@ -56,7 +56,7 @@ func InsertComment(file string, style *comments.CommentStyle, config *ConfigHead
 		return err
 	}
 
-	content, encoding, err := decodeContent(content)
+	content, encoding, err := decodeContentLossless(content)
 	if err != nil {
 		return fmt.Errorf("failed to decode %v: %w", file, err)
 	}

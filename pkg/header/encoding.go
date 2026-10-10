@@ -65,6 +65,26 @@ func decodeContent(content []byte) ([]byte, fileEncoding, error) {
 	}
 }
 
+// decodeContentLossless is decodeContent for callers that rewrite the file. The
+// UTF-16 decoder replaces malformed input, such as an odd trailing byte or an
+// unpaired surrogate, with U+FFFD instead of failing, so content that does not
+// survive a round trip is rejected to keep the original bytes intact.
+func decodeContentLossless(content []byte) ([]byte, fileEncoding, error) {
+	decoded, encoding, err := decodeContent(content)
+	if err != nil {
+		return nil, encoding, err
+	}
+	encoded, err := encodeContent(decoded, encoding)
+	if err != nil {
+		return nil, encoding, err
+	}
+	// Only UTF-16 decoding is lossy, the other encodings always round trip.
+	if !bytes.Equal(encoded, content) {
+		return nil, encoding, fmt.Errorf("malformed UTF-16 content")
+	}
+	return decoded, encoding, nil
+}
+
 func decodeWith(content []byte, order unicode.Endianness) ([]byte, error) {
 	decoded, _, err := transform.Bytes(unicode.UTF16(order, unicode.IgnoreBOM).NewDecoder(), content)
 	if err != nil {

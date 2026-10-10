@@ -1,0 +1,238 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+package header
+
+import (
+	"bytes"
+	"encoding/binary"
+	"os"
+	"path/filepath"
+	"testing"
+	"unicode/utf16"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/apache/skywalking-eyes/pkg/comments"
+)
+
+// encodeUTF16 encodes s as UTF-16 with the given byte order, prefixed with bom.
+// It is independent of the implementation under test, which uses x/text.
+func encodeUTF16(s string, order binary.ByteOrder, bom []byte) []byte {
+	units := utf16.Encode([]rune(s))
+	out := make([]byte, 0, len(bom)+len(units)*2)
+	out = append(out, bom...)
+	var buf [2]byte
+	for _, unit := range units {
+		order.PutUint16(buf[:], unit)
+		out = append(out, buf[0], buf[1])
+	}
+	return out
+}
+
+func decodeUTF16(t *testing.T, content []byte, order binary.ByteOrder) string {
+	t.Helper()
+	require.Zero(t, len(content)%2, "UTF-16 content must have an even number of bytes")
+	units := make([]uint16, len(content)/2)
+	for i := range units {
+		units[i] = order.Uint16(content[i*2:])
+	}
+	return string(utf16.Decode(units))
+}
+
+// TestFixPreservesFileEncoding ensures that fixing a BOM encoded file keeps
+// its encoding and byte-order mark, see
+// https://github.com/apache/skywalking-eyes/pull/285#issuecomment-6081296040.
+func TestFixPreservesFileEncoding(t *testing.T) {
+	const source = "#!/usr/bin/env pwsh\nWrite-Host 'Hello World'\n"
+	tests := []struct {
+		name  string
+		bom   []byte
+		order binary.ByteOrder
+	}{
+		{name: "UTF-16LE with BOM", bom: []byte{0xFF, 0xFE}, order: binary.LittleEndian},
+		{name: "UTF-16BE with BOM", bom: []byte{0xFE, 0xFF}, order: binary.BigEndian},
+		{name: "UTF-8 with BOM", bom: []byte{0xEF, 0xBB, 0xBF}},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			content := append(append([]byte{}, test.bom...), source...)
+			if test.order != nil {
+				content = encodeUTF16(source, test.order, test.bom)
+			}
+			file := filepath.Join(t.TempDir(), "test.ps1")
+			require.NoError(t, os.WriteFile(file, content, 0o600))
+
+			config := &ConfigHeader{
+				License: LicenseConfig{Content: "Apache License 2.0"},
+				Paths:   []string{"**"},
+			}
+			require.NoError(t, config.Finalize())
+
+			var before Result
+			require.NoError(t, CheckFile(file, config, &before))
+			require.True(t, before.HasFailure(), "a headerless file must not pass the check")
+
+			var fixed Result
+			require.NoError(t, Fix(file, config, &fixed))
+			require.Equal(t, []string{file}, fixed.Fixed)
+
+			after, err := os.ReadFile(file)
+			require.NoError(t, err)
+			require.True(t, bytes.HasPrefix(after, test.bom), "the BOM must stay at byte 0")
+
+			text := string(after[len(test.bom):])
+			if test.order != nil {
+				text = decodeUTF16(t, after[len(test.bom):], test.order)
+			}
+			require.Contains(t, text, "#!/usr/bin/env pwsh\n")
+			require.Contains(t, text, "<#\n Apache License 2.0\n#>\n")
+			require.Contains(t, text, "Write-Host 'Hello World'")
+
+			var checked Result
+			require.NoError(t, CheckFile(file, config, &checked))
+			require.False(t, checked.HasFailure(), "the fixed file must pass the check")
+			require.Equal(t, []string{file}, checked.Success)
+
+			// Fixing an already valid file must not change it.
+			var again Result
+			require.NoError(t, Fix(file, config, &again))
+			unchanged, err := os.ReadFile(file)
+			require.NoError(t, err)
+			require.Equal(t, after, unchanged)
+		})
+	}
+}
+
+func TestHeaderOperationsRejectUTF32(t *testing.T) {
+	const source = "Write-Host 'Hello'\n"
+	encodings := []struct {
+		name  string
+		bom   []byte
+		order binary.ByteOrder
+	}{
+		{name: "UTF-32LE", bom: []byte{0xFF, 0xFE, 0x00, 0x00}, order: binary.LittleEndian},
+		{name: "UTF-32BE", bom: []byte{0x00, 0x00, 0xFE, 0xFF}, order: binary.BigEndian},
+	}
+	// The check reports the file as invalid without aborting the whole run,
+	// while the operations that would rewrite it fail and leave it untouched.
+	operations := []struct {
+		name    string
+		run     func(string, *ConfigHeader, *Result) error
+		wantErr bool
+	}{
+		{name: "check", run: CheckFile},
+		{name: "diff", run: func(file string, config *ConfigHeader, _ *Result) error {
+			_, err := DiffFile(file, config)
+			return err
+		}, wantErr: true},
+		{name: "fix", run: Fix, wantErr: true},
+		{name: "insert", run: func(file string, config *ConfigHeader, result *Result) error {
+			return InsertComment(file, comments.FileCommentStyle(file), config, result)
+		}, wantErr: true},
+	}
+
+	for _, encoding := range encodings {
+		t.Run(encoding.name, func(t *testing.T) {
+			content := append([]byte{}, encoding.bom...)
+			var buf [4]byte
+			for _, b := range []byte(source) {
+				encoding.order.PutUint32(buf[:], uint32(b))
+				content = append(content, buf[:]...)
+			}
+
+			for _, operation := range operations {
+				t.Run(operation.name, func(t *testing.T) {
+					file := filepath.Join(t.TempDir(), "test.ps1")
+					require.NoError(t, os.WriteFile(file, content, 0o600))
+					config := &ConfigHeader{
+						License: LicenseConfig{Content: "Apache License 2.0"},
+						Paths:   []string{"**"},
+					}
+					require.NoError(t, config.Finalize())
+
+					var result Result
+					err := operation.run(file, config, &result)
+					if operation.wantErr {
+						require.ErrorContains(t, err, "unsupported encoding: UTF-32")
+					} else {
+						require.NoError(t, err)
+						require.Equal(t, []string{file}, result.Failure)
+					}
+					require.Empty(t, result.Success)
+					require.Empty(t, result.Fixed)
+					after, err := os.ReadFile(file)
+					require.NoError(t, err)
+					require.Equal(t, content, after, "unsupported files must remain unchanged")
+				})
+			}
+		})
+	}
+}
+
+// TestFixRejectsMalformedUTF16 ensures that fixing a UTF-16 file the decoder
+// cannot convert losslessly leaves it untouched instead of replacing the
+// malformed bytes with U+FFFD.
+func TestFixRejectsMalformedUTF16(t *testing.T) {
+	const source = "Write-Host 'Hello'\n"
+	orders := []struct {
+		name  string
+		bom   []byte
+		order binary.ByteOrder
+	}{
+		{name: "UTF-16LE", bom: []byte{0xFF, 0xFE}, order: binary.LittleEndian},
+		{name: "UTF-16BE", bom: []byte{0xFE, 0xFF}, order: binary.BigEndian},
+	}
+	malformations := []struct {
+		name string
+		tail func(binary.ByteOrder) []byte
+	}{
+		{name: "odd trailing byte", tail: func(binary.ByteOrder) []byte { return []byte{0x41} }},
+		{name: "unpaired surrogate", tail: func(order binary.ByteOrder) []byte {
+			var buf [2]byte
+			order.PutUint16(buf[:], 0xD800)
+			return append(buf[:], encodeUTF16("x\n", order, nil)...)
+		}},
+	}
+
+	for _, order := range orders {
+		for _, malformation := range malformations {
+			t.Run(order.name+" with "+malformation.name, func(t *testing.T) {
+				content := append(encodeUTF16(source, order.order, order.bom), malformation.tail(order.order)...)
+				file := filepath.Join(t.TempDir(), "test.ps1")
+				require.NoError(t, os.WriteFile(file, content, 0o600))
+				config := &ConfigHeader{
+					License: LicenseConfig{Content: "Apache License 2.0"},
+					Paths:   []string{"**"},
+				}
+				require.NoError(t, config.Finalize())
+
+				var checked Result
+				require.NoError(t, CheckFile(file, config, &checked))
+				require.Equal(t, []string{file}, checked.Failure)
+
+				var fixed Result
+				require.ErrorContains(t, Fix(file, config, &fixed), "malformed UTF-16 content")
+				require.Empty(t, fixed.Fixed)
+				after, err := os.ReadFile(file)
+				require.NoError(t, err)
+				require.Equal(t, content, after, "malformed files must remain unchanged")
+			})
+		}
+	}
+}

@@ -255,18 +255,31 @@ func CheckFile(file string, config *ConfigHeader, result *Result) error {
 	if err != nil {
 		return err
 	}
-	if t := http.DetectContentType(bs); !strings.HasPrefix(t, "text/") {
-		logger.Log.Debugln("Ignoring file:", file, "; type:", t)
+
+	content, encoding, err := decodeContent(bs)
+	if err != nil {
+		// Report the file instead of aborting the whole check. Fixing it is
+		// rejected later by InsertComment, which leaves the file untouched.
+		logger.Log.Warnln("Failed to decode file:", file, "; error:", err)
+		result.Fail(file)
 		return nil
 	}
+	// A BOM already implies textual content, so only files without one need
+	// the MIME sniffing.
+	if encoding == encodingRaw {
+		if t := http.DetectContentType(bs); !strings.HasPrefix(t, "text/") {
+			logger.Log.Debugln("Ignoring file:", file, "; type:", t)
+			return nil
+		}
+	}
 
-	content := lcs.NormalizeHeader(string(bs))
+	normalized := lcs.NormalizeHeader(string(content))
 	expected, pattern := config.NormalizedLicense(), config.NormalizedPattern()
 
-	if satisfy(content, config, expected, pattern) {
+	if satisfy(normalized, config, expected, pattern) {
 		result.Succeed(file)
 	} else {
-		logger.Log.Debugln("Content is:", content)
+		logger.Log.Debugln("Content is:", normalized)
 
 		result.Fail(file)
 	}

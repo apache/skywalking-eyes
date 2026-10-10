@@ -125,3 +125,9 @@
   start: '/'
   middle: '/'
   end: '/'
+
+- id: PowerShellStyle
+  after: '(?m)\A#!.+$'
+  start: '<#'
+  middle: ~
+  end: '#>'

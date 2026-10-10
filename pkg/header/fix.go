@@ -56,12 +56,22 @@ func InsertComment(file string, style *comments.CommentStyle, config *ConfigHead
 		return err
 	}
 
+	content, encoding, err := decodeContentLossless(content)
+	if err != nil {
+		return fmt.Errorf("failed to decode %v: %w", file, err)
+	}
+
 	licenseHeader, err := GenerateLicenseHeader(style, config)
 	if err != nil {
 		return err
 	}
 
 	content = rewriteContent(style, content, licenseHeader, config.LicensePattern(style))
+
+	content, err = encodeContent(content, encoding)
+	if err != nil {
+		return fmt.Errorf("failed to encode %v: %w", file, err)
+	}
 
 	if err := os.WriteFile(file, content, stat.Mode()); err != nil { //nolint:gosec // path from tool's own file scanner
 		return err

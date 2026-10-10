@@ -40,6 +40,8 @@ var (
 	utf8BOM    = []byte{0xEF, 0xBB, 0xBF}
 	utf16LEBOM = []byte{0xFF, 0xFE}
 	utf16BEBOM = []byte{0xFE, 0xFF}
+	utf32LEBOM = []byte{0xFF, 0xFE, 0x00, 0x00}
+	utf32BEBOM = []byte{0x00, 0x00, 0xFE, 0xFF}
 )
 
 // decodeContent converts the file content into UTF-8 and reports the encoding
@@ -47,6 +49,9 @@ var (
 // encoding cannot be determined reliably (e.g. UTF-16 without a BOM).
 func decodeContent(content []byte) ([]byte, fileEncoding, error) {
 	switch {
+	case bytes.HasPrefix(content, utf32LEBOM), bytes.HasPrefix(content, utf32BEBOM):
+		// The UTF-32LE BOM shares the UTF-16LE prefix, so check it first.
+		return nil, encodingRaw, fmt.Errorf("unsupported encoding: UTF-32")
 	case bytes.HasPrefix(content, utf16LEBOM):
 		decoded, err := decodeWith(content[len(utf16LEBOM):], unicode.LittleEndian)
 		return decoded, encodingUTF16LE, err

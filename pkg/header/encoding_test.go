@@ -26,6 +26,8 @@ import (
 	"unicode/utf16"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/apache/skywalking-eyes/pkg/comments"
 )
 
 // encodeUTF16 encodes s as UTF-16 with the given byte order, prefixed with bom.
@@ -113,6 +115,63 @@ func TestFixPreservesFileEncoding(t *testing.T) {
 			unchanged, err := os.ReadFile(file)
 			require.NoError(t, err)
 			require.Equal(t, after, unchanged)
+		})
+	}
+}
+
+func TestHeaderOperationsRejectUTF32(t *testing.T) {
+	const source = "Write-Host 'Hello'\n"
+	encodings := []struct {
+		name  string
+		bom   []byte
+		order binary.ByteOrder
+	}{
+		{name: "UTF-32LE", bom: []byte{0xFF, 0xFE, 0x00, 0x00}, order: binary.LittleEndian},
+		{name: "UTF-32BE", bom: []byte{0x00, 0x00, 0xFE, 0xFF}, order: binary.BigEndian},
+	}
+	operations := []struct {
+		name string
+		run  func(string, *ConfigHeader, *Result) error
+	}{
+		{name: "check", run: CheckFile},
+		{name: "diff", run: func(file string, config *ConfigHeader, _ *Result) error {
+			_, err := DiffFile(file, config)
+			return err
+		}},
+		{name: "fix", run: Fix},
+		{name: "insert", run: func(file string, config *ConfigHeader, result *Result) error {
+			return InsertComment(file, comments.FileCommentStyle(file), config, result)
+		}},
+	}
+
+	for _, encoding := range encodings {
+		t.Run(encoding.name, func(t *testing.T) {
+			content := append([]byte{}, encoding.bom...)
+			var buf [4]byte
+			for _, b := range []byte(source) {
+				encoding.order.PutUint32(buf[:], uint32(b))
+				content = append(content, buf[:]...)
+			}
+
+			for _, operation := range operations {
+				t.Run(operation.name, func(t *testing.T) {
+					file := filepath.Join(t.TempDir(), "test.ps1")
+					require.NoError(t, os.WriteFile(file, content, 0o600))
+					config := &ConfigHeader{
+						License: LicenseConfig{Content: "Apache License 2.0"},
+						Paths:   []string{"**"},
+					}
+					require.NoError(t, config.Finalize())
+
+					var result Result
+					require.ErrorContains(t, operation.run(file, config, &result), "unsupported encoding: UTF-32")
+					require.Empty(t, result.Success)
+					require.Empty(t, result.Fixed)
+					after, err := os.ReadFile(file)
+					require.NoError(t, err)
+					require.Equal(t, content, after, "unsupported files must remain unchanged")
+				})
+			}
 		})
 	}
 }

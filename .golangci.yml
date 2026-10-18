@@ -48,6 +48,10 @@ linters:
     goconst:
       min-len: 2
       min-occurrences: 2
+      # goconst 1.10 started checking composite literals by default; keep the previous scope.
+      exclude-types:
+        - Call
+        - CompositeLit
     gocritic:
       disabled-checks:
         - ifElseChain

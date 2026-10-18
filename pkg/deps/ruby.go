@@ -598,7 +598,7 @@ func getGemPaths() []string {
 }
 
 func parseGemspecInfo(path string) (gemName, gemLicense string, err error) {
-	f, err := os.Open(path)
+	f, err := os.Open(path) //nolint:gosec // read-only; path from local gemspec directory scan
 	if err != nil {
 		return "", "", err
 	}

@@ -85,7 +85,7 @@ var DepsResolveCommand = &cobra.Command{
 				return err
 			}
 			licensePath = absPath
-			if err := os.MkdirAll(filepath.Dir(outDir), 0o700); err != nil && !os.IsExist(err) {
+			if err := os.MkdirAll(filepath.Dir(licensePath), 0o700); err != nil && !os.IsExist(err) {
 				return err
 			}
 
@@ -127,7 +127,7 @@ var DepsResolveCommand = &cobra.Command{
 				pkgs[i] = s.Dependency
 			}
 			return fmt.Errorf(
-				"failed to identify the licenses of following packages (%d):\n%s",
+				"failed to identify the licenses of the following packages (%d):\n%s",
 				len(pkgs), strings.Join(pkgs, "\n"),
 			)
 		}

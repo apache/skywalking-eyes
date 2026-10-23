@@ -53,7 +53,7 @@ func ParseTemplate(f fs.FS, path string) (*template.Template, error) {
 	return template.New("summary").Funcs(sprig.TxtFuncMap()).Parse(string(tpl))
 }
 
-// GenerateSummary generate the summary content by template, license config and dependency report
+// GenerateSummary generates the summary content by template, license config and dependency report
 func GenerateSummary(tpl *template.Template, head *header.ConfigHeader, rep *Report) (string, error) {
 	var r bytes.Buffer
 	context, err := generateSummaryRenderContext(head, rep)

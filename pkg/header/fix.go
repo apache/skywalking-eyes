@@ -83,7 +83,7 @@ func InsertComment(file string, style *comments.CommentStyle, config *ConfigHead
 }
 
 func rewriteContent(style *comments.CommentStyle, content []byte, licenseHeader string, licensePattern *regexp.Regexp) []byte {
-	// Remove previous license header version to allow update it
+	// Remove previous license header version to allow updating it
 	if licensePattern != nil {
 		content = licensePattern.ReplaceAll(content, []byte(""))
 	}

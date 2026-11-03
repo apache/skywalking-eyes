@@ -13,7 +13,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/net v0.61.0
+	golang.org/x/net v0.62.0
 	golang.org/x/oauth2 v0.27.0
 	golang.org/x/sync v0.24.0
 	golang.org/x/text v0.43.0

@@ -16,6 +16,7 @@
 # under the License.
 
 github:
+  dependabot_updates: false
   description: A full-featured license tool to check and fix license headers and resolve dependencies' licenses.
   homepage: https://skywalking.apache.org/
   labels:

@@ -113,13 +113,20 @@ func initLanguageCommentStyles(languages map[string]Language) {
 	}
 }
 
+// FileCommentStyle returns the comment style for the file, or nil if none is
+// configured. When several extensions or filenames match, such as ".inc" and
+// "Makefile.inc", the longest one wins, so the result does not depend on the
+// map iteration order.
 func FileCommentStyle(filename string) *CommentStyle {
+	var matched string
+	var result *CommentStyle
 	for extension, style := range commentStyles {
-		if strings.HasSuffix(filename, extension) {
-			return &style
+		if len(extension) > len(matched) && strings.HasSuffix(filename, extension) {
+			matched = extension
+			result = &style
 		}
 	}
-	return nil
+	return result
 }
 
 func OverrideLanguageCommentStyle(languages map[string]Language) {

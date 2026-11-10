@@ -56,12 +56,20 @@ func TestCommentStyle(t *testing.T) {
 		{filename: "Test.ps1", commentStyleID: "PowerShellStyle"},
 		{filename: "Test.psm1", commentStyleID: "PowerShellStyle"},
 		{filename: "Test.psd1", commentStyleID: "PowerShellStyle"},
+		// These also end with an extension of another language (".inc",
+		// ".frag", ".spec"); the more specific filename must win.
+		{filename: "Makefile.inc", commentStyleID: "Hashtag"},
+		{filename: "src/Makefile.inc", commentStyleID: "Hashtag"},
+		{filename: "Makefile.frag", commentStyleID: "Hashtag"},
+		{filename: "buildozer.spec", commentStyleID: "Semicolon"},
 	}
 	for _, test := range tests {
 		t.Run(test.filename, func(t *testing.T) {
-			if style := FileCommentStyle(test.filename); test.commentStyleID != style.ID {
-				t.Logf("Extension = %v, Comment style = %v", test.filename, style.ID)
-				t.Fail()
+			// Map iteration order is random, so look up more than once.
+			for i := 0; i < 100; i++ {
+				if style := FileCommentStyle(test.filename); test.commentStyleID != style.ID {
+					t.Fatalf("Extension = %v, Comment style = %v, want %v", test.filename, style.ID, test.commentStyleID)
+				}
 			}
 		})
 	}

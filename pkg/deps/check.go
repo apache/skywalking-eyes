@@ -220,23 +220,56 @@ func CheckWithMatrix(mainLicenseSpdxID string, matrix *CompatibilityMatrix, repo
 }
 
 func parseLicenseExpression(s string) (operator LicenseOperator, spdxIDs []string) {
-	if ss := strings.Split(s, " AND "); len(ss) > 1 {
+	s = trimEnclosingParentheses(s)
+	split := func(sep string) []string {
+		ss := strings.Split(s, sep)
+		for i := range ss {
+			ss[i] = trimEnclosingParentheses(ss[i])
+		}
+		return ss
+	}
+	if ss := split(" AND "); len(ss) > 1 {
 		return LicenseOperatorAND, ss
 	}
-	if ss := strings.Split(s, " and "); len(ss) > 1 {
+	if ss := split(" and "); len(ss) > 1 {
 		return LicenseOperatorAND, ss
 	}
-	if ss := strings.Split(s, " OR "); len(ss) > 1 {
+	if ss := split(" OR "); len(ss) > 1 {
 		return LicenseOperatorOR, ss
 	}
-	if ss := strings.Split(s, " or "); len(ss) > 1 {
+	if ss := split(" or "); len(ss) > 1 {
 		return LicenseOperatorOR, ss
 	}
-	if ss := strings.Split(s, " WITH "); len(ss) > 1 {
+	if ss := split(" WITH "); len(ss) > 1 {
 		return LicenseOperatorWITH, ss
 	}
-	if ss := strings.Split(s, " with "); len(ss) > 1 {
+	if ss := split(" with "); len(ss) > 1 {
 		return LicenseOperatorWITH, ss
 	}
 	return LicenseOperatorNone, []string{s}
+}
+
+// trimEnclosingParentheses removes the parentheses that wrap a whole SPDX
+// license expression, such as "(MIT OR Apache-2.0)", which is the form the
+// npm documentation uses for the package.json "license" field. Parentheses
+// that only group part of the expression, as in "(MIT) OR (ISC)", are kept.
+func trimEnclosingParentheses(s string) string {
+	s = strings.TrimSpace(s)
+	for len(s) >= 2 && s[0] == '(' && s[len(s)-1] == ')' {
+		depth := 0
+		for i := 0; i < len(s)-1; i++ {
+			switch s[i] {
+			case '(':
+				depth++
+			case ')':
+				depth--
+			}
+			if depth == 0 {
+				// The opening parenthesis is closed before the end of s.
+				return s
+			}
+		}
+		s = strings.TrimSpace(s[1 : len(s)-1])
+	}
+	return s
 }

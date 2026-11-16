@@ -172,3 +172,38 @@ func TestCheckWithMatrix(t *testing.T) {
 		t.Errorf("Shouldn't return error")
 	}
 }
+
+func TestCheckWithMatrixParenthesizedExpression(t *testing.T) {
+	tests := []struct {
+		license string
+		wantErr bool
+	}{
+		{"(Apache-2.0)", false},
+		{"(Apache-2.0 OR GPL-3.0)", false},
+		{"(ISC) OR (GPL-3.0)", false},
+		{"( BSD-2-Clause AND ISC )", false},
+		{"((BSD-3-Clause))", false},
+		{"(GPL-2.0-only OR GPL-3.0)", true},
+		{"(LGPL-2.1-only AND BSD-2-Clause)", true},
+		{"(BSD-2-Clause) AND (LGPL-2.1-only)", true},
+		{"(GPL-2.0-or-later WITH Bison-exception-2.2)", true},
+	}
+	for _, test := range tests {
+		t.Run(test.license, func(t *testing.T) {
+			err := deps.CheckWithMatrix("Apache-2.0", &TestMatrix, &deps.Report{
+				Resolved: []*deps.Result{
+					{
+						Dependency:    "Foo",
+						LicenseSpdxID: test.license,
+					},
+				},
+			}, false)
+			if test.wantErr && err == nil {
+				t.Errorf("license %q should be reported", test.license)
+			}
+			if !test.wantErr && err != nil {
+				t.Errorf("license %q should not be reported, got: %v", test.license, err)
+			}
+		})
+	}
+}

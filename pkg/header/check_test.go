@@ -386,9 +386,14 @@ func TestSplitExplicitFilesRejectsPathsGitWouldNotList(t *testing.T) {
 	require.Equal(t, []string{"tracked.go", "sub/inner.go"}, files)
 	require.Empty(t, rest)
 
-	// A nested repository, whose files Git-based discovery does not list.
+	// A nested repository and an uninitialized submodule, whose files Git-based
+	// discovery does not list.
 	require.NoError(t, os.MkdirAll(filepath.Join("nested", ".git"), 0o755))
 	require.NoError(t, os.WriteFile(filepath.Join("nested", "n.go"), []byte("package n"), 0o600))
+	require.NoError(t, os.WriteFile(".gitmodules",
+		[]byte("[submodule \"lib\"]\n\tpath = third_party/lib\n\turl = https://example.com/lib.git\n"), 0o600))
+	require.NoError(t, os.MkdirAll(filepath.Join("third_party", "lib"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join("third_party", "lib", "lib.go"), []byte("package lib"), 0o600))
 
 	tests := []struct {
 		name  string
@@ -399,6 +404,7 @@ func TestSplitExplicitFilesRejectsPathsGitWouldNotList(t *testing.T) {
 		{name: "other spelling of an existing file", paths: []string{"TRACKED.go"}},
 		{name: "other spelling of a parent directory", paths: []string{"SUB/inner.go"}},
 		{name: "file inside a nested repository", paths: []string{"nested/n.go"}},
+		{name: "file inside an uninitialized submodule", paths: []string{"third_party/lib/lib.go"}},
 		{name: "missing file", paths: []string{"missing.go"}},
 		{name: "directory", paths: []string{"sub"}},
 		{name: "glob", paths: []string{"*.go"}},
@@ -407,10 +413,14 @@ func TestSplitExplicitFilesRejectsPathsGitWouldNotList(t *testing.T) {
 	outside := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(outside, "x.go"), []byte("package x"), 0o600))
 	if err := os.Symlink(outside, "link"); err == nil {
-		tests = append(tests, struct {
+		require.NoError(t, os.Symlink(filepath.Join(outside, "x.go"), "leaf.go"))
+		tests = append(tests, []struct {
 			name  string
 			paths []string
-		}{name: "file below a symlinked directory", paths: []string{"link/x.go"}})
+		}{
+			{name: "file below a symlinked directory", paths: []string{"link/x.go"}},
+			{name: "symlink to a file", paths: []string{"leaf.go"}},
+		}...)
 	} else {
 		t.Logf("skipping symlinked directory case: %v", err)
 	}
@@ -422,6 +432,16 @@ func TestSplitExplicitFilesRejectsPathsGitWouldNotList(t *testing.T) {
 			require.Equal(t, tt.paths, rest)
 		})
 	}
+}
+
+func TestListFilesInBareRepository(t *testing.T) {
+	t.Chdir(t.TempDir())
+
+	_, err := git.PlainInit(".", true)
+	require.NoError(t, err)
+
+	_, err = listFiles(&ConfigHeader{Paths: []string{"HEAD"}})
+	require.ErrorIs(t, err, git.ErrIsBareRepository)
 }
 
 func TestIsLiteralLocalPath(t *testing.T) {

@@ -34,6 +34,7 @@ import (
 	"github.com/bmatcuk/doublestar/v2"
 	"github.com/go-git/go-billy/v5/osfs"
 	"github.com/go-git/go-git/v5"
+	gitconfig "github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -93,6 +94,11 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 			fileList = append(fileList, files...)
 		}
 	} else {
+		t, err := repo.Worktree()
+		if err != nil {
+			return nil, err
+		}
+
 		// Paths that name existing files directly, e.g. the changed files a
 		// pre-commit hook passes on the command line, need no discovery. Git-based
 		// discovery scans the whole worktree and HEAD tree, which is slow in large
@@ -106,7 +112,6 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 
 		var candidates []string
 
-		t, _ := repo.Worktree()
 		if t.Excludes == nil {
 			t.Excludes = make([]gitignore.Pattern, 0)
 		}
@@ -175,10 +180,16 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 // that Git-based discovery could return under the same spelling (see
 // isDiscoverableFile). Duplicate files are dropped.
 func splitExplicitFiles(paths []string) (files, rest []string) {
+	submodules, err := submodulePaths()
+	if err != nil {
+		logger.Log.Debugln("Failed to read .gitmodules, using Git-based discovery for all paths:", err)
+		return nil, paths
+	}
+
 	seen := make(map[string]bool, len(paths))
 	dirs := make(map[string]*dirListing)
 	for _, p := range paths {
-		if !isLiteralLocalPath(p) || !isDiscoverableFile(p, dirs) {
+		if !isLiteralLocalPath(p) || inSubmodule(p, submodules) || !isDiscoverableFile(p, dirs) {
 			rest = append(rest, p)
 			continue
 		}
@@ -188,6 +199,39 @@ func splitExplicitFiles(paths []string) (files, rest []string) {
 		}
 	}
 	return files, rest
+}
+
+// submodulePaths returns the submodule paths declared in .gitmodules. Git-based
+// discovery skips files in submodules, including uninitialized ones, which have
+// no .git entry of their own.
+func submodulePaths() ([]string, error) {
+	data, err := os.ReadFile(".gitmodules")
+	if os.IsNotExist(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	modules := gitconfig.NewModules()
+	if err := modules.Unmarshal(data); err != nil {
+		return nil, err
+	}
+	paths := make([]string, 0, len(modules.Submodules))
+	for _, m := range modules.Submodules {
+		if p := strings.TrimSuffix(m.Path, "/"); p != "" {
+			paths = append(paths, p)
+		}
+	}
+	return paths, nil
+}
+
+func inSubmodule(p string, submodules []string) bool {
+	for _, s := range submodules {
+		if p == s || strings.HasPrefix(p, s+"/") {
+			return true
+		}
+	}
+	return false
 }
 
 // dirListing is the cached content of one directory.
@@ -219,8 +263,9 @@ func listDir(dir string, dirs map[string]*dirListing) (*dirListing, error) {
 // filesystems also accept other spellings, which paths-ignore would not match.
 // Every parent must be a real directory: not a symlink, which could lead outside
 // the repository, and not .git or a directory holding its own .git (a submodule
-// or nested repository). As in Git-based discovery, the file itself may be a
-// symlink to a regular file. dirs caches directory listings across calls.
+// or nested repository). The file itself must be a regular file, not a symlink,
+// whose target could also be outside the repository; Git-based discovery decides
+// about symlinks as before. dirs caches directory listings across calls.
 func isDiscoverableFile(p string, dirs map[string]*dirListing) bool {
 	parts := strings.Split(p, "/")
 	dir := "."
@@ -233,14 +278,19 @@ func isDiscoverableFile(p string, dirs map[string]*dirListing) bool {
 			return false
 		}
 		mode, ok := l.entries[name]
-		if !ok || (i < len(parts)-1 && !mode.IsDir()) {
+		if !ok {
+			return false
+		}
+		if i == len(parts)-1 {
+			return mode.IsRegular()
+		}
+		if !mode.IsDir() {
 			return false
 		}
 		dir = filepath.Join(dir, name)
 	}
 
-	stat, err := os.Stat(p)
-	return err == nil && stat.Mode().IsRegular()
+	return false
 }
 
 // isLiteralLocalPath reports whether p is a relative path inside the current

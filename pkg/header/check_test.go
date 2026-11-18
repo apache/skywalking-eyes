@@ -274,6 +274,207 @@ func TestListFilesWithWorktreeDetachedHEAD(t *testing.T) {
 	}
 }
 
+// initRepoWithFiles creates a Git repository in the current directory and
+// commits the given files to it.
+func initRepoWithFiles(t *testing.T, files map[string]string) {
+	t.Helper()
+
+	repo, err := git.PlainInit(".", false)
+	require.NoError(t, err)
+	worktree, err := repo.Worktree()
+	require.NoError(t, err)
+
+	for name, content := range files {
+		require.NoError(t, os.MkdirAll(filepath.Dir(name), 0o755))
+		require.NoError(t, os.WriteFile(name, []byte(content), 0o600))
+		_, err = worktree.Add(name)
+		require.NoError(t, err)
+	}
+
+	_, err = worktree.Commit("Initial commit", &git.CommitOptions{
+		Author: &object.Signature{Name: "Test User", Email: "test@example.com"},
+	})
+	require.NoError(t, err)
+}
+
+func TestListFilesWithExplicitFiles(t *testing.T) {
+	t.Chdir(t.TempDir())
+
+	initRepoWithFiles(t, map[string]string{
+		"tracked.go":   "package main",
+		"sub/inner.go": "package sub",
+		".gitignore":   "ignored.go\n",
+	})
+	require.NoError(t, os.WriteFile("untracked.go", []byte("package main"), 0o600))
+	require.NoError(t, os.WriteFile("ignored.go", []byte("package main"), 0o600))
+
+	tests := []struct {
+		name  string
+		paths []string
+		want  []string
+	}{
+		{
+			name:  "existing files are returned as given, deduplicated",
+			paths: []string{"tracked.go", "sub/inner.go", "untracked.go", "tracked.go"},
+			want:  []string{"tracked.go", "sub/inner.go", "untracked.go"},
+		},
+		{
+			name:  "explicitly named gitignored file is returned",
+			paths: []string{"ignored.go"},
+			want:  []string{"ignored.go"},
+		},
+		{
+			name:  "explicitly named file is kept when another path needs discovery",
+			paths: []string{"ignored.go", "missing.go"},
+			want:  []string{"ignored.go"},
+		},
+		{
+			name:  "explicit files and directories are combined without duplicates",
+			paths: []string{"ignored.go", "sub/inner.go", "sub/"},
+			want:  []string{"ignored.go", "sub/inner.go"},
+		},
+		{
+			name:  "directory goes through git discovery",
+			paths: []string{"sub/"},
+			want:  []string{"sub/inner.go"},
+		},
+		{
+			name:  "glob goes through git discovery and respects gitignore",
+			paths: []string{"*.go"},
+			want:  []string{"tracked.go", "untracked.go"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			files, err := listFiles(&ConfigHeader{Paths: tt.paths})
+			require.NoError(t, err)
+			require.ElementsMatch(t, tt.want, files)
+		})
+	}
+}
+
+func TestListFilesWithExplicitFilesSkipsGitDiscovery(t *testing.T) {
+	t.Chdir(t.TempDir())
+
+	initRepoWithFiles(t, map[string]string{
+		"a.go": "package a",
+		"b.go": "package b",
+	})
+
+	// Delete b.go's blob so that walking the HEAD tree fails.
+	blob := plumbing.ComputeHash(plumbing.BlobObject, []byte("package b")).String()
+	require.NoError(t, os.Remove(filepath.Join(".git", "objects", blob[:2], blob[2:])))
+
+	_, err := listFiles(&ConfigHeader{Paths: []string{"**/*.go"}})
+	require.Error(t, err, "git discovery should fail on the broken repository")
+
+	files, err := listFiles(&ConfigHeader{Paths: []string{"a.go"}})
+	require.NoError(t, err)
+	require.Equal(t, []string{"a.go"}, files)
+}
+
+func TestSplitExplicitFilesRejectsPathsGitWouldNotList(t *testing.T) {
+	t.Chdir(t.TempDir())
+
+	initRepoWithFiles(t, map[string]string{
+		"tracked.go":   "package main",
+		"sub/inner.go": "package sub",
+	})
+
+	files, rest := splitExplicitFiles([]string{"tracked.go", "sub/inner.go", "tracked.go"})
+	require.Equal(t, []string{"tracked.go", "sub/inner.go"}, files)
+	require.Empty(t, rest)
+
+	// A nested repository and an uninitialized submodule, whose files Git-based
+	// discovery does not list.
+	require.NoError(t, os.MkdirAll(filepath.Join("nested", ".git"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join("nested", "n.go"), []byte("package n"), 0o600))
+	require.NoError(t, os.WriteFile(".gitmodules",
+		[]byte("[submodule \"lib\"]\n\tpath = third_party/lib\n\turl = https://example.com/lib.git\n"), 0o600))
+	require.NoError(t, os.MkdirAll(filepath.Join("third_party", "lib"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join("third_party", "lib", "lib.go"), []byte("package lib"), 0o600))
+
+	tests := []struct {
+		name  string
+		paths []string
+	}{
+		{name: "git metadata", paths: []string{".git/HEAD"}},
+		{name: "git metadata spelled in another case", paths: []string{".GIT/HEAD"}},
+		{name: "other spelling of an existing file", paths: []string{"TRACKED.go"}},
+		{name: "other spelling of a parent directory", paths: []string{"SUB/inner.go"}},
+		{name: "file inside a nested repository", paths: []string{"nested/n.go"}},
+		{name: "file inside an uninitialized submodule", paths: []string{"third_party/lib/lib.go"}},
+		{name: "missing file", paths: []string{"missing.go"}},
+		{name: "directory", paths: []string{"sub"}},
+		{name: "glob", paths: []string{"*.go"}},
+	}
+
+	outside := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(outside, "x.go"), []byte("package x"), 0o600))
+	if err := os.Symlink(outside, "link"); err == nil {
+		require.NoError(t, os.Symlink(filepath.Join(outside, "x.go"), "leaf.go"))
+		tests = append(tests, []struct {
+			name  string
+			paths []string
+		}{
+			{name: "file below a symlinked directory", paths: []string{"link/x.go"}},
+			{name: "symlink to a file", paths: []string{"leaf.go"}},
+		}...)
+	} else {
+		t.Logf("skipping symlinked directory case: %v", err)
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			files, rest := splitExplicitFiles(append([]string{"tracked.go"}, tt.paths...))
+			require.Equal(t, []string{"tracked.go"}, files)
+			require.Equal(t, tt.paths, rest)
+		})
+	}
+}
+
+func TestListFilesInBareRepository(t *testing.T) {
+	t.Chdir(t.TempDir())
+
+	_, err := git.PlainInit(".", true)
+	require.NoError(t, err)
+
+	_, err = listFiles(&ConfigHeader{Paths: []string{"HEAD"}})
+	require.ErrorIs(t, err, git.ErrIsBareRepository)
+}
+
+func TestIsLiteralLocalPath(t *testing.T) {
+	tests := []struct {
+		path string
+		want bool
+	}{
+		{"a.go", true},
+		{"sub/inner.go", true},
+		{".github/workflows/ci.yaml", true},
+		{"", false},
+		{".", true}, // literal, but listFiles still falls back because it is a directory
+		{"./a.go", false},
+		{"sub//inner.go", false},
+		{"sub/./inner.go", false},
+		{"sub/../a.go", false},
+		{"../a.go", false},
+		{"/abs/a.go", false},
+		{"sub/", false},
+		{"*.go", false},
+		{"a?.go", false},
+		{"[ab].go", false},
+		{"{a,b}.go", false},
+		{`sub\inner.go`, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.path, func(t *testing.T) {
+			require.Equal(t, tt.want, isLiteralLocalPath(tt.path))
+		})
+	}
+}
+
 func TestMatchPaths(t *testing.T) {
 	tests := []struct {
 		name     string

@@ -45,7 +45,12 @@ const currentDir = "./"
 
 // Check checks the license headers of the files that the config's paths cover.
 func Check(config *ConfigHeader, result *Result) error {
-	return checkFiles(config.Paths, func(file string) error {
+	files, err := listFiles(config.Paths)
+	if err != nil {
+		return err
+	}
+
+	return checkEach(files, func(file string) error {
 		return CheckFile(file, config, result)
 	})
 }
@@ -53,33 +58,82 @@ func Check(config *ConfigHeader, result *Result) error {
 // CheckPaths checks the license headers of the files found under the given paths
 // (files, directories, or glob patterns) instead of the config's paths, e.g. the
 // paths passed on the command line. The given paths only select the files: a
-// selected file is checked only if the config's paths cover it and its
-// paths-ignore does not exclude it, and is counted as ignored otherwise. So with
-// multiple header configs, each file is checked only against the headers whose
-// paths cover it, the same as without the given paths.
+// selected file is checked only if Check checks it too, and is counted as
+// ignored otherwise. So with multiple header configs, each file is checked only
+// against the headers whose paths cover it.
 func CheckPaths(config *ConfigHeader, paths []string, result *Result) error {
-	_, err := git.PlainOpen(currentDir)
-	inGit := err == nil
-
-	return checkFiles(paths, func(file string) error {
-		if yes, err := config.shouldIgnoreSelected(file, paths, inGit); yes || err != nil {
-			result.Ignore(file)
-			return err
-		}
-		return checkContent(file, config, result)
-	})
-}
-
-func checkFiles(paths []string, check func(file string) error) error {
-	fileList, err := listFiles(paths)
+	files, err := listFiles(paths)
 	if err != nil {
 		return err
 	}
 
+	covered, err := coverage(config)
+	if err != nil {
+		return err
+	}
+
+	return checkEach(files, func(file string) error {
+		// Match the file against the given paths the same way that CheckFile
+		// matches it against the config's paths, e.g. to drop the files inside
+		// the directories that a glob matches outside a Git repository.
+		if selected, err := tryMatchPatten(file, paths); !selected || err != nil {
+			result.Ignore(file)
+			return err
+		}
+
+		name, ok := covered(file)
+		if !ok {
+			result.Ignore(file)
+			return nil
+		}
+
+		return CheckFile(name, config, result)
+	})
+}
+
+// coverage returns a function that reports whether Check finds the file from
+// the config's paths, and by which name.
+func coverage(config *ConfigHeader) (func(file string) (name string, ok bool), error) {
+	if _, err := git.PlainOpen(currentDir); err == nil {
+		// In a Git repository, both find the files by their paths relative to the
+		// repository root. Listing all the files that the config's paths cover is
+		// slow in large repositories, see listFiles, so match each file the way
+		// that listFiles does instead.
+		return func(file string) (string, bool) {
+			return file, MatchPaths(file, config.Paths)
+		}, nil
+	}
+
+	// Outside a Git repository, list the files that the config's paths cover,
+	// and find each file among them by its absolute path, since the given paths
+	// can spell a file differently, e.g. as an absolute path.
+	files, err := listFiles(config.Paths)
+	if err != nil {
+		return nil, err
+	}
+
+	names := make(map[string]string, len(files))
+	for _, file := range files {
+		if abs, err := filepath.Abs(file); err == nil {
+			names[abs] = file
+		}
+	}
+
+	return func(file string) (string, bool) {
+		abs, err := filepath.Abs(file)
+		if err != nil {
+			return "", false
+		}
+		name, ok := names[abs]
+		return name, ok
+	}, nil
+}
+
+func checkEach(files []string, check func(file string) error) error {
 	g := new(errgroup.Group)
 	g.SetLimit(runtime.GOMAXPROCS(0))
 
-	for _, file := range fileList {
+	for _, file := range files {
 		f := file
 		g.Go(func() error {
 			return check(f)
@@ -419,12 +473,6 @@ func CheckFile(file string, config *ConfigHeader, result *Result) error {
 		return err
 	}
 
-	return checkContent(file, config, result)
-}
-
-// checkContent checks whether the file contains the configured license header,
-// without checking whether the config's paths cover the file.
-func checkContent(file string, config *ConfigHeader, result *Result) error {
 	logger.Log.Debugln("Checking file:", file)
 
 	bs, err := os.ReadFile(file)

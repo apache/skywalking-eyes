@@ -662,12 +662,10 @@ func TestCheckPathsSelection(t *testing.T) {
 		require.Equal(t, native("src/nested/b.go"), result.Ignored)
 	})
 
-	t.Run("an absolute path is matched relative to the current directory", func(t *testing.T) {
-		if runtime.GOOS == "windows" {
-			t.Skip("doublestar takes the backslashes in Windows paths given as patterns as escapes")
-		}
+	t.Run("a file is checked by the name that the config's paths find it by", func(t *testing.T) {
 		// The parent directories of the current directory must not matter.
 		t.Chdir(t.TempDir())
+		writeFiles("shared/s.go")
 		require.NoError(t, os.MkdirAll(filepath.Join("vendor", "project"), 0o755))
 		t.Chdir(filepath.Join("vendor", "project")) // not a Git repository
 		writeFiles("src/a.go", "src/gen/b.go", "other/c.go")
@@ -678,47 +676,61 @@ func TestCheckPathsSelection(t *testing.T) {
 		h := newHeader([]string{"src/**"}, []string{"src/gen/**"})
 		var result Result
 		require.NoError(t, CheckPaths(h, []string{a, b, c}, &result))
-		require.Equal(t, []string{a}, result.Failure)
-		require.ElementsMatch(t, []string{b, c}, result.Ignored)
+		require.Equal(t, native("src/a.go"), result.Failure)
+		require.ElementsMatch(t, append(native("src/gen/b.go"), c), result.Ignored) // b by paths-ignore
+
+		// A fixed file is fixed by that name too.
+		for _, file := range result.Failure {
+			require.NoError(t, Fix(file, h, &result))
+		}
+		require.Equal(t, native("src/a.go"), result.Fixed)
 
 		result = Result{}
 		require.NoError(t, CheckPaths(newHeader([]string{"**/vendor/**"}, nil), []string{a}, &result))
 		require.Equal(t, []string{a}, result.Ignored)
 
-		// An absolute path in the config covers a relative path given on the command line.
 		result = Result{}
-		require.NoError(t, CheckPaths(newHeader([]string{wd + "/src/**"}, nil), []string{"src/a.go"}, &result))
-		require.Equal(t, []string{"src/a.go"}, result.Failure)
+		require.NoError(t, CheckPaths(newHeader([]string{"../../shared/**"}, nil), []string{filepath.Join(wd, "..", "..", "shared", "s.go")}, &result))
+		require.Equal(t, native("../../shared/s.go"), result.Failure)
+	})
 
-		// The file is fixed by the name it was given by.
-		result = Result{}
-		require.NoError(t, CheckPaths(h, []string{a}, &result))
-		require.NoError(t, Fix(a, h, &result))
-		require.Equal(t, []string{a}, result.Fixed)
-		result = Result{}
-		require.NoError(t, CheckPaths(h, []string{a}, &result))
-		require.Equal(t, []string{a}, result.Success)
+	t.Run("a directory path does not cover the files behind a symlinked directory", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("creating symlinks needs extra privileges on Windows")
+		}
+		t.Chdir(t.TempDir()) // not a Git repository
+		writeFiles("src/a.go", "other/b.go")
+		require.NoError(t, os.Symlink(filepath.Join("..", "other"), filepath.Join("src", "link")))
+
+		var result Result
+		require.NoError(t, CheckPaths(newHeader([]string{"src"}, nil), []string{"src/a.go", "src/link/b.go"}, &result))
+		require.Equal(t, []string{"src/a.go"}, result.Failure)
+		require.Equal(t, []string{"src/link/b.go"}, result.Ignored)
 	})
 
 	t.Run("a malformed glob is reported", func(t *testing.T) {
 		t.Chdir(t.TempDir())
-		initRepoWithFiles(t, map[string]string{"main.go": "package main\n"})
+		initRepoWithFiles(t, map[string]string{"main.go": "// Licensed under license A.\npackage main\n"})
 
 		var result Result
 		require.ErrorIs(t, CheckPaths(newHeader(nil, nil), []string{"[ab.go", "main.go"}, &result), doublestar.ErrBadPattern)
+
+		result = Result{}
+		require.ErrorIs(t, CheckPaths(newHeader([]string{"[ab.go", "main.go"}, nil), []string{"main.go"}, &result), doublestar.ErrBadPattern)
 	})
 }
 
 // TestCheckPathsMatchesCheck checks that a header checks the same files when
 // they are given as paths as when they are found from the config's paths.
 func TestCheckPathsMatchesCheck(t *testing.T) {
-	files := []string{"main.go", "src/a.go", "src/nested/b.go", "src/gen/c.go", "sub/main.go", "other/d.go"}
+	files := []string{"main.go", "src/a.go", "src/nested/b.go", "src/nested/main.go", "src/gen/c.go", "sub/main.go", "other/d.go"}
 	configs := []struct{ paths, pathsIgnore []string }{
 		{paths: []string{"**"}},
 		{paths: []string{"src"}},
 		{paths: []string{"src/"}},
 		{paths: []string{"src/**"}, pathsIgnore: []string{"src/gen/**"}},
 		{paths: []string{"src/*"}},
+		{paths: []string{"src/*", "main.go"}},
 		{paths: []string{"main.go"}},
 		{paths: []string{"**/main.go"}},
 		{paths: []string{"**/*.go"}, pathsIgnore: []string{"main.go"}},

@@ -20,7 +20,6 @@ package header
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -128,88 +127,6 @@ func (config *ConfigHeader) ShouldIgnore(path string) (bool, error) {
 	}
 
 	return false, nil
-}
-
-// shouldIgnoreSelected is ShouldIgnore for a file found under the given paths
-// instead of the config's paths, see CheckPaths. The file must match the given
-// paths, the same way ShouldIgnore matches it against the config's paths. It
-// must also be a file that a run without the given paths checks: one that the
-// config's paths cover (see covers) and its paths-ignore does not exclude.
-func (config *ConfigHeader) shouldIgnoreSelected(file string, paths []string, inGit bool) (bool, error) {
-	if selected, err := tryMatchPatten(filepath.ToSlash(file), paths); !selected || err != nil {
-		return !selected, err
-	}
-
-	if covered, err := config.covers(file, inGit); !covered || err != nil {
-		return !covered, err
-	}
-
-	for _, pattern := range config.PathsIgnore {
-		if ignored, err := tryMatchPatten(nameFor(file, pattern, inGit), []string{pattern}); ignored || err != nil {
-			return ignored, err
-		}
-	}
-
-	return false, nil
-}
-
-// covers reports whether a run without command-line paths finds the file from
-// the config's paths:
-//   - In a Git repository, a path covers the files that it matches as a glob,
-//     and the files inside it if it ends with "/", see MatchPaths.
-//   - Otherwise, a path covers the files that it matches as a glob, and the
-//     files inside the directory that it names.
-//
-// Unlike in ShouldIgnore, a path does not cover the files elsewhere that only
-// share its base name, e.g. `main.go` does not cover `sub/main.go`.
-func (config *ConfigHeader) covers(file string, inGit bool) (bool, error) {
-	if inGit {
-		return MatchPaths(file, config.Paths), nil
-	}
-
-	for _, pattern := range config.Paths {
-		name := nameFor(file, pattern, inGit)
-		if m, err := doublestar.Match(pattern, name); m || err != nil {
-			return m, err
-		}
-		if dir := strings.TrimRight(pattern, "/"); dir != "" && strings.HasPrefix(name, dir+"/") {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-// nameFor returns the name of the file to match against a pattern from the
-// config. In a Git repository, the files are found by their paths relative to
-// the repository root, which is the current directory, the same as in a run
-// without command-line paths. Otherwise, a file given on the command line can
-// be spelled differently than discovery from the config spells it, e.g. as an
-// absolute path, so the name is the file's clean, slash-separated path that is
-// absolute if the pattern is, and relative to the current directory otherwise,
-// unless the file is outside the current directory.
-func nameFor(file, pattern string, inGit bool) string {
-	if inGit {
-		return file
-	}
-
-	abs, err := filepath.Abs(file)
-	if err != nil {
-		return filepath.ToSlash(file)
-	}
-	if strings.HasPrefix(pattern, "/") || filepath.IsAbs(pattern) {
-		return filepath.ToSlash(abs)
-	}
-
-	wd, err := os.Getwd()
-	if err != nil {
-		return filepath.ToSlash(abs)
-	}
-	rel, err := filepath.Rel(wd, abs)
-	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
-		return filepath.ToSlash(abs)
-	}
-	return filepath.ToSlash(rel)
 }
 
 func tryMatchPatten(path string, patterns []string) (bool, error) {

@@ -20,9 +20,11 @@ package header
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
+	"github.com/bmatcuk/doublestar/v2"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -140,7 +142,7 @@ func TestListFilesWithEmptyRepo(t *testing.T) {
 	}
 
 	// This should not panic even with empty repository
-	fileList, err := listFiles(config)
+	fileList, err := listFiles(config.Paths)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -210,7 +212,7 @@ func TestListFilesWithWorktreeDetachedHEAD(t *testing.T) {
 		Paths: []string{"**/*.go"},
 	}
 
-	fileList, err := listFiles(config)
+	fileList, err := listFiles(config.Paths)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -231,7 +233,7 @@ func TestListFilesWithWorktreeDetachedHEAD(t *testing.T) {
 	}
 
 	// This should not panic even with problematic git state
-	fileList2, err := listFiles(config)
+	fileList2, err := listFiles(config.Paths)
 	if err != nil {
 		// It's okay if there's an error, we just don't want a panic
 		t.Logf("Got expected error: %v", err)
@@ -264,7 +266,7 @@ func TestListFilesWithWorktreeDetachedHEAD(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fileList3, err := listFiles(config)
+	fileList3, err := listFiles(config.Paths)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -347,7 +349,7 @@ func TestListFilesWithExplicitFiles(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			files, err := listFiles(&ConfigHeader{Paths: tt.paths})
+			files, err := listFiles(tt.paths)
 			require.NoError(t, err)
 			require.ElementsMatch(t, tt.want, files)
 		})
@@ -366,10 +368,10 @@ func TestListFilesWithExplicitFilesSkipsGitDiscovery(t *testing.T) {
 	blob := plumbing.ComputeHash(plumbing.BlobObject, []byte("package b")).String()
 	require.NoError(t, os.Remove(filepath.Join(".git", "objects", blob[:2], blob[2:])))
 
-	_, err := listFiles(&ConfigHeader{Paths: []string{"**/*.go"}})
+	_, err := listFiles([]string{"**/*.go"})
 	require.Error(t, err, "git discovery should fail on the broken repository")
 
-	files, err := listFiles(&ConfigHeader{Paths: []string{"a.go"}})
+	files, err := listFiles([]string{"a.go"})
 	require.NoError(t, err)
 	require.Equal(t, []string{"a.go"}, files)
 }
@@ -440,7 +442,7 @@ func TestListFilesInBareRepository(t *testing.T) {
 	_, err := git.PlainInit(".", true)
 	require.NoError(t, err)
 
-	_, err = listFiles(&ConfigHeader{Paths: []string{"HEAD"}})
+	_, err = listFiles([]string{"HEAD"})
 	require.ErrorIs(t, err, git.ErrIsBareRepository)
 }
 
@@ -543,6 +545,278 @@ func TestMatchPaths(t *testing.T) {
 					result,
 					tt.expected,
 				)
+			}
+		})
+	}
+}
+
+func TestCheckPathsWithMultipleHeaders(t *testing.T) {
+	t.Chdir(t.TempDir())
+
+	initRepoWithFiles(t, map[string]string{
+		"a/x.go": "package a\n",
+		"b/y.go": "package b\n",
+	})
+
+	headerA := &ConfigHeader{License: LicenseConfig{Content: "Licensed under license A."}, Paths: []string{"a/**"}}
+	headerB := &ConfigHeader{License: LicenseConfig{Content: "Licensed under license B."}, Paths: []string{"b/**"}}
+	for _, h := range []*ConfigHeader{headerA, headerB} {
+		require.NoError(t, h.Finalize())
+	}
+
+	for _, paths := range [][]string{
+		{"a/x.go", "b/y.go"}, // explicit files, as a pre-commit hook passes them
+		{"**/*.go"},          // a glob that goes through Git-based discovery
+	} {
+		t.Run(strings.Join(paths, ","), func(t *testing.T) {
+			var resultA, resultB Result
+			require.NoError(t, CheckPaths(headerA, paths, &resultA))
+			require.NoError(t, CheckPaths(headerB, paths, &resultB))
+
+			require.Equal(t, []string{"a/x.go"}, resultA.Failure)
+			require.Equal(t, []string{"b/y.go"}, resultA.Ignored)
+			require.Equal(t, []string{"b/y.go"}, resultB.Failure)
+			require.Equal(t, []string{"a/x.go"}, resultB.Ignored)
+		})
+	}
+
+	// Fixing the files given as paths inserts only the header that covers each file.
+	paths := []string{"a/x.go", "b/y.go"}
+	for _, h := range []*ConfigHeader{headerA, headerB} {
+		var result Result
+		require.NoError(t, CheckPaths(h, paths, &result))
+		for _, file := range result.Failure {
+			require.NoError(t, Fix(file, h, &result))
+		}
+	}
+
+	for file, want := range map[string]struct{ has, hasNot string }{
+		"a/x.go": {has: "license A", hasNot: "license B"},
+		"b/y.go": {has: "license B", hasNot: "license A"},
+	} {
+		content, err := os.ReadFile(file)
+		require.NoError(t, err)
+		require.Contains(t, string(content), want.has, file)
+		require.NotContains(t, string(content), want.hasNot, file)
+	}
+
+	for _, h := range []*ConfigHeader{headerA, headerB} {
+		var result Result
+		require.NoError(t, CheckPaths(h, paths, &result))
+		require.False(t, result.HasFailure())
+		require.Len(t, result.Success, 1)
+	}
+}
+
+// canSymlink reports whether the tests can create symlinks, which needs extra
+// privileges on Windows.
+var canSymlink = runtime.GOOS != "windows"
+
+func TestCheckPathsSelection(t *testing.T) {
+	license := LicenseConfig{Content: "Licensed under license A."}
+	newHeader := func(paths, pathsIgnore []string) *ConfigHeader {
+		h := &ConfigHeader{License: license, Paths: paths, PathsIgnore: pathsIgnore}
+		require.NoError(t, h.Finalize())
+		return h
+	}
+	writeFiles := func(files ...string) {
+		for _, file := range files {
+			require.NoError(t, os.MkdirAll(filepath.Dir(file), 0o755))
+			require.NoError(t, os.WriteFile(file, []byte("package p\n"), 0o600))
+		}
+	}
+	native := func(files ...string) []string {
+		for i, file := range files {
+			files[i] = filepath.FromSlash(file)
+		}
+		return files
+	}
+
+	t.Run("a path does not cover files elsewhere with the same base name", func(t *testing.T) {
+		t.Chdir(t.TempDir())
+		initRepoWithFiles(t, map[string]string{"main.go": "package main\n", "sub/main.go": "package sub\n"})
+
+		var result Result
+		require.NoError(t, CheckPaths(newHeader([]string{"main.go"}, nil), []string{"sub/main.go"}, &result))
+		require.Equal(t, []string{"sub/main.go"}, result.Ignored)
+		require.Empty(t, result.Failure)
+	})
+
+	t.Run("a directory path covers what Git-based discovery finds", func(t *testing.T) {
+		t.Chdir(t.TempDir())
+		initRepoWithFiles(t, map[string]string{"src/a.go": "package src\n"})
+
+		// Git-based discovery takes a path as a directory only if it ends with "/".
+		var result Result
+		require.NoError(t, CheckPaths(newHeader([]string{"src"}, nil), []string{"src/a.go"}, &result))
+		require.Equal(t, []string{"src/a.go"}, result.Ignored)
+
+		result = Result{}
+		require.NoError(t, CheckPaths(newHeader([]string{"src/"}, nil), []string{"src/a.go"}, &result))
+		require.Equal(t, []string{"src/a.go"}, result.Failure)
+	})
+
+	t.Run("a glob does not select the files inside the directories it matches", func(t *testing.T) {
+		t.Chdir(t.TempDir()) // not a Git repository
+		writeFiles("src/a.go", "src/nested/b.go")
+
+		var result Result
+		require.NoError(t, CheckPaths(newHeader(nil, nil), []string{"src/*"}, &result))
+		require.Equal(t, native("src/a.go"), result.Failure)
+		require.Equal(t, native("src/nested/b.go"), result.Ignored)
+	})
+
+	t.Run("a file is checked by the name that the config's paths find it by", func(t *testing.T) {
+		// The parent directories of the current directory must not matter.
+		t.Chdir(t.TempDir())
+		writeFiles("shared/s.go")
+		require.NoError(t, os.MkdirAll(filepath.Join("vendor", "project"), 0o755))
+		t.Chdir(filepath.Join("vendor", "project")) // not a Git repository
+		writeFiles("src/a.go", "src/gen/b.go", "other/c.go")
+		wd, err := os.Getwd()
+		require.NoError(t, err)
+		a, b, c := filepath.Join(wd, "src", "a.go"), filepath.Join(wd, "src", "gen", "b.go"), filepath.Join(wd, "other", "c.go")
+
+		h := newHeader([]string{"src/**"}, []string{"src/gen/**"})
+		var result Result
+		require.NoError(t, CheckPaths(h, []string{a, b, c}, &result))
+		require.Equal(t, native("src/a.go"), result.Failure)
+		require.ElementsMatch(t, append(native("src/gen/b.go"), c), result.Ignored) // b by paths-ignore
+
+		// A fixed file is fixed by that name too.
+		for _, file := range result.Failure {
+			require.NoError(t, Fix(file, h, &result))
+		}
+		require.Equal(t, native("src/a.go"), result.Fixed)
+
+		result = Result{}
+		require.NoError(t, CheckPaths(newHeader([]string{"**/vendor/**"}, nil), []string{a}, &result))
+		require.Equal(t, []string{a}, result.Ignored)
+
+		result = Result{}
+		require.NoError(t, CheckPaths(newHeader([]string{"../../shared/**"}, nil), []string{filepath.Join(wd, "..", "..", "shared", "s.go")}, &result))
+		require.Equal(t, native("../../shared/s.go"), result.Failure)
+	})
+
+	t.Run("a directory path does not cover the files behind a symlinked directory", func(t *testing.T) {
+		if !canSymlink {
+			t.Skip("creating symlinks needs extra privileges on Windows")
+		}
+		t.Chdir(t.TempDir()) // not a Git repository
+		writeFiles("src/a.go", "other/b.go")
+		require.NoError(t, os.Symlink(filepath.Join("..", "other"), filepath.Join("src", "link")))
+
+		var result Result
+		require.NoError(t, CheckPaths(newHeader([]string{"src"}, nil), []string{"src/a.go", "src/link/b.go"}, &result))
+		require.Equal(t, []string{"src/a.go"}, result.Failure)
+		require.Equal(t, []string{"src/link/b.go"}, result.Ignored)
+	})
+
+	t.Run("a file found by several names is checked by each", func(t *testing.T) {
+		t.Chdir(t.TempDir()) // not a Git repository
+		writeFiles("src/a.go")
+		wd, err := os.Getwd()
+		require.NoError(t, err)
+		abs := filepath.Join(wd, "src", "a.go")
+
+		// Check finds src/a.go by both names, and ignores only the absolute one.
+		h := newHeader([]string{"src/**", wd + "/src/**"}, []string{wd + "/src/**"})
+		var full, selected Result
+		require.NoError(t, Check(h, &full))
+		require.NoError(t, CheckPaths(h, []string{"src/a.go"}, &selected))
+		require.Equal(t, native("src/a.go"), full.Failure)
+		require.Equal(t, full.Failure, selected.Failure)
+		require.Equal(t, []string{abs}, selected.Ignored)
+	})
+
+	t.Run("a file is not mistaken for another one through a symlinked current directory", func(t *testing.T) {
+		if !canSymlink {
+			t.Skip("creating symlinks needs extra privileges on Windows")
+		}
+		t.Chdir(t.TempDir())
+		writeFiles("real/project/a.go", "real/shared.go", "view/shared.go")
+		require.NoError(t, os.Symlink(filepath.Join("..", "real", "project"), filepath.Join("view", "project")))
+		root, err := os.Getwd()
+		require.NoError(t, err)
+		// The current directory is view/project, which is real/project, so
+		// "../shared.go" is real/shared.go, not view/shared.go.
+		t.Chdir(filepath.Join(root, "view", "project")) // not a Git repository
+		h := newHeader([]string{"../shared.go"}, nil)
+
+		var result Result
+		require.NoError(t, CheckPaths(h, []string{filepath.Join(root, "view", "shared.go")}, &result))
+		require.Empty(t, result.Failure)
+
+		result = Result{}
+		require.NoError(t, CheckPaths(h, []string{filepath.Join(root, "real", "shared.go")}, &result))
+		require.Equal(t, []string{"../shared.go"}, result.Failure)
+	})
+
+	t.Run("a malformed glob is reported", func(t *testing.T) {
+		t.Chdir(t.TempDir())
+		initRepoWithFiles(t, map[string]string{"main.go": "// Licensed under license A.\npackage main\n"})
+
+		var result Result
+		require.ErrorIs(t, CheckPaths(newHeader(nil, nil), []string{"[ab.go", "main.go"}, &result), doublestar.ErrBadPattern)
+
+		result = Result{}
+		require.ErrorIs(t, CheckPaths(newHeader([]string{"[ab.go", "main.go"}, nil), []string{"main.go"}, &result), doublestar.ErrBadPattern)
+	})
+}
+
+// TestCheckPathsMatchesCheck checks that a header checks the same files when
+// they are given as paths as when they are found from the config's paths.
+func TestCheckPathsMatchesCheck(t *testing.T) {
+	files := []string{"main.go", "src/a.go", "src/nested/b.go", "src/nested/main.go", "src/gen/c.go", "sub/main.go", "other/d.go", ".hidden/e.go"}
+	configs := []struct{ paths, pathsIgnore []string }{
+		{paths: []string{"**"}},
+		{paths: []string{"**"}, pathsIgnore: []string{"src/gen/**", "**/main.go"}},
+		{paths: []string{"**", "src/**"}},
+		{paths: []string{"src"}},
+		{paths: []string{"src/"}},
+		{paths: []string{"src/**"}, pathsIgnore: []string{"src/gen/**"}},
+		{paths: []string{"src/*"}},
+		{paths: []string{"src/*", "main.go"}},
+		{paths: []string{"main.go"}},
+		{paths: []string{"**/main.go"}},
+		{paths: []string{"**/*.go"}, pathsIgnore: []string{"main.go"}},
+		{paths: []string{"sub/", "other/**"}},
+	}
+
+	for _, inGit := range []bool{true, false} {
+		t.Run(map[bool]string{true: "git", false: "no git"}[inGit], func(t *testing.T) {
+			t.Chdir(t.TempDir())
+			for _, file := range files {
+				require.NoError(t, os.MkdirAll(filepath.Dir(file), 0o755))
+				require.NoError(t, os.WriteFile(file, []byte("package p\n"), 0o600))
+			}
+			all := files
+			if inGit {
+				contents := make(map[string]string, len(files))
+				for _, file := range files {
+					contents[file] = "package p\n"
+				}
+				initRepoWithFiles(t, contents)
+			} else if canSymlink {
+				// Outside Git, the glob "**" follows symlinked directories, but
+				// the walk of a directory such as "src" does not.
+				require.NoError(t, os.Symlink(filepath.Join("..", "other"), filepath.Join("src", "link")))
+				all = append([]string{"src/link/d.go"}, files...)
+			}
+			selections := [][]string{all, {"**"}}
+
+			for _, c := range configs {
+				h := &ConfigHeader{License: LicenseConfig{Content: "Licensed under license A."}, Paths: c.paths, PathsIgnore: c.pathsIgnore}
+				require.NoError(t, h.Finalize())
+
+				var full Result
+				require.NoError(t, Check(h, &full))
+
+				for _, paths := range selections {
+					var selected Result
+					require.NoError(t, CheckPaths(h, paths, &selected))
+					require.ElementsMatch(t, full.Failure, selected.Failure, "paths: %v, paths-ignore: %v, given: %v", c.paths, c.pathsIgnore, paths)
+				}
 			}
 		})
 	}

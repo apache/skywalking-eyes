@@ -35,6 +35,7 @@ var DiffCommand = &cobra.Command{
 		"license headers of the invalid files differ from the license header in the " +
 		"config file, to help understand why the check command fails. " +
 		"Accepts files, directories, and glob patterns. " +
+		"Each header applies only to the files found that its paths cover and its paths-ignore does not exclude. " +
 		"If no paths are specified, checks the current directory " +
 		"recursively as defined in the config file. " +
 		"The texts are compared in the same normalized forms that the check command " +
@@ -48,12 +49,7 @@ var DiffCommand = &cobra.Command{
 		for _, h := range Config.Headers() {
 			var result header.Result
 
-			if len(args) > 0 {
-				logger.Log.Debugln("Overriding paths with command line args.")
-				h.Paths = args
-			}
-
-			if err := header.Check(h, &result); err != nil {
+			if err := checkHeader(h, args, &result); err != nil {
 				return err
 			}
 

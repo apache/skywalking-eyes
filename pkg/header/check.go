@@ -43,38 +43,229 @@ import (
 
 const currentDir = "./"
 
-// Check checks the license headers of the specified paths/globs.
+// Check checks the license headers of the files that the config's paths cover.
 func Check(config *ConfigHeader, result *Result) error {
-	fileList, err := listFiles(config)
+	files, err := listFiles(config.Paths)
 	if err != nil {
 		return err
 	}
 
-	g := new(errgroup.Group)
-	g.SetLimit(runtime.GOMAXPROCS(0))
+	return checkEach(files, func(file string) error {
+		return CheckFile(file, config, result)
+	})
+}
 
-	for _, file := range fileList {
-		f := file
-		g.Go(func() error {
-			return CheckFile(f, config, result)
-		})
-	}
-
-	if err := g.Wait(); err != nil {
+// CheckPaths checks the license headers of the files found under the given paths
+// (files, directories, or glob patterns) instead of the config's paths, e.g. the
+// paths passed on the command line. The given paths only select the files: a
+// selected file is checked only if Check checks it too, and is counted as
+// ignored otherwise. So with multiple header configs, each file is checked only
+// against the headers whose paths cover it.
+func CheckPaths(config *ConfigHeader, paths []string, result *Result) error {
+	files, err := listFiles(paths)
+	if err != nil {
 		return err
 	}
 
-	return nil
+	covered, err := coverage(config)
+	if err != nil {
+		return err
+	}
+
+	return checkEach(files, func(file string) error {
+		// Match the file against the given paths the same way that CheckFile
+		// matches it against the config's paths, e.g. to drop the files inside
+		// the directories that a glob matches outside a Git repository.
+		if selected, err := tryMatchPatten(file, paths); !selected || err != nil {
+			result.Ignore(file)
+			return err
+		}
+
+		// Check the file by each name that Check finds it by, if any.
+		checked := false
+		for _, name := range covered(file) {
+			if name != file && !sameFile(name, file) {
+				continue
+			}
+			checked = true
+			if err := CheckFile(name, config, result); err != nil {
+				return err
+			}
+		}
+		if !checked {
+			result.Ignore(file)
+		}
+		return nil
+	})
 }
 
-func listFiles(config *ConfigHeader) ([]string, error) {
+// coverage returns a function that returns the names that Check finds the file
+// by from the config's paths, or none if Check does not find it.
+func coverage(config *ConfigHeader) (func(file string) []string, error) {
+	if _, err := git.PlainOpen(currentDir); err == nil {
+		// In a Git repository, both find the files by their paths relative to the
+		// repository root. Listing all the files that the config's paths cover is
+		// slow in large repositories, see listFiles, so match each file the way
+		// that listFiles does instead.
+		return func(file string) []string {
+			if MatchPaths(file, config.Paths) {
+				return []string{file}
+			}
+			return nil
+		}, nil
+	}
+
+	wd, err := newWorkDir()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(config.Paths) == 1 && config.Paths[0] == "**" {
+		// Outside a Git repository, "**" (the default) covers every file inside
+		// the current directory, by its clean relative path: the glob follows
+		// symlinked directories too. So there's no need to list all the files.
+		return func(file string) []string {
+			if rel, ok := wd.relative(file); ok {
+				return []string{rel}
+			}
+			return nil
+		}, nil
+	}
+
+	// Otherwise, list the files that the config's paths cover, and find a file
+	// among them by its path, since a file given on the command line can be
+	// spelled differently, e.g. as an absolute path. The paths can find a file
+	// by several names, e.g. both relative and absolute, which Check checks
+	// separately.
+	files, err := listFiles(config.Paths)
+	if err != nil {
+		return nil, err
+	}
+
+	names := make(map[string][]string, len(files))
+	for _, file := range files {
+		key := wd.key(file)
+		names[key] = append(names[key], file)
+	}
+
+	return func(file string) []string {
+		return names[wd.key(file)]
+	}, nil
+}
+
+// workDir is the current directory, as both the logical path that
+// filepath.Abs uses, which can go through symlinks, e.g. as $PWD, and the
+// physical path that the OS resolves relative paths against, e.g. for "..".
+type workDir struct {
+	logical, physical string
+}
+
+func newWorkDir() (*workDir, error) {
+	logical, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	physical, err := filepath.EvalSymlinks(logical)
+	if err != nil {
+		return nil, err
+	}
+	return &workDir{logical: logical, physical: physical}, nil
+}
+
+// relative returns the clean path of the file relative to the current
+// directory, if the file is inside it.
+func (wd *workDir) relative(file string) (string, bool) {
+	rel := filepath.Clean(file)
+	if filepath.IsAbs(rel) {
+		abs := rel
+		var ok bool
+		if rel, ok = relativeTo(wd.logical, abs); !ok {
+			if rel, ok = relativeTo(wd.physical, abs); !ok {
+				// The path can lead to the current directory through other
+				// symlinks, e.g. /var to /private/var on macOS.
+				resolved, err := filepath.EvalSymlinks(abs)
+				if err != nil {
+					return "", false
+				}
+				if rel, ok = relativeTo(wd.physical, resolved); !ok {
+					return "", false
+				}
+			}
+		}
+	}
+	if rel == "." || isOutside(rel) {
+		return "", false
+	}
+	return rel, true
+}
+
+// key returns a path of the file that is the same for the spellings of its path
+// that the OS resolves to the same file: inside the current directory, its path
+// relative to the current directory, and outside it, its physical path.
+func (wd *workDir) key(file string) string {
+	if rel, ok := wd.relative(file); ok {
+		return filepath.Join(wd.physical, rel)
+	}
+	path := file
+	if !filepath.IsAbs(path) {
+		// e.g. "../shared/a.go", which the OS resolves from the physical
+		// current directory.
+		path = filepath.Join(wd.physical, path)
+	}
+	if resolved, err := filepath.EvalSymlinks(path); err == nil {
+		return resolved
+	}
+	return filepath.Clean(path)
+}
+
+func relativeTo(dir, file string) (string, bool) {
+	rel, err := filepath.Rel(dir, file)
+	if err != nil || isOutside(rel) {
+		return "", false
+	}
+	return rel, true
+}
+
+// isOutside reports whether a clean relative path leads out of its directory.
+func isOutside(rel string) bool {
+	const parent = ".."
+	return rel == parent || strings.HasPrefix(rel, parent+string(filepath.Separator))
+}
+
+func sameFile(a, b string) bool {
+	sa, err := os.Stat(a)
+	if err != nil {
+		return false
+	}
+	sb, err := os.Stat(b)
+	if err != nil {
+		return false
+	}
+	return os.SameFile(sa, sb)
+}
+
+func checkEach(files []string, check func(file string) error) error {
+	g := new(errgroup.Group)
+	g.SetLimit(runtime.GOMAXPROCS(0))
+
+	for _, file := range files {
+		f := file
+		g.Go(func() error {
+			return check(f)
+		})
+	}
+
+	return g.Wait()
+}
+
+func listFiles(paths []string) ([]string, error) {
 	var fileList []string
 
 	repo, err := git.PlainOpen(currentDir)
 
 	if err != nil { // we're not in a Git workspace, fallback to glob paths
 		var localFileList []string
-		for _, pattern := range config.Paths {
+		for _, pattern := range paths {
 			if pattern == "." {
 				pattern = currentDir
 			}
@@ -103,7 +294,7 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 		// pre-commit hook passes on the command line, need no discovery. Git-based
 		// discovery scans the whole worktree and HEAD tree, which is slow in large
 		// repositories, so it only runs for the remaining paths.
-		explicit, patterns := splitExplicitFiles(config.Paths)
+		explicit, patterns := splitExplicitFiles(paths)
 		fileList = append(fileList, explicit...)
 		if len(patterns) == 0 {
 			logger.Log.Debugln("All paths name existing files, skipping Git-based file discovery.")
@@ -160,7 +351,7 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 				seen[candidate] = true
 				_, err := os.Stat(candidate)
 				if err == nil {
-					// Filter candidates by the paths/patterns specified in config
+					// Filter candidates by the given paths/patterns
 					if MatchPaths(candidate, patterns) {
 						fileList = append(fileList, candidate)
 					}

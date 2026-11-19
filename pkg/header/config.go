@@ -20,6 +20,7 @@ package header
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -130,20 +131,24 @@ func (config *ConfigHeader) ShouldIgnore(path string) (bool, error) {
 }
 
 func tryMatchPatten(path string, patterns []string) (bool, error) {
+	// The patterns use "/" as the separator, but the paths found outside a Git
+	// repository use the OS separator, e.g. "\" on Windows.
+	name := filepath.ToSlash(path)
+
 	for _, pattern := range patterns {
-		if m, err := doublestar.Match(pattern, path); m || err != nil {
+		if m, err := doublestar.Match(filepath.ToSlash(pattern), name); m || err != nil {
 			return m, err
 		}
 	}
 
 	if stat, err := os.Stat(path); err == nil {
 		for _, pattern := range patterns {
-			pattern = strings.TrimRight(pattern, "/")
+			pattern = strings.TrimRight(filepath.ToSlash(pattern), "/")
 			if stat.Name() == pattern {
 				return true, nil
 			}
 			pattern += "/"
-			if strings.HasPrefix(path, pattern) {
+			if strings.HasPrefix(name, pattern) {
 				return true, nil
 			}
 		}

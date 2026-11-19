@@ -43,9 +43,32 @@ import (
 
 const currentDir = "./"
 
-// Check checks the license headers of the specified paths/globs.
+// Check checks the license headers of the files that the config's paths cover.
 func Check(config *ConfigHeader, result *Result) error {
-	fileList, err := listFiles(config)
+	return checkFiles(config.Paths, func(file string) error {
+		return CheckFile(file, config, result)
+	})
+}
+
+// CheckPaths checks the license headers of the files found under the given paths
+// (files, directories, or glob patterns) instead of the config's paths, e.g. the
+// paths passed on the command line. The given paths only select the files: a
+// selected file is checked only if the config's paths cover it and its
+// paths-ignore does not exclude it, and is counted as ignored otherwise. So with
+// multiple header configs, each file is checked only against the headers whose
+// paths cover it, the same as without the given paths.
+func CheckPaths(config *ConfigHeader, paths []string, result *Result) error {
+	return checkFiles(paths, func(file string) error {
+		if yes, err := config.shouldIgnoreSelected(file, paths); yes || err != nil {
+			result.Ignore(file)
+			return err
+		}
+		return checkContent(file, config, result)
+	})
+}
+
+func checkFiles(paths []string, check func(file string) error) error {
+	fileList, err := listFiles(paths)
 	if err != nil {
 		return err
 	}
@@ -56,25 +79,21 @@ func Check(config *ConfigHeader, result *Result) error {
 	for _, file := range fileList {
 		f := file
 		g.Go(func() error {
-			return CheckFile(f, config, result)
+			return check(f)
 		})
 	}
 
-	if err := g.Wait(); err != nil {
-		return err
-	}
-
-	return nil
+	return g.Wait()
 }
 
-func listFiles(config *ConfigHeader) ([]string, error) {
+func listFiles(paths []string) ([]string, error) {
 	var fileList []string
 
 	repo, err := git.PlainOpen(currentDir)
 
 	if err != nil { // we're not in a Git workspace, fallback to glob paths
 		var localFileList []string
-		for _, pattern := range config.Paths {
+		for _, pattern := range paths {
 			if pattern == "." {
 				pattern = currentDir
 			}
@@ -103,7 +122,7 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 		// pre-commit hook passes on the command line, need no discovery. Git-based
 		// discovery scans the whole worktree and HEAD tree, which is slow in large
 		// repositories, so it only runs for the remaining paths.
-		explicit, patterns := splitExplicitFiles(config.Paths)
+		explicit, patterns := splitExplicitFiles(paths)
 		fileList = append(fileList, explicit...)
 		if len(patterns) == 0 {
 			logger.Log.Debugln("All paths name existing files, skipping Git-based file discovery.")
@@ -160,7 +179,7 @@ func listFiles(config *ConfigHeader) ([]string, error) {
 				seen[candidate] = true
 				_, err := os.Stat(candidate)
 				if err == nil {
-					// Filter candidates by the paths/patterns specified in config
+					// Filter candidates by the given paths/patterns
 					if MatchPaths(candidate, patterns) {
 						fileList = append(fileList, candidate)
 					}
@@ -397,6 +416,12 @@ func CheckFile(file string, config *ConfigHeader, result *Result) error {
 		return err
 	}
 
+	return checkContent(file, config, result)
+}
+
+// checkContent checks whether the file contains the configured license header,
+// without checking whether the config's paths cover the file.
+func checkContent(file string, config *ConfigHeader, result *Result) error {
 	logger.Log.Debugln("Checking file:", file)
 
 	bs, err := os.ReadFile(file)

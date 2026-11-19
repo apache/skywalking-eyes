@@ -19,6 +19,9 @@ package commands
 
 import (
 	"github.com/spf13/cobra"
+
+	"github.com/apache/skywalking-eyes/pkg/header"
+	"github.com/apache/skywalking-eyes/pkg/logger"
 )
 
 var Header = &cobra.Command{
@@ -34,4 +37,17 @@ func init() {
 	Header.AddCommand(CheckCommand)
 	Header.AddCommand(FixCommand)
 	Header.AddCommand(DiffCommand)
+}
+
+// checkHeader checks the files that the header config covers. Paths given on
+// the command line select the files to check instead of the config's paths, but
+// the header still checks only the selected files that its own paths and
+// paths-ignore cover, so with multiple headers each file is checked only against
+// the headers that cover it.
+func checkHeader(h *header.ConfigHeader, args []string, result *header.Result) error {
+	if len(args) == 0 {
+		return header.Check(h, result)
+	}
+	logger.Log.Debugln("Checking the paths given on the command line.")
+	return header.CheckPaths(h, args, result)
 }

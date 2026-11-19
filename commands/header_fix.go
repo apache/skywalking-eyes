@@ -33,6 +33,7 @@ var FixCommand = &cobra.Command{
 	Long: "fix command walks the specified paths recursively and fixes the license " +
 		"header if the specified files don't have the license header. " +
 		"Accepts files, directories, and glob patterns. " +
+		"Each header applies only to the files found that its paths cover and its paths-ignore does not exclude. " +
 		"If no paths are specified, fixes the current directory " +
 		"recursively as defined in the config file.",
 	RunE: func(_ *cobra.Command, args []string) error {
@@ -40,12 +41,7 @@ var FixCommand = &cobra.Command{
 		for _, h := range Config.Headers() {
 			var result header.Result
 
-			if len(args) > 0 {
-				logger.Log.Debugln("Overriding paths with command line args.")
-				h.Paths = args
-			}
-
-			if err := header.Check(h, &result); err != nil {
+			if err := checkHeader(h, args, &result); err != nil {
 				return err
 			}
 

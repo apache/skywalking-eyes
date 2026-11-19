@@ -23,6 +23,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bmatcuk/doublestar/v2"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -140,7 +141,7 @@ func TestListFilesWithEmptyRepo(t *testing.T) {
 	}
 
 	// This should not panic even with empty repository
-	fileList, err := listFiles(config)
+	fileList, err := listFiles(config.Paths)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -210,7 +211,7 @@ func TestListFilesWithWorktreeDetachedHEAD(t *testing.T) {
 		Paths: []string{"**/*.go"},
 	}
 
-	fileList, err := listFiles(config)
+	fileList, err := listFiles(config.Paths)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -231,7 +232,7 @@ func TestListFilesWithWorktreeDetachedHEAD(t *testing.T) {
 	}
 
 	// This should not panic even with problematic git state
-	fileList2, err := listFiles(config)
+	fileList2, err := listFiles(config.Paths)
 	if err != nil {
 		// It's okay if there's an error, we just don't want a panic
 		t.Logf("Got expected error: %v", err)
@@ -264,7 +265,7 @@ func TestListFilesWithWorktreeDetachedHEAD(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fileList3, err := listFiles(config)
+	fileList3, err := listFiles(config.Paths)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -347,7 +348,7 @@ func TestListFilesWithExplicitFiles(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			files, err := listFiles(&ConfigHeader{Paths: tt.paths})
+			files, err := listFiles(tt.paths)
 			require.NoError(t, err)
 			require.ElementsMatch(t, tt.want, files)
 		})
@@ -366,10 +367,10 @@ func TestListFilesWithExplicitFilesSkipsGitDiscovery(t *testing.T) {
 	blob := plumbing.ComputeHash(plumbing.BlobObject, []byte("package b")).String()
 	require.NoError(t, os.Remove(filepath.Join(".git", "objects", blob[:2], blob[2:])))
 
-	_, err := listFiles(&ConfigHeader{Paths: []string{"**/*.go"}})
+	_, err := listFiles([]string{"**/*.go"})
 	require.Error(t, err, "git discovery should fail on the broken repository")
 
-	files, err := listFiles(&ConfigHeader{Paths: []string{"a.go"}})
+	files, err := listFiles([]string{"a.go"})
 	require.NoError(t, err)
 	require.Equal(t, []string{"a.go"}, files)
 }
@@ -440,7 +441,7 @@ func TestListFilesInBareRepository(t *testing.T) {
 	_, err := git.PlainInit(".", true)
 	require.NoError(t, err)
 
-	_, err = listFiles(&ConfigHeader{Paths: []string{"HEAD"}})
+	_, err = listFiles([]string{"HEAD"})
 	require.ErrorIs(t, err, git.ErrIsBareRepository)
 }
 
@@ -546,4 +547,118 @@ func TestMatchPaths(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCheckPathsWithMultipleHeaders(t *testing.T) {
+	t.Chdir(t.TempDir())
+
+	initRepoWithFiles(t, map[string]string{
+		"a/x.go": "package a\n",
+		"b/y.go": "package b\n",
+	})
+
+	headerA := &ConfigHeader{License: LicenseConfig{Content: "Licensed under license A."}, Paths: []string{"a/**"}}
+	headerB := &ConfigHeader{License: LicenseConfig{Content: "Licensed under license B."}, Paths: []string{"b/**"}}
+	for _, h := range []*ConfigHeader{headerA, headerB} {
+		require.NoError(t, h.Finalize())
+	}
+
+	for _, paths := range [][]string{
+		{"a/x.go", "b/y.go"}, // explicit files, as a pre-commit hook passes them
+		{"**/*.go"},          // a glob that goes through Git-based discovery
+	} {
+		t.Run(strings.Join(paths, ","), func(t *testing.T) {
+			var resultA, resultB Result
+			require.NoError(t, CheckPaths(headerA, paths, &resultA))
+			require.NoError(t, CheckPaths(headerB, paths, &resultB))
+
+			require.Equal(t, []string{"a/x.go"}, resultA.Failure)
+			require.Equal(t, []string{"b/y.go"}, resultA.Ignored)
+			require.Equal(t, []string{"b/y.go"}, resultB.Failure)
+			require.Equal(t, []string{"a/x.go"}, resultB.Ignored)
+		})
+	}
+
+	// Fixing the files given as paths inserts only the header that covers each file.
+	paths := []string{"a/x.go", "b/y.go"}
+	for _, h := range []*ConfigHeader{headerA, headerB} {
+		var result Result
+		require.NoError(t, CheckPaths(h, paths, &result))
+		for _, file := range result.Failure {
+			require.NoError(t, Fix(file, h, &result))
+		}
+	}
+
+	for file, want := range map[string]struct{ has, hasNot string }{
+		"a/x.go": {has: "license A", hasNot: "license B"},
+		"b/y.go": {has: "license B", hasNot: "license A"},
+	} {
+		content, err := os.ReadFile(file)
+		require.NoError(t, err)
+		require.Contains(t, string(content), want.has, file)
+		require.NotContains(t, string(content), want.hasNot, file)
+	}
+
+	for _, h := range []*ConfigHeader{headerA, headerB} {
+		var result Result
+		require.NoError(t, CheckPaths(h, paths, &result))
+		require.False(t, result.HasFailure())
+		require.Len(t, result.Success, 1)
+	}
+}
+
+func TestCheckPathsSelection(t *testing.T) {
+	license := LicenseConfig{Content: "Licensed under license A."}
+	newHeader := func(paths, pathsIgnore []string) *ConfigHeader {
+		h := &ConfigHeader{License: license, Paths: paths, PathsIgnore: pathsIgnore}
+		require.NoError(t, h.Finalize())
+		return h
+	}
+	writeFiles := func(files ...string) {
+		for _, file := range files {
+			require.NoError(t, os.MkdirAll(filepath.Dir(file), 0o755))
+			require.NoError(t, os.WriteFile(file, []byte("package p\n"), 0o600))
+		}
+	}
+
+	t.Run("a path does not cover files elsewhere with the same base name", func(t *testing.T) {
+		t.Chdir(t.TempDir())
+		initRepoWithFiles(t, map[string]string{"main.go": "package main\n", "sub/main.go": "package sub\n"})
+
+		var result Result
+		require.NoError(t, CheckPaths(newHeader([]string{"main.go"}, nil), []string{"sub/main.go"}, &result))
+		require.Equal(t, []string{"sub/main.go"}, result.Ignored)
+		require.Empty(t, result.Failure)
+	})
+
+	t.Run("a glob does not select the files inside the directories it matches", func(t *testing.T) {
+		t.Chdir(t.TempDir()) // not a Git repository
+		writeFiles("src/a.go", "src/nested/b.go")
+
+		var result Result
+		require.NoError(t, CheckPaths(newHeader(nil, nil), []string{"src/*"}, &result))
+		require.Equal(t, []string{"src/a.go"}, result.Failure)
+		require.Equal(t, []string{"src/nested/b.go"}, result.Ignored)
+	})
+
+	t.Run("an absolute path is matched relative to the current directory", func(t *testing.T) {
+		t.Chdir(t.TempDir()) // not a Git repository
+		writeFiles("src/a.go", "src/gen/b.go", "other/c.go")
+		wd, err := os.Getwd()
+		require.NoError(t, err)
+		a, b, c := filepath.Join(wd, "src", "a.go"), filepath.Join(wd, "src", "gen", "b.go"), filepath.Join(wd, "other", "c.go")
+
+		var result Result
+		require.NoError(t, CheckPaths(newHeader([]string{"src/**"}, []string{"src/gen/**"}), []string{a, b, c}, &result))
+		require.Equal(t, []string{a}, result.Failure)
+		require.ElementsMatch(t, []string{b, c}, result.Ignored)
+	})
+
+	t.Run("a malformed glob is reported", func(t *testing.T) {
+		t.Chdir(t.TempDir())
+		initRepoWithFiles(t, map[string]string{"main.go": "package main\n"})
+
+		var result Result
+		require.ErrorIs(t, CheckPaths(newHeader(nil, nil), []string{"[ab.go", "main.go"}, &result), doublestar.ErrBadPattern)
+	})
 }

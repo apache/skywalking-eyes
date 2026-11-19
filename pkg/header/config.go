@@ -20,6 +20,7 @@ package header
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -127,6 +128,74 @@ func (config *ConfigHeader) ShouldIgnore(path string) (bool, error) {
 	}
 
 	return false, nil
+}
+
+// shouldIgnoreSelected is ShouldIgnore for a file found under the given paths
+// instead of the config's paths, see CheckPaths. The file must match the given
+// paths the way ShouldIgnore matches it against the config's paths. It must also
+// be covered by the config's paths, see covers, and not be excluded by the
+// config's paths-ignore.
+func (config *ConfigHeader) shouldIgnoreSelected(file string, paths []string) (bool, error) {
+	if selected, err := tryMatchPatten(file, paths); !selected || err != nil {
+		return !selected, err
+	}
+
+	// A file given as an absolute or unclean path, e.g. outside a Git
+	// repository, is also matched by its path relative to the current
+	// directory, which is what the config's paths are written against.
+	names := []string{file}
+	if rel := relativePath(file); rel != file {
+		names = append(names, rel)
+	}
+
+	if covered, err := config.covers(names); !covered || err != nil {
+		return !covered, err
+	}
+
+	for _, name := range names {
+		if ignored, err := tryMatchPatten(name, config.PathsIgnore); ignored || err != nil {
+			return ignored, err
+		}
+	}
+
+	return false, nil
+}
+
+// covers reports whether the config's paths cover a file known by the given
+// names: a name matches one of the paths, or is inside a directory that one of
+// them names. Unlike ShouldIgnore, a path does not cover the files elsewhere
+// that only share its base name, e.g. `main.go` does not cover `sub/main.go`.
+func (config *ConfigHeader) covers(names []string) (bool, error) {
+	for _, pattern := range config.Paths {
+		dir := strings.TrimRight(pattern, "/")
+		for _, name := range names {
+			if m, err := doublestar.Match(pattern, name); m || err != nil {
+				return m, err
+			}
+			if dir != "" && strings.HasPrefix(name, dir+"/") {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}
+
+// relativePath returns the file's clean, slash-separated path relative to the
+// current directory, or the file itself if that cannot be determined or the
+// file is outside the current directory.
+func relativePath(file string) string {
+	if filepath.IsAbs(file) {
+		wd, err := os.Getwd()
+		if err != nil {
+			return file
+		}
+		rel, err := filepath.Rel(wd, file)
+		if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+			return file
+		}
+		file = rel
+	}
+	return filepath.ToSlash(filepath.Clean(file))
 }
 
 func tryMatchPatten(path string, patterns []string) (bool, error) {

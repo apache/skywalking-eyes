@@ -20,6 +20,7 @@ package header
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -620,6 +621,12 @@ func TestCheckPathsSelection(t *testing.T) {
 			require.NoError(t, os.WriteFile(file, []byte("package p\n"), 0o600))
 		}
 	}
+	native := func(files ...string) []string {
+		for i, file := range files {
+			files[i] = filepath.FromSlash(file)
+		}
+		return files
+	}
 
 	t.Run("a path does not cover files elsewhere with the same base name", func(t *testing.T) {
 		t.Chdir(t.TempDir())
@@ -631,27 +638,66 @@ func TestCheckPathsSelection(t *testing.T) {
 		require.Empty(t, result.Failure)
 	})
 
+	t.Run("a directory path covers what Git-based discovery finds", func(t *testing.T) {
+		t.Chdir(t.TempDir())
+		initRepoWithFiles(t, map[string]string{"src/a.go": "package src\n"})
+
+		// Git-based discovery takes a path as a directory only if it ends with "/".
+		var result Result
+		require.NoError(t, CheckPaths(newHeader([]string{"src"}, nil), []string{"src/a.go"}, &result))
+		require.Equal(t, []string{"src/a.go"}, result.Ignored)
+
+		result = Result{}
+		require.NoError(t, CheckPaths(newHeader([]string{"src/"}, nil), []string{"src/a.go"}, &result))
+		require.Equal(t, []string{"src/a.go"}, result.Failure)
+	})
+
 	t.Run("a glob does not select the files inside the directories it matches", func(t *testing.T) {
 		t.Chdir(t.TempDir()) // not a Git repository
 		writeFiles("src/a.go", "src/nested/b.go")
 
 		var result Result
 		require.NoError(t, CheckPaths(newHeader(nil, nil), []string{"src/*"}, &result))
-		require.Equal(t, []string{"src/a.go"}, result.Failure)
-		require.Equal(t, []string{"src/nested/b.go"}, result.Ignored)
+		require.Equal(t, native("src/a.go"), result.Failure)
+		require.Equal(t, native("src/nested/b.go"), result.Ignored)
 	})
 
 	t.Run("an absolute path is matched relative to the current directory", func(t *testing.T) {
-		t.Chdir(t.TempDir()) // not a Git repository
+		if runtime.GOOS == "windows" {
+			t.Skip("doublestar takes the backslashes in Windows paths given as patterns as escapes")
+		}
+		// The parent directories of the current directory must not matter.
+		t.Chdir(t.TempDir())
+		require.NoError(t, os.MkdirAll(filepath.Join("vendor", "project"), 0o755))
+		t.Chdir(filepath.Join("vendor", "project")) // not a Git repository
 		writeFiles("src/a.go", "src/gen/b.go", "other/c.go")
 		wd, err := os.Getwd()
 		require.NoError(t, err)
 		a, b, c := filepath.Join(wd, "src", "a.go"), filepath.Join(wd, "src", "gen", "b.go"), filepath.Join(wd, "other", "c.go")
 
+		h := newHeader([]string{"src/**"}, []string{"src/gen/**"})
 		var result Result
-		require.NoError(t, CheckPaths(newHeader([]string{"src/**"}, []string{"src/gen/**"}), []string{a, b, c}, &result))
+		require.NoError(t, CheckPaths(h, []string{a, b, c}, &result))
 		require.Equal(t, []string{a}, result.Failure)
 		require.ElementsMatch(t, []string{b, c}, result.Ignored)
+
+		result = Result{}
+		require.NoError(t, CheckPaths(newHeader([]string{"**/vendor/**"}, nil), []string{a}, &result))
+		require.Equal(t, []string{a}, result.Ignored)
+
+		// An absolute path in the config covers a relative path given on the command line.
+		result = Result{}
+		require.NoError(t, CheckPaths(newHeader([]string{wd + "/src/**"}, nil), []string{"src/a.go"}, &result))
+		require.Equal(t, []string{"src/a.go"}, result.Failure)
+
+		// The file is fixed by the name it was given by.
+		result = Result{}
+		require.NoError(t, CheckPaths(h, []string{a}, &result))
+		require.NoError(t, Fix(a, h, &result))
+		require.Equal(t, []string{a}, result.Fixed)
+		result = Result{}
+		require.NoError(t, CheckPaths(h, []string{a}, &result))
+		require.Equal(t, []string{a}, result.Success)
 	})
 
 	t.Run("a malformed glob is reported", func(t *testing.T) {
@@ -661,4 +707,52 @@ func TestCheckPathsSelection(t *testing.T) {
 		var result Result
 		require.ErrorIs(t, CheckPaths(newHeader(nil, nil), []string{"[ab.go", "main.go"}, &result), doublestar.ErrBadPattern)
 	})
+}
+
+// TestCheckPathsMatchesCheck checks that a header checks the same files when
+// they are given as paths as when they are found from the config's paths.
+func TestCheckPathsMatchesCheck(t *testing.T) {
+	files := []string{"main.go", "src/a.go", "src/nested/b.go", "src/gen/c.go", "sub/main.go", "other/d.go"}
+	configs := []struct{ paths, pathsIgnore []string }{
+		{paths: []string{"**"}},
+		{paths: []string{"src"}},
+		{paths: []string{"src/"}},
+		{paths: []string{"src/**"}, pathsIgnore: []string{"src/gen/**"}},
+		{paths: []string{"src/*"}},
+		{paths: []string{"main.go"}},
+		{paths: []string{"**/main.go"}},
+		{paths: []string{"**/*.go"}, pathsIgnore: []string{"main.go"}},
+		{paths: []string{"sub/", "other/**"}},
+	}
+
+	for _, inGit := range []bool{true, false} {
+		t.Run(map[bool]string{true: "git", false: "no git"}[inGit], func(t *testing.T) {
+			t.Chdir(t.TempDir())
+			for _, file := range files {
+				require.NoError(t, os.MkdirAll(filepath.Dir(file), 0o755))
+				require.NoError(t, os.WriteFile(file, []byte("package p\n"), 0o600))
+			}
+			if inGit {
+				contents := make(map[string]string, len(files))
+				for _, file := range files {
+					contents[file] = "package p\n"
+				}
+				initRepoWithFiles(t, contents)
+			}
+
+			for _, c := range configs {
+				h := &ConfigHeader{License: LicenseConfig{Content: "Licensed under license A."}, Paths: c.paths, PathsIgnore: c.pathsIgnore}
+				require.NoError(t, h.Finalize())
+
+				var full Result
+				require.NoError(t, Check(h, &full))
+
+				for _, paths := range [][]string{files, {"**"}} {
+					var selected Result
+					require.NoError(t, CheckPaths(h, paths, &selected))
+					require.ElementsMatch(t, full.Failure, selected.Failure, "paths: %v, paths-ignore: %v, given: %v", c.paths, c.pathsIgnore, paths)
+				}
+			}
+		})
+	}
 }

@@ -28,10 +28,12 @@ import (
 	"github.com/apache/skywalking-eyes/pkg/logger"
 )
 
-// Fix adds the configured license header to the given file.
+// Fix adds the configured license header to the given file, unless the file
+// already has it. Fix does not check whether the config's paths cover the file:
+// the files to fix are the failures that Check or CheckPaths reports.
 func Fix(file string, config *ConfigHeader, result *Result) error {
 	var r Result
-	if err := CheckFile(file, config, &r); err != nil || !r.HasFailure() {
+	if err := checkContent(file, config, &r); err != nil || !r.HasFailure() {
 		logger.Log.Warnln("Try to fix a valid file, do nothing:", file)
 		return err
 	}

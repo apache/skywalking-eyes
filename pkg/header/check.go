@@ -58,8 +58,11 @@ func Check(config *ConfigHeader, result *Result) error {
 // multiple header configs, each file is checked only against the headers whose
 // paths cover it, the same as without the given paths.
 func CheckPaths(config *ConfigHeader, paths []string, result *Result) error {
+	_, err := git.PlainOpen(currentDir)
+	inGit := err == nil
+
 	return checkFiles(paths, func(file string) error {
-		if yes, err := config.shouldIgnoreSelected(file, paths); yes || err != nil {
+		if yes, err := config.shouldIgnoreSelected(file, paths, inGit); yes || err != nil {
 			result.Ignore(file)
 			return err
 		}
